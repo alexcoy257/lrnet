@@ -5,6 +5,7 @@
 
 #include <QtNetwork/QSslSocket>
 #include <QtNetwork/QSslCipher>
+#include <cstdio>
 
 
 /*
@@ -204,6 +205,7 @@ void LRNetServer::receivedClientInfo()
     QString clientName = QString();
     cout << "JackTrip HUB SERVER: Reading UDP port from Client..." << endl;
     int peer_udp_port;
+    /*
     if (!clientConnection->isEncrypted()) {
         if (clientConnection->bytesAvailable() < (int)sizeof(qint32)) {
             // We don't have enough data. Wait for the next readyRead notification.
@@ -214,19 +216,24 @@ void LRNetServer::receivedClientInfo()
         // number was always sent as a 32 bit integer, it meants we can squeeze this functionality
         // in here without breaking older clients when authentication isn't required.)
     
-    }
+    }*/
+    char inbuf[1024];
+    int bytesRead = clientConnection->read(inbuf, 1024);
+    osc::ReceivedPacket inPack(inbuf, bytesRead);
+    std::cout <<inPack;
     
     // Check is client is new or not
-
+    QString myString = "Hello World\n";
+    qDebug() <<"Wrote " <<clientConnection->write(myString.toLocal8Bit());
 
     // If the address is not new, we need to remove the client from the pool
     // before re-starting the connection
     
     // Close and mark socket for deletion
     // ----------------------------------
-    clientConnection->close();
-    clientConnection->deleteLater();
-    cout << "JackTrip HUB SERVER: Client TCP Connection Closed!" << endl;
+    //clientConnection->close();
+    //clientConnection->deleteLater();
+    //cout << "JackTrip HUB SERVER: Client TCP Connection Closed!" << endl;
 
     QThread::msleep(100);
 

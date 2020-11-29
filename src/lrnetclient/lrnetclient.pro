@@ -5,4 +5,5 @@ QT += gui widgets network
 TARGET = lrnetclient
 
 HEADERS += client.h
-SOURCES += lrnetclient.cpp
+SOURCES += lrnetclient.cpp \
+           /usr/local/include/osc/*.cpp \

@@ -8,3 +8,4 @@ HEADERS += lrnetserver.h \
 SOURCES += lrnetserver.cpp \
             sslserver.cpp \
             lrnetservermain.cpp \
+            /usr/local/include/osc/*.cpp \

@@ -53,6 +53,8 @@
 #include <QFile>
 #include <QtEndian>
 #include <QUdpSocket>
+#include <osc/OscReceivedElements.h>
+#include <osc/OscPrintReceivedElements.h>
 
 extern int gVerboseFlag;
 
