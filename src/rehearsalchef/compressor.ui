@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Compressor</class>
+ <widget class="QWidget" name="Compressor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>254</width>
+    <height>179</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="gridLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>240</width>
+     <height>164</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="3">
+     <widget class="QDial" name="c_gainKnob"/>
+    </item>
+    <item row="2" column="2">
+     <widget class="QDial" name="c_releaseKnob"/>
+    </item>
+    <item row="0" column="2">
+     <widget class="QDial" name="c_threshKnob"/>
+    </item>
+    <item row="2" column="1">
+     <widget class="QDial" name="c_attackKnob"/>
+    </item>
+    <item row="0" column="1">
+     <widget class="QDial" name="c_ratioKnob"/>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="c_ratioVal">
+      <property name="text">
+       <string>Ratio: 1</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLabel" name="c_threshVal">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLabel" name="c_gainVal">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="c_attackVal">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QLabel" name="c_releaseVal">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
