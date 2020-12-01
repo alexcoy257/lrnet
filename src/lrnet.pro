@@ -1,2 +1,2 @@
 TEMPLATE=subdirs
-SUBDIRS = lrnetclient lrnetserver
+SUBDIRS = lrnetclient lrnetserver lrmixer rehearsalchef
