@@ -55,6 +55,10 @@
 #include <QUdpSocket>
 #include <osc/OscReceivedElements.h>
 #include <osc/OscPrintReceivedElements.h>
+#include <osc/OscOutboundPacketStream.h>
+#include "auth.h"
+
+#define OUTPUT_BUFFER_SIZE 1024
 
 extern int gVerboseFlag;
 
@@ -90,6 +94,8 @@ private slots:
     void receivedNewConnection();
     void receivedClientInfo();
     void stopCheck();
+    void handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg);
+    void sendRoster(QSslSocket * socket);
 
 signals:
     void Listening();
@@ -158,6 +164,11 @@ private:
 
     int mBufferStrategy;
     int mBroadcastQueue;
+    char buffer[OUTPUT_BUFFER_SIZE];
+    osc::OutboundPacketStream oscOutStream;
+    QVector<QSslSocket *>activeConnections;
+    QHash<Auth::session_id_t, Auth::session_id_t>activeSessions;
+    Auth authorizer;
     
 public :
     void setRequireAuth(bool requireAuth) { mRequireAuth = requireAuth; }

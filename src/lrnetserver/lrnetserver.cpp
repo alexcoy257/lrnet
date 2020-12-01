@@ -66,7 +66,8 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mHubPatchDescriptions({"server-to-clients", "client loopback", "client fan out/in but not loopback",
                            "reserved for TUB", "full mix", "no auto patching"}),
     m_connectDefaultAudioPorts(false),
-    mIOStatTimeout(0)
+    mIOStatTimeout(0),
+    oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
 {
 
     qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
@@ -205,26 +206,66 @@ void LRNetServer::receivedClientInfo()
     QString clientName = QString();
     cout << "JackTrip HUB SERVER: Reading UDP port from Client..." << endl;
     int peer_udp_port;
-    /*
-    if (!clientConnection->isEncrypted()) {
-        if (clientConnection->bytesAvailable() < (int)sizeof(qint32)) {
+    
+
+        if (clientConnection->bytesAvailable() < 33) {
             // We don't have enough data. Wait for the next readyRead notification.
             return;
         }
-        // Use our peer port to check if we need to authenticate our client.
-        // (We use values above the max port number of 65535 to achieve this. Since the port
-        // number was always sent as a 32 bit integer, it meants we can squeeze this functionality
-        // in here without breaking older clients when authentication isn't required.)
-    
-    }*/
     char inbuf[1024];
+    clientConnection->read(inbuf, 1);
+    if (inbuf[0] == 'a'){
+        clientConnection->read(inbuf+1, 32);
+        QByteArray cArray(inbuf+1, 32);
+        Auth::auth_type_t at = authorizer.checkCredentials(cArray);
+        if( at.authType != Auth::NONE){
+            inbuf[0] = 's';
+            memcpy(inbuf + 1, &at.session_id, sizeof(Auth::session_id_t));
+            clientConnection->write(inbuf, 1 + sizeof(Auth::session_id_t));
+            qDebug() <<"Authenticated: Gave session id " <<at.session_id;
+            activeSessions.insert(at.session_id, at.session_id);
+        }
+        else
+        {
+            inbuf[0] = 'f';
+            clientConnection->write(inbuf, 1);
+        }
+        return;
+    }
+    else if (inbuf[0] == 's'){
+        Auth::session_id_t tSess;
+        clientConnection->read(inbuf+1, sizeof(Auth::session_id_t));
+        memcpy(&tSess, inbuf+1, sizeof(Auth::session_id_t));
+        if (!activeSessions.contains(tSess)){
+            qDebug() << "No session found for " <<tSess;
+            return;
+        }
+    }
+    else {
+        return;
+    }
+
+    
+
+    
     int bytesRead = clientConnection->read(inbuf, 1024);
     osc::ReceivedPacket inPack(inbuf, bytesRead);
-    std::cout <<inPack;
+    osc::ReceivedBundle * inBundle = NULL;
+    osc::ReceivedMessage * inMsg = NULL;
+
+    if (inPack.IsBundle()){
+        inBundle = new osc::ReceivedBundle(inPack);
+    }
+    else{
+        inMsg = new osc::ReceivedMessage(inPack);
+        const char * ap = inMsg->AddressPattern();
+        handleMessage(clientConnection, inMsg);
+    }
+
     
     // Check is client is new or not
-    QString myString = "Hello World\n";
-    qDebug() <<"Wrote " <<clientConnection->write(myString.toLocal8Bit());
+    //QString myString = "Hello World\n";
+    //qDebug() <<"Wrote " <<clientConnection->write(myString.toLocal8Bit());
 
     // If the address is not new, we need to remove the client from the pool
     // before re-starting the connection
@@ -238,6 +279,21 @@ void LRNetServer::receivedClientInfo()
     QThread::msleep(100);
 
 
+}
+
+void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg){
+    cout <<"Address Pattern: " <<msg->AddressPattern() << endl;
+    if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
+        sendRoster(socket);
+        }
+}
+
+void LRNetServer::sendRoster(QSslSocket * socket){
+    
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/roster" ) 
+            << "James-Sax" << "Coy-Tbn" << osc::EndMessage;
+    qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::stopCheck()
