@@ -1,7 +1,9 @@
 #message(Building channel strip)
 #system(faust $$PWD/faustTest.dsp -o channelStrip.h -cn ChannelStrip)
 
-CONFIG += c++11 lib
+CONFIG += c++11
+
+TEMPLATE = lib
 
 CONFIG += qt
 
@@ -32,7 +34,7 @@ LIBS += -ljack
 
 #patchtest{
   TARGET = patcher
-  SOURCES += patchTest.cpp
+#  SOURCES += patchTest.cpp
   HEADERS += Patcher.h \
 #             $$FAUSTINC/gui/QTUI.h \
              $$FAUSTINC/gui/GUI.h \

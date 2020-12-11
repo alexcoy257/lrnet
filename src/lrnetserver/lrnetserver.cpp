@@ -8,40 +8,10 @@
 #include <cstdio>
 
 
-/*
-  JackTrip: A System for High-Quality Audio Network Performance
-  over the Internet
-
-  Copyright (c) 2008 Juan-Pablo Caceres, Chris Chafe.
-  SoundWIRE group at CCRMA, Stanford University.
-
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation
-  files (the "Software"), to deal in the Software without
-  restriction, including without limitation the rights to use,
-  copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following
-  conditions:
-
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-  OTHER DEALINGS IN THE SOFTWARE.
-*/
-//*****************************************************************
-
 /**
  * \file SslServer.cpp
- * \author Aaron Wyatt
- * \date September 2020
+ * \author Alex Coy
+ * \date November 2020
  */
 
 #include "sslserver.h"
@@ -58,17 +28,69 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mServerPort(server_port),
     mServerUdpPort(server_udp_port),//final udp base port number
     mRequireAuth(false),
-    mStopped(false),
+    mStopped(false)
     #ifdef WAIR // wair
     mWAIR(false),
     #endif // endwhere
-    mTotalRunningThreads(0),
-    mHubPatchDescriptions({"server-to-clients", "client loopback", "client fan out/in but not loopback",
-                           "reserved for TUB", "full mix", "no auto patching"}),
-    m_connectDefaultAudioPorts(false),
-    mIOStatTimeout(0),
-    oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
+
+    , mTotalRunningThreads(0)
+    , mStimeoutTimer()
+    , mCtimeoutTimer ()
+    , cThread(new QThread())
+    , m_connectDefaultAudioPorts(false)
+    , mIOStatTimeout(0)
+
+    , oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
+
 {
+
+
+
+
+
+        mStimeoutTimer.setInterval(300000); //5 minutes for a session
+        mStimeoutTimer.callOnTimeout([=](){
+            //Single threaded event loop: mutex not required
+            //QMutexLocker lock(&sMutex);
+            for (QHash<Auth::session_id_t, sessionTriple>::key_value_iterator i = activeSessions.keyValueBegin();
+                 i != activeSessions.keyValueEnd(); i++){
+                if (!(i->second.ShasCheckedIn)){
+                    activeSessions.remove(i->first);
+                }
+                else{
+                i->second.ShasCheckedIn = false;
+                }
+            }
+        });
+        mStimeoutTimer.start();
+
+    mCtimeoutTimer.setInterval(20000); //20 seconds for a connection
+    mCtimeoutTimer.callOnTimeout([=](){
+        qDebug() <<"Checking for expired connections";
+        //MutexLocker not required as this timer is in the main loop for now.
+        //QMutexLocker lock(&cMutex);
+        QMutableHashIterator<QSslSocket *, connectionPair> i(activeConnections);
+        while (i.hasNext()){
+            i.next();
+            if (!(i.value().ChasCheckedIn)){
+                if(i.key()){
+                    i.key()->close();
+                }
+                //i.remove();
+                //free i.value();
+                qDebug() << "Closed a connection (timeout)";
+            }
+            else{
+            i.value().ChasCheckedIn = false;
+            }
+        }
+    });
+
+    //mCtimeoutTimer->moveToThread(cThread);
+    mCtimeoutTimer.start();
+    //cThread->exec();
+
+
 
     qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
     mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
@@ -76,13 +98,8 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
-    // Inizialize IP addresses
-    for (int i = 0; i<gMaxThreads; i++) {
-        mActiveAddress[i].address = ""; // Address strings
-        mActiveAddress[i].port = 0;
-        mActiveAddress[i].clientName = "";
-    }
-    cout << "JackTrip HUB SERVER: UDP Base Port set to " << mBasePort << endl;
+
+    cout << "LRNet Server." << endl;
 
 
     mBufferStrategy = 1;
@@ -190,6 +207,19 @@ void LRNetServer::receivedNewConnection()
 {
     QSslSocket *clientSocket = static_cast<QSslSocket *>(mTcpServer.nextPendingConnection());
     connect(clientSocket, &QAbstractSocket::readyRead, this, &LRNetServer::receivedClientInfo);
+    connect(clientSocket, &QAbstractSocket::disconnected, clientSocket,
+            [=](){
+        qDebug() <<"Client disconnected, must remove";
+        //Single threaded event loop: mutex not required
+        //if(cMutex.tryLock()){
+            if (activeConnections.contains(clientSocket)){
+                activeConnections.remove(clientSocket);
+            }
+            clientSocket->deleteLater();
+            //cMutex.unlock();
+        //}
+
+        });
     cout << "JackTrip HUB SERVER: Client Connection Received!" << endl;
 }
 
@@ -201,20 +231,22 @@ void LRNetServer::receivedClientInfo()
     cout << "JackTrip HUB SERVER: Client Connect Received from Address : "
          << PeerAddress.toString().toStdString() << endl;
          
-    // Get UDP port from client
-    // ------------------------
-    QString clientName = QString();
-    cout << "JackTrip HUB SERVER: Reading UDP port from Client..." << endl;
-    int peer_udp_port;
-    
 
-        if (clientConnection->bytesAvailable() < 33) {
-            // We don't have enough data. Wait for the next readyRead notification.
-            return;
-        }
+
+
+
     char inbuf[1024];
     clientConnection->read(inbuf, 1);
+
     if (inbuf[0] == 'a'){
+        if (clientConnection->bytesAvailable() < 32) {
+            // We don't have enough data for an authentication. Close the connection for
+            // non-cooperation.
+            clientConnection->close();
+            qDebug() <<__BASE_FILE__ <<__LINE__ <<"Not enough auth data";
+            return;
+        }
+
         clientConnection->read(inbuf+1, 32);
         QByteArray cArray(inbuf+1, 32);
         Auth::auth_type_t at = authorizer.checkCredentials(cArray);
@@ -223,16 +255,25 @@ void LRNetServer::receivedClientInfo()
             memcpy(inbuf + 1, &at.session_id, sizeof(Auth::session_id_t));
             clientConnection->write(inbuf, 1 + sizeof(Auth::session_id_t));
             qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-            activeSessions.insert(at.session_id, at.session_id);
+            activeSessions.insert(at.session_id, {at.session_id, clientConnection, true});
+            activeConnections.insert(clientConnection, {new QMutex(), at.session_id, false});
         }
         else
         {
             inbuf[0] = 'f';
             clientConnection->write(inbuf, 1);
+            clientConnection->close();
         }
         return;
     }
     else if (inbuf[0] == 's'){
+        if ((signed)sizeof(Auth::session_id_t) - clientConnection->bytesAvailable() > 0) {
+            // We don't have enough data for an authentication. Close the connection for
+            // non-cooperation.
+            qDebug() <<__BASE_FILE__ <<__LINE__ <<"Not enough session data";
+            clientConnection->close();
+            return;
+        }
         Auth::session_id_t tSess;
         clientConnection->read(inbuf+1, sizeof(Auth::session_id_t));
         memcpy(&tSess, inbuf+1, sizeof(Auth::session_id_t));
@@ -240,8 +281,24 @@ void LRNetServer::receivedClientInfo()
             qDebug() << "No session found for " <<tSess;
             return;
         }
+        qDebug() <<__BASE_FILE__ <<__LINE__ <<"Handle OSC message now.";
+        //Now, handle the OSC message.
+    }
+    else if (inbuf[0] == 'p'){
+        if (activeConnections.contains(clientConnection)){
+            activeConnections[clientConnection].ChasCheckedIn = true;
+            activeSessions[activeConnections[clientConnection].assocSession].ShasCheckedIn = true;
+            QMutexLocker lock(activeConnections[clientConnection].mutex);
+            const char toSend = 'p';
+            clientConnection->write(&toSend, 1);
+        }
+        else{
+            clientConnection->close();
+        }
+        return;
     }
     else {
+        clientConnection->close();
         return;
     }
 
@@ -258,7 +315,6 @@ void LRNetServer::receivedClientInfo()
     }
     else{
         inMsg = new osc::ReceivedMessage(inPack);
-        const char * ap = inMsg->AddressPattern();
         handleMessage(clientConnection, inMsg);
     }
 
@@ -292,7 +348,7 @@ void LRNetServer::sendRoster(QSslSocket * socket){
     
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/push/roster" ) 
-            << "James-Sax" << "Coy-Tbn" << osc::EndMessage;
+            << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1 << osc::EndMessage;
     qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
@@ -456,9 +512,7 @@ int LRNetServer::releaseThread(int id)
     mActiveAddress[id].address = "";
     mActiveAddress[id].port = 0;
     mTotalRunningThreads--;
-#ifdef WAIR // wair
-    if (isWAIR()) connectMesh(false); // invoked with -Sw
-#endif // endwhere
+
     mActiveAddress[id].clientName = "";
     return 0; /// \todo Check if we really need to return an argument here
 }

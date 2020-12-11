@@ -1,0 +1,7 @@
+#ifndef REHEARSALCHEFABOUT_H
+#define REHEARSALCHEFABOUT_H
+
+#define REHEARSALCHEF_DOMAIN "cuwinds.com"
+#define REHEARSALCHEF_TITLE "rehearsalchef"
+
+#endif // REHEARSALCHEFABOUT_H

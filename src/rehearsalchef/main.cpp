@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();    
 
-    w.addChannelStrip("Mike-Tbn");
-    w.addChannelStrip("Jimmy-Sax");
+    //w.addChannelStrip("Mike-Tbn");
+    //w.addChannelStrip("Jimmy-Sax");
     //w.addChannelStrip("John-Tbn");
     //w.addChannelStrip("Paul-Tbn");
     //w.addChannelStrip("George-Tbn");

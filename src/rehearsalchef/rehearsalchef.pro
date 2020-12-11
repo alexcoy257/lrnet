@@ -1,8 +1,10 @@
-QT       += core gui testlib
+QT       += core gui testlib network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
+
+LIBS += -L../lrnetclient -llrnetclient -lcrypto
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -12,14 +14,17 @@ SOURCES += \
     channelstrip.cpp \
     channeltester.cpp \
     compressor.cpp \
+    lrchef_connectform.cpp \
     main.cpp \
     mainwindow.cpp \
     rc_tests_1.cpp
 
 HEADERS += \
+    RehearsalChefabout.h \
     channelstrip.h \
     channeltester.h \
     compressor.h \
+    lrchef_connectform.h \
     mainwindow.h \
     testworker.h
 

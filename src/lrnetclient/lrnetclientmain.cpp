@@ -4,6 +4,6 @@
 int main(int argc, char *argv[])
     {
         QApplication app(argc, argv, false);
-        Client client("localhost", 4463);
+        LRNetClient client;
         return app.exec();
     }

@@ -5,24 +5,57 @@
 #include "lrnetclient.h"
 
 
-Client::Client(const QString &host, int port):
+LRNetClient::LRNetClient():
 oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
+,m_timeoutTimer(this)
 {
     socket = new QSslSocket();
-    connect(socket, SIGNAL(connected()), SLOT(waitForGreeting()));
+    m_timeoutTimer.setSingleShot(true);
+    m_timeoutTimer.setInterval(5000);
+    connect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
+    connect(socket, &QSslSocket::connected, this,
+            [=](){
+        disconnect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
+        m_timeoutTimer.stop();
+        m_timeoutTimer.setSingleShot(false);
+        m_timeoutTimer.setInterval(2000);
+        m_timeoutTimer.callOnTimeout([=](){
+            char temp = 'p';
+             qDebug() << "Sending ping";
+            socket->write(&temp,1);
+
+        });
+        m_timeoutTimer.start();
+        connect(socket, &QSslSocket::disconnected, this, [=](){
+            qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
+            m_timeoutTimer.stop();
+        });
+        waitForGreeting();
+    });
     connect(socket, SIGNAL(readyRead()), SLOT(readResponse()));
-    connect(socket, SIGNAL(disconnected()), qApp, SLOT(quit()));
-    socket->connectToHost(host, port);
+    //connect(socket, SIGNAL(disconnected()), qApp, SLOT(quit()));
+
 }
 
-Client::~Client(){
+
+void LRNetClient::connectionTimedOut(){
+    emit timeout();
+}
+
+void LRNetClient::tryConnect(const QString &host, int port){
+    qDebug() <<"Connecting to "<<host <<"on " <<port;
+    socket->connectToHost(host, port);
+    m_timeoutTimer.start();
+}
+
+LRNetClient::~LRNetClient(){
     socket->disconnect();
 }
     
 
-void Client::waitForGreeting()
+void LRNetClient::waitForGreeting()
 {   
-    QString temp = "Hi";
+    emit connected();
 
     /*
     oscOutStream.Clear();
@@ -32,10 +65,10 @@ void Client::waitForGreeting()
     */
     char tryThing[34] = "acornell1000000000000000000000000";
     socket->write(tryThing, 33);
-    qDebug("Connected; now waiting for the greeting");
+    qDebug() <<__FILE__ <<__LINE__ <<"Connected; authenticating";
 }
 
-void Client::sendPacket(){
+void LRNetClient::sendPacket(){
     char outbuf[OUTPUT_BUFFER_SIZE + sizeof(Auth::session_id_t) + 1];
     memcpy(outbuf+1, &session, sizeof(Auth::session_id_t));
     memcpy(outbuf+sizeof(Auth::session_id_t)+1, oscOutStream.Data(), oscOutStream.Size());
@@ -43,14 +76,14 @@ void Client::sendPacket(){
     socket->write(outbuf, oscOutStream.Size() + sizeof(Auth::session_id_t) + 1);
 }
 
-void Client::requestRoster(){
+void LRNetClient::requestRoster(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/get/roster" ) 
             << true << 23 << (float)3.1415 << "hello" << osc::EndMessage;
     sendPacket();
 }
 
-void Client::readResponse()
+void LRNetClient::readResponse()
 {
     char inbuf[1024+33];
     int bytesRead = socket->read(inbuf, 1024);
@@ -65,11 +98,14 @@ void Client::readResponse()
         requestRoster();
         return;
     }
+    else if (inbuf[0] == 'p'){
+        qDebug() << "Pong";
+        return;
+    }
     osc::ReceivedPacket inPack(inbuf, bytesRead);
     osc::ReceivedBundle * inBundle = NULL;
     osc::ReceivedMessage * inMsg = NULL;
     qDebug() <<"Got communication";
-    std::cout << "Got communication " << std::endl;
     
 
     if (inPack.IsBundle()){
@@ -84,12 +120,14 @@ void Client::readResponse()
 
             while (!args.Eos()){
                 const char * memName;
-                args >> memName;
-                std::cout << "Member " << memName << std::endl;
+                const char * memSect;
+                int id;
+                args >> memName; args >> memSect; args >> id;
+                std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
+                emit newMember(QString(memName), QString(memSect), id);
             }
-            
         }
-        std::cout <<"Address Pattern: " <<ap << endl;
+        std::cout <<"Address Pattern: " <<ap << std::endl;
     }
 }
 

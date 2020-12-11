@@ -1,8 +1,9 @@
 # build dir
-build
+build*
 .qmake.stash
 .vscode
 generate_auth.sh
+*.pro.user
 
 # Prerequisites
 *.d

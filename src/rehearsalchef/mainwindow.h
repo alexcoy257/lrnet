@@ -4,9 +4,14 @@
 #include <QMainWindow>
 #include <QWidget>
 #include <QObject>
+#include <QPushButton>
+#include <QTimer>
+
 #include "channelstrip.h"
 #include "compressor.h"
 #include "channeltester.h"
+#include "lrchef_connectform.h"
+#include "../lrnetclient/lrnetclient.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; class ChannelStrip;}
@@ -24,19 +29,28 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void addChannelStrip(QString cName);
+
+public slots:
+
 
 private:
     Ui::MainWindow *ui;
     ChannelStrip * m_channelStrip;
     Compressor * m_comp;
     Compressor * m_actComp;
-    QHash<QString, LRMClient *> m_clients;
+    QHash<int, LRMClient *> m_clients;
+    ConnectForm * m_connectForm;
+    QPushButton * m_openConnectFormButton;
+    LRNetClient * m_netClient;
+    QTimer m_keepAliveTimer;
+
 
 signals:
-    void deleteChannel(QString s);
+    void deleteChannel(int id);
 
 private slots:
     void highlightInsert(Compressor * cp);
+    void addChannelStrip(const QString& mName, const QString& sName, int id);
+    void deleteChannelStrip(int id);
 };
 #endif // MAINWINDOW_H

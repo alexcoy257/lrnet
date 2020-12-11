@@ -14,10 +14,10 @@ class TestWorker : public QObject
 public:
     TestWorker(MainWindow * _w):w(_w){};
     void doTests(){
-        w->addChannelStrip("Mike-Tbn");
-        w->addChannelStrip("Jimmy-Sax");
-        QThread::sleep(4);
-        w->addChannelStrip("John-Tbn");
+        //w->addChannelStrip("Mike-Tbn");
+        //w->addChannelStrip("Jimmy-Sax");
+        //QThread::sleep(4);
+        //w->addChannelStrip("John-Tbn");
     }
 signals:
     void resultReady(const QString &s);
