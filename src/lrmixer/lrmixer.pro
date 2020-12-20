@@ -1,3 +1,5 @@
+include(../lrnet.pri)
+
 #message(Building channel strip)
 #system(faust $$PWD/faustTest.dsp -o channelStrip.h -cn ChannelStrip)
 
@@ -9,6 +11,9 @@ CONFIG += qt
 
 QT += widgets
 
+macx{
+LIBS += -L/usr/local/lib -framework CoreAudio
+}
 
 
 FAUSTINC = /usr/local/include/faust/

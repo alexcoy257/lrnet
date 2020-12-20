@@ -96,20 +96,20 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::keyInit(){
-    loadSetup();
+    //loadSetup();
 
     if (m_publicKey.length() == 0){
         RSA * t_keyPair = RSA_new();
         BIGNUM * e = NULL;
         BN_dec2bn(&e, "3");
-        RSA_generate_key_ex(keyPair, 2048,e, NULL);
+        RSA_generate_key_ex(t_keyPair, 2048,e, NULL);
         //m_keyCopyGenButton->setText("Generate Public Key");
         BN_free(e);
 
         BIO * t_pri = BIO_new(BIO_s_mem());
         BIO * t_pub = BIO_new(BIO_s_mem());
-        PEM_write_bio_RSAPrivateKey(t_pri, keyPair, NULL, NULL, 0, NULL, NULL);
-        PEM_write_bio_RSA_PUBKEY(t_pub, keyPair);
+        PEM_write_bio_RSAPrivateKey(t_pri, t_keyPair, NULL, NULL, 0, NULL, NULL);
+        PEM_write_bio_RSA_PUBKEY(t_pub, t_keyPair);
         size_t len = BIO_pending(t_pri);
 
         void *pri_key = malloc(len);
@@ -142,7 +142,8 @@ void MainWindow::keyInit(){
     RSA * trsa = PEM_read_bio_RSA_PUBKEY(t_pub, &keyPair, NULL, NULL);
 
     if (!trsa){
-        qDebug() <<"RSA read failed somehow";
+        qDebug() <<"RSA read failed somehow. Quitting";
+        std::exit(1);
     }
 
     BIO_write(t_pri, m_privateKey.data(), m_privateKey.length());

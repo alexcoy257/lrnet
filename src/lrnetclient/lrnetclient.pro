@@ -1,3 +1,7 @@
+include(../lrnet.pri)
+
+DESTDIR=$$DLLDESTDIR
+
 CONFIG += c++11 console
 CONFIG += qt
 QT += gui widgets network sql
