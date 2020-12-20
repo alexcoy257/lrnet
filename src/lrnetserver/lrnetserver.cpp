@@ -52,13 +52,14 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
         mStimeoutTimer.callOnTimeout([=](){
             //Single threaded event loop: mutex not required
             //QMutexLocker lock(&sMutex);
-            for (QHash<Auth::session_id_t, sessionTriple>::key_value_iterator i = activeSessions.keyValueBegin();
-                 i != activeSessions.keyValueEnd(); i++){
-                if (!(i->second.ShasCheckedIn)){
-                    activeSessions.remove(i->first);
+            QMutableHashIterator<session_id_t, sessionTriple> i(activeSessions);
+            while (i.hasNext()){
+                i.next();
+                if (!(i.value().ShasCheckedIn)){
+                    activeSessions.remove(i.key());
                 }
                 else{
-                i->second.ShasCheckedIn = false;
+                i.value().ShasCheckedIn = false;
                 }
             }
         });
@@ -227,19 +228,15 @@ void LRNetServer::receivedClientInfo()
 {
     QSslSocket* clientConnection = static_cast<QSslSocket*>(QObject::sender());
     
-    QHostAddress PeerAddress = clientConnection->peerAddress();
-    cout << "JackTrip HUB SERVER: Client Connect Received from Address : "
-         << PeerAddress.toString().toStdString() << endl;
+    //QHostAddress PeerAddress = clientConnection->peerAddress();
+    //cout << "JackTrip HUB SERVER: Client Connect Received from Address : "
+    //     << PeerAddress.toString().toStdString() << endl;
          
-
-
-
-
     char inbuf[1024];
     clientConnection->read(inbuf, 1);
 
     if (inbuf[0] == 'a'){
-        if (clientConnection->bytesAvailable() < 32) {
+        if ((unsigned) clientConnection->bytesAvailable() < sizeof(auth_packet_t)) {
             // We don't have enough data for an authentication. Close the connection for
             // non-cooperation.
             clientConnection->close();
@@ -247,13 +244,18 @@ void LRNetServer::receivedClientInfo()
             return;
         }
 
-        clientConnection->read(inbuf+1, 32);
-        QByteArray cArray(inbuf+1, 32);
-        Auth::auth_type_t at = authorizer.checkCredentials(cArray);
-        if( at.authType != Auth::NONE){
+        clientConnection->read(inbuf+1, sizeof(auth_packet_t));
+        AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(inbuf+1));
+        QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
+        qDebug() <<"Have a challenge " <<batmp;
+        batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
+        qDebug() <<"Signed " <<batmp;
+
+        auth_type_t at = authorizer.checkCredentials(pkt);
+        if( at.authType != NONE){
             inbuf[0] = 's';
-            memcpy(inbuf + 1, &at.session_id, sizeof(Auth::session_id_t));
-            clientConnection->write(inbuf, 1 + sizeof(Auth::session_id_t));
+            memcpy(inbuf + 1, &at.session_id, sizeof(session_id_t));
+            clientConnection->write(inbuf, 1 + sizeof(session_id_t));
             qDebug() <<"Authenticated: Gave session id " <<at.session_id;
             activeSessions.insert(at.session_id, {at.session_id, clientConnection, true});
             activeConnections.insert(clientConnection, {new QMutex(), at.session_id, false});
@@ -266,22 +268,23 @@ void LRNetServer::receivedClientInfo()
         }
         return;
     }
+    //Client claims to have sent a session id.
     else if (inbuf[0] == 's'){
-        if ((signed)sizeof(Auth::session_id_t) - clientConnection->bytesAvailable() > 0) {
+        if ((signed)sizeof(session_id_t) - clientConnection->bytesAvailable() > 0) {
             // We don't have enough data for an authentication. Close the connection for
             // non-cooperation.
             qDebug() <<__BASE_FILE__ <<__LINE__ <<"Not enough session data";
             clientConnection->close();
             return;
         }
-        Auth::session_id_t tSess;
-        clientConnection->read(inbuf+1, sizeof(Auth::session_id_t));
-        memcpy(&tSess, inbuf+1, sizeof(Auth::session_id_t));
+        session_id_t tSess;
+        clientConnection->read(inbuf+1, sizeof(session_id_t));
+        memcpy(&tSess, inbuf+1, sizeof(session_id_t));
         if (!activeSessions.contains(tSess)){
             qDebug() << "No session found for " <<tSess;
             return;
         }
-        qDebug() <<__BASE_FILE__ <<__LINE__ <<"Handle OSC message now.";
+        //qDebug() <<__BASE_FILE__ <<__LINE__ <<"Handle OSC message now.";
         //Now, handle the OSC message.
     }
     else if (inbuf[0] == 'p'){
@@ -302,9 +305,6 @@ void LRNetServer::receivedClientInfo()
         return;
     }
 
-    
-
-    
     int bytesRead = clientConnection->read(inbuf, 1024);
     osc::ReceivedPacket inPack(inbuf, bytesRead);
     osc::ReceivedBundle * inBundle = NULL;
@@ -318,19 +318,6 @@ void LRNetServer::receivedClientInfo()
         handleMessage(clientConnection, inMsg);
     }
 
-    
-    // Check is client is new or not
-    //QString myString = "Hello World\n";
-    //qDebug() <<"Wrote " <<clientConnection->write(myString.toLocal8Bit());
-
-    // If the address is not new, we need to remove the client from the pool
-    // before re-starting the connection
-    
-    // Close and mark socket for deletion
-    // ----------------------------------
-    //clientConnection->close();
-    //clientConnection->deleteLater();
-    //cout << "JackTrip HUB SERVER: Client TCP Connection Closed!" << endl;
 
     QThread::msleep(100);
 
@@ -362,71 +349,6 @@ void LRNetServer::stopCheck()
     }
 }
 
-    /* From Old Runloop code
-  // Create objects on the stack
-  QUdpSocket HubUdpSocket;
-  QHostAddress PeerAddress;
-  uint16_t peer_port; // Ougoing Peer port, in case they're not using the default
-
-  // Bind the socket to the well known port
-  bindUdpSocket(HubUdpSocket, mServerPort);
-
-  char buf[1];
-  cout << "Server Listening in UDP Port: " << mServerPort << endl;
-  cout << "Waiting for client..." << endl;
-  cout << "=======================================================" << endl;
-  while ( !mStopped )
-  {
-    //cout << "WAITING........................." << endl;
-    while ( HubUdpSocket.hasPendingDatagrams() )
-    {
-      cout << "Received request from Client!" << endl;
-      // Get Client IP Address and outgoing port from packet
-      int rv = HubUdpSocket.readDatagram(buf, 1, &PeerAddress, &peer_port);
-      cout << "Peer Port in Server ==== " << peer_port << endl;
-      if (rv < 0) { std::cerr << "ERROR: Bad UDP packet read..." << endl; }
-
-      /// \todo Get number of channels in the client from header
-
-      // check by comparing 32-bit addresses
-      /// \todo Add the port number in the comparison
-      cout << "peer_portpeer_portpeer_port === " << peer_port << endl;
-      int id = isNewAddress(PeerAddress.toIPv4Address(), peer_port);
-
-      //cout << "IDIDIDIDIDDID === " << id << endl;
-
-      // If the address is new, create a new thread in the pool
-      if (id >= 0) // old address is -1
-      {
-        // redirect port and spawn listener
-        sendToPoolPrototype(id);
-        // wait until one is complete before another spawns
-        while (mJTWorker->isSpawning()) { QThread::msleep(10); }
-        mTotalRunningThreads++;
-        cout << "Total Running Threads:  " << mTotalRunningThreads << endl;
-        cout << "=======================================================" << endl;
-      }
-      //cout << "ENDDDDDDDDDDDDDDDDDd === " << id << endl;
-    }
-    QThread::msleep(100);
-  }
-  */
-
-//*******************************************************************************
-// Returns 0 on error
-
-
-
-//*******************************************************************************
-/*
-void LRNetServer::sendToPoolPrototype(int id)
-{
-  mJTWorker->setJackTrip(id, mActiveAddress[id][0],
-                         mBasePort+(2*id), mActiveAddress[id][1],
-                         1); /// \todo temp default to 1 channel
-  mThreadPool.start(mJTWorker, QThread::TimeCriticalPriority); //send one thread to the pool
-}
-*/
 
 
 //*******************************************************************************

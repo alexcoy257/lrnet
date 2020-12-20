@@ -4,6 +4,7 @@ build*
 .vscode
 generate_auth.sh
 *.pro.user
+lib
 
 # Prerequisites
 *.d

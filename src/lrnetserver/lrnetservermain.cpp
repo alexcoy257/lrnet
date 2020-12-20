@@ -75,12 +75,12 @@ void parseInput(int argc, char** argv)
     //----------------------------------------------------------------------------
     if (optind < argc) {
       if (strcmp(argv[optind],"help")!=0) {
-        std::cout << "...separator..." << endl;
+        std::cout << "...separator..." << std::endl;
         std::cout << "*** Unexpected command-line argument(s): ";
         for( ; optind < argc; optind++) {
           std::cout << argv[optind] << " ";
         }
-        std::cout << endl << "...separator..." << endl;
+        std::cout << std::endl << "...separator..." << std::endl;
       }
       printUsage();
       std::exit(1);

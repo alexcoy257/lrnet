@@ -11,11 +11,18 @@ class LRdbClient : public QObject
 {
     Q_OBJECT
     QSqlDatabase readDb;
+    bool madeConnection;
+    bool connGood;
 public:
     explicit LRdbClient(QString uname, QString pw, QString hostname = "localhost", QObject *parent = nullptr);
     ~LRdbClient();
     bool netidExists(QString& netid);
     bool addKeyToNetid(QByteArray& key, QString& netid);
+    bool connIsGood() {return connGood;};
+    QVector<int> * getIDsForNetid(QString& netid);
+    QVector<int> * getIDsForNetid(char * netid, int len);
+    QByteArray * getKeyForID(int id);
+    QString * getRoleForID(int id);
 
 signals:
 

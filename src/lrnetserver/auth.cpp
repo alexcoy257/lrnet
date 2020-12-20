@@ -1,6 +1,8 @@
 #include "auth.h"
 
-Auth::Auth(){
+Auth::Auth():
+    readdb("lrnetread", "lrnetreadpw")
+{
   unsigned char testRand;
   if(!RAND_bytes(&testRand, 1)){
     qDebug() <<"Machine doesn't support rand_bytes";
@@ -14,7 +16,7 @@ Auth::~Auth(){
 
 
 
-Auth::session_id_t Auth::genSessionKey(){
+session_id_t Auth::genSessionKey(){
   session_id_t id;
     if (RAND_bytes(reinterpret_cast<unsigned char *>(&id), sizeof(session_id_t)))
       return id;
@@ -22,21 +24,63 @@ Auth::session_id_t Auth::genSessionKey(){
       return 0;
 }
 
-Auth::auth_type_t Auth::checkCredentials (QByteArray& key)
+auth_type_t Auth::checkCredentials (AuthPacket & pck)
 {
-    if (key.isEmpty()) {
-        return {0, NONE};
+    QScopedPointer<QVector<int>> ids(readdb.getIDsForNetid(pck.netid, pck.netid_length));
+
+    if (ids->isEmpty()){
+        return {0,NONE};
     }
 
-    if (key.length() < 32){
-      return {0, NONE};
+    BIO * t_pub = BIO_new(BIO_s_mem());
+    RSA * pubkey = RSA_new();
+
+    AuthTypeE role = NONE;
+
+    for (int id:*ids){
+        QByteArray * key = readdb.getKeyForID(id);
+
+        qDebug() <<"Got key from db:" <<*key <<"of length " <<key->length();
+
+        int nw = BIO_write(t_pub, key->data(), key->length());
+        if (nw < 1){
+            qDebug() << "BIO write failed somehow.";
+        }
+
+        RSA * res = PEM_read_bio_RSA_PUBKEY(t_pub, &pubkey, NULL, NULL);
+
+        if (!res){
+            qDebug() << "RSA read failed somehow.";
+        }
+        //qDebug() <<"RSA Size: " <<RSA_size(pubkey);
+
+        int verified = RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, pubkey);
+        if (verified) {
+            QString * srole = readdb.getRoleForID(id);
+            if (srole){
+                qDebug() <<"Got a role: " <<*srole <<" to superchef: " <<srole->compare("superchef");
+            }
+            if (QString::compare(*srole, "chef") == 0){
+                role = CHEF;
+            }
+            if (srole->compare("superchef") == 0){
+                qDebug() <<"Set to superchef.";
+                role = SUPERCHEF;
+            }
+            if (QString::compare(*srole, "user") == 0){
+                role = MEMBER;
+            }
+             break;
+        }
     }
 
-    if (QString::compare(QString(key), "cornell1000000000000000000000000")==0){
-      return {genSessionKey(), CHEF};
+    BIO_free(t_pub);
+    RSA_free(pubkey);
+
+    if (role != NONE){
+      return {genSessionKey(), role};
     }
 
-    qDebug() <<"Wrong credential" <<QString(key) <<" needed " <<QString("cornell1000000000000000000000000");
+    qDebug() <<"Challenge failed";
     return {0, NONE};
-    
 }

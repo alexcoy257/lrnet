@@ -14,6 +14,8 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
+#include <openssl/rand.h>
+#include <openssl/err.h>
 
 
 #include "RehearsalChefabout.h"
@@ -23,6 +25,7 @@
 class ConnectForm : public QWidget
 {
     Q_OBJECT
+    friend class MainWindow;
 
     QBoxLayout * tl_layout;
     QBoxLayout * bu_layout;
@@ -31,16 +34,13 @@ class ConnectForm : public QWidget
     QLineEdit * m_portBox;
     QLabel * m_errLabel;
     QPushButton * m_submitButton;
-    QSettings m_settings;
 
 
-    QByteArray m_privateKey;
-    QByteArray m_publicKey;
+
     QPlainTextEdit * m_lPublicKey;
     QPushButton * m_keyCopyGenButton;
 
-    void loadSetup();
-    void saveSetup();
+
 
 public:
     explicit ConnectForm(QWidget *parent = nullptr);

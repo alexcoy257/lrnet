@@ -41,8 +41,16 @@ private:
     QHash<int, LRMClient *> m_clients;
     ConnectForm * m_connectForm;
     QPushButton * m_openConnectFormButton;
+    QSettings m_settings;
     LRNetClient * m_netClient;
     QTimer m_keepAliveTimer;
+    QByteArray m_privateKey;
+    QByteArray m_publicKey;
+    RSA * keyPair;
+
+    void loadSetup();
+    void keyInit();
+    void saveSetup();
 
 
 signals:

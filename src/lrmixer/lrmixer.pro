@@ -15,7 +15,7 @@ FAUSTINC = /usr/local/include/faust/
 
 
 INCLUDEPATH += $$FAUSTINC
-message($$FAUSTINC)
+#message($$FAUSTINC)
 
 LIBS += -ljack
 

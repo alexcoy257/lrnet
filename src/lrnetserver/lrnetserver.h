@@ -42,14 +42,14 @@ class LRNetServer : public QObject
     Q_OBJECT;
 
     typedef struct {
-        Auth::session_id_t id;
+        session_id_t id;
         QSslSocket * lastSeenConnection;
         bool ShasCheckedIn;
     }sessionTriple;
 
     typedef struct {
         QMutex * mutex;
-        Auth::session_id_t assocSession;
+        session_id_t assocSession;
         bool ChasCheckedIn;
     }connectionPair;
 
@@ -159,7 +159,7 @@ private:
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream oscOutStream;
     //QVector<QSslSocket *>activeConnections;
-    QHash<Auth::session_id_t, sessionTriple>activeSessions;
+    QHash<session_id_t, sessionTriple>activeSessions;
     QHash<QSslSocket *, connectionPair>activeConnections;
     Auth authorizer;
     

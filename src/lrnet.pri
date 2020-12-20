@@ -1,0 +1,2 @@
+DLLDESTDIR=$$PWD/lib
+#message($$DLLDESTDIR)

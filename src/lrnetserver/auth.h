@@ -2,31 +2,31 @@
 #define LRS_AUTH_H
 
 #include <openssl/rand.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
 #include <QObject>
 #include <QDebug>
 #include <QVector>
+#include "../lrdb_client/lrdbclient.h"
 
+#include "auth_types.h"
 
 class Auth : public QObject{
   Q_OBJECT;
   
-  
+  LRdbClient readdb;
+
   public:
-  typedef uint64_t session_id_t;
-  typedef enum {
-        NONE = 1 << 16,
-        CHEF = 2 << 16,
-        MEMBER = 3 << 16
-    } AuthTypeE;
-  
-  typedef struct {
-    session_id_t session_id;
-    AuthTypeE authType;
-  } auth_type_t;
   
   Auth();
   ~Auth();
-  auth_type_t checkCredentials (QByteArray& key);
+
+  auth_type_t checkCredentials (AuthPacket &pkt);
+
+
+  signals:
 
   private:
   session_id_t genSessionKey();
