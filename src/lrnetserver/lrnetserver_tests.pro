@@ -1,16 +1,9 @@
-include(lrnetserver.pro)
-
-QT += testlib
-
-TARGET -= lrnetserver
-TARGET += lrnetserver_tests
-
-DEFINES += AUTH_TEST_SHORTCUT
-
-SOURCES -= lrnetservermain.cpp
+include(lrnetserver_tests.pri)
 
 
-HEADERS += lrnet_rostertest.h
-#    lrnet_commands_test.h
-SOURCES += lrnet_rostertest.cpp
-#    lrnet_commands_test.cpp
+
+TEMPLATE = subdirs
+SUBDIRS = rostertests commandstests
+rostertests.file=./rostertests.pro
+commandstests.file=./commandstests.pro
+

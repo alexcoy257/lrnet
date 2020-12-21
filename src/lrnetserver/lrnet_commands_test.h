@@ -15,6 +15,7 @@ class CommandsTest: public QObject
 private slots:
     void initTestCase();
     void init();
+    void emptyTest(){QVERIFY(true);};
     void cleanup();
     void cleanupTestCase();
 
