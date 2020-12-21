@@ -1,23 +1,20 @@
-#ifndef ROSTERTEST_H
-#define ROSTERTEST_H
+#ifndef COMMANDSTEST_H
+#define COMMANDSTEST_H
 
 
 
 
 #include <QObject>
 #include <QtTest/QtTest>
-#include "lrnet_roster.h"
+#include "lrnetserver.h"
 
-class RosterTest: public QObject
+class CommandsTest: public QObject
 {
     Q_OBJECT
-    Roster roster;
     QVector<QMetaObject::Connection> * connections;
 private slots:
     void initTestCase();
     void init();
-    void addMember();
-    void removeMember();
     void cleanup();
     void cleanupTestCase();
 

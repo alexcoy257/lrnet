@@ -26,6 +26,16 @@ session_id_t Auth::genSessionKey(){
 
 auth_type_t Auth::checkCredentials (AuthPacket & pck)
 {
+#ifdef AUTH_TEST_SHORTCUT
+    if (std::strcmp(pck.netid, "superchef") == 0)
+        return {1, SUPERCHEF};
+    if (std::strcmp(pck.netid, "chef") == 0)
+        return {1, SUPERCHEF};
+    if (std::strcmp(pck.netid, "memberchef") == 0)
+        return {1, SUPERCHEF};
+    return {0, NONE};
+#endif
+
     QScopedPointer<QVector<int>> ids(readdb.getIDsForNetid(pck.netid, pck.netid_length));
 
     if (ids->isEmpty()){
