@@ -11,8 +11,13 @@
 class RosterTest: public QObject
 {
     Q_OBJECT
+    Roster roster;
+
 private slots:
+    void initTestCase();
     void addMember();
+    void removeMember();
+    void cleanupTestCase();
 
 
 

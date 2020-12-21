@@ -2,6 +2,9 @@ include(lrnetserver.pro)
 
 QT += testlib
 
+TARGET -= lrnetserver
+TARGET += lrnetserver_tests
+
 SOURCES -= lrnetservermain.cpp
 
 
