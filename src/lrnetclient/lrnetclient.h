@@ -23,6 +23,8 @@ class LRNetClient : public QObject
         Q_OBJECT
 
         RSA * authKey;
+        AuthTypeE authType;
+
         class Buffer{
             char _base[INPUT_BUFFER_SIZE];
             char * _head = _base;

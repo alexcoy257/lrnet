@@ -389,7 +389,8 @@ session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStrea
 void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/auth/success" )
-            << osc::Blob(&at.session_id, sizeof(at.session_id));
+            << osc::Blob(&at, sizeof(at));
+    /*
     switch (at.authType){
     case SUPERCHEF:
         oscOutStream<<"superchef";
@@ -405,7 +406,7 @@ void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
         qDebug() <<"Unrecognized auth type";
         oscOutStream<<"none";
         break;
-    }
+    }*/
 
     oscOutStream << osc::EndMessage;
     qDebug() <<"Sending Session ID bytes = " <<socket->write(oscOutStream.Data(), oscOutStream.Size());

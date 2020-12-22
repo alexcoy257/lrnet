@@ -169,20 +169,22 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     if (std::strcmp(ap, "/auth/success") == 0){
         osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
 
-            const session_id_t *tSess = NULL;
-            osc::Blob tSess_b;
+            const auth_type_t *t_at = NULL;
+            osc::Blob t_at_b;
             try{
             if (!args.Eos()){
-                args >> tSess_b;
-            }}
+                args >> t_at_b;
+            }
+            }
             catch (osc::WrongArgumentTypeException e){
-                qDebug() << "Not a blob type";
+                qDebug() << "Auth success: Bad return type";
                 return;
             }
-            if (tSess_b.size != sizeof(session_id_t))
+            if (t_at_b.size != sizeof(auth_type_t))
                 return;
-            tSess = reinterpret_cast<const session_id_t *>(tSess_b.data);
-            session = *tSess;
+            t_at = reinterpret_cast<const auth_type_t *>(t_at_b.data);
+            session = t_at->session_id;
+            authType = t_at->authType;
             m_timeoutTimer.setSingleShot(false);
             m_timeoutTimer.setInterval(2000);
             m_timeoutTimer.callOnTimeout([=](){sendPing();});
