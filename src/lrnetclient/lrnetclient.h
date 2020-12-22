@@ -85,6 +85,7 @@ class LRNetClient : public QObject
         void connectionTimedOut();
         void sendAuthPacket(auth_packet_t & pck);
         void handleMessage(osc::ReceivedMessage * inMsg);
+        void sendPing();
         
     };
 

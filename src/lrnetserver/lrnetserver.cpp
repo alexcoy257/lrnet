@@ -408,7 +408,7 @@ void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
     }
 
     oscOutStream << osc::EndMessage;
-    qDebug() <<"Sending Session ID " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    qDebug() <<"Sending Session ID bytes = " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::sendAuthFail(QSslSocket * socket){

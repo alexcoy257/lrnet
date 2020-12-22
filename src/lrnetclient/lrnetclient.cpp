@@ -19,15 +19,6 @@ authKey(k)
             [=](){
         disconnect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
         m_timeoutTimer.stop();
-        m_timeoutTimer.setSingleShot(false);
-        m_timeoutTimer.setInterval(2000);
-        m_timeoutTimer.callOnTimeout([=](){
-            char temp = 'p';
-             qDebug() << "Sending ping";
-            socket->write(&temp,1);
-
-        });
-        m_timeoutTimer.start();
         connect(socket, &QSslSocket::disconnected, this, [=](){
             qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
             m_timeoutTimer.stop();
@@ -191,8 +182,19 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
                 return;
             tSess = reinterpret_cast<const session_id_t *>(tSess_b.data);
             session = *tSess;
+            m_timeoutTimer.setSingleShot(false);
+            m_timeoutTimer.setInterval(2000);
+            m_timeoutTimer.callOnTimeout([=](){sendPing();});
+            m_timeoutTimer.start();
     }
 
+}
+
+void LRNetClient::sendPing(){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/ping" )
+            << 0 << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::setRSAKey(RSA * key){
