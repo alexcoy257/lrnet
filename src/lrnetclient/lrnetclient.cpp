@@ -95,7 +95,8 @@ void LRNetClient::sendPacket(){
 void LRNetClient::requestRoster(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/get/roster" ) 
-            << 0 << osc::EndMessage;
+            << osc::Blob(&session, sizeof(session))
+            << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
@@ -193,7 +194,8 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
 void LRNetClient::sendPing(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/ping" )
-            << 0 << osc::EndMessage;
+            << osc::Blob(&session, sizeof(session))
+            << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
