@@ -7,7 +7,7 @@
 
 LRNetClient::LRNetClient(RSA * k):
 authKey(k)
-,oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
+,oscOutStream( oBuffer, OUTPUT_BUFFER_SIZE )
 ,m_timeoutTimer(this)
 
 {
@@ -32,7 +32,7 @@ authKey(k)
             qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
             m_timeoutTimer.stop();
         });
-        waitForGreeting();
+        startHandshake();
     });
     connect(socket, SIGNAL(readyRead()), SLOT(readResponse()));
     //connect(socket, SIGNAL(disconnected()), qApp, SLOT(quit()));
@@ -55,26 +55,18 @@ LRNetClient::~LRNetClient(){
 }
     
 
-void LRNetClient::waitForGreeting()
+void LRNetClient::startHandshake()
 {   
     emit connected();
 
-    /*
-    oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/get/roster" ) 
-            << true << 23 << (float)3.1415 << "hello" << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
-    */
     char netid[30] = "ac2456";
+
+
     AuthPacket pck(netid);
     unsigned int retlen;
     RAND_bytes(pck.challenge, 214);
 
-    //unsigned char challenge[214]; //256-42 = 214
-    //unsigned char sig[256];
-
     RSA_sign(NID_sha256, pck.challenge, 214, pck.sig, &retlen, authKey);
-    //char tryThing[34] = "acornell1000000000000000000000000";
 
     QByteArray batmp = QByteArray::fromRawData((const char *)pck.challenge, 214);
     qDebug() <<"Challenging with challenge " <<batmp;
@@ -86,75 +78,121 @@ void LRNetClient::waitForGreeting()
     }else{
         qDebug() <<"Failed to verify at send";
     }
+
     auth_packet_t dpck;
     pck.pack(dpck);
-    char buf [sizeof(auth_packet_t) + 1] = {'a'};
-    std::memcpy(buf + 1, &dpck, sizeof(auth_packet_t));
-    socket->write(buf, sizeof(auth_packet_t) + 1);
+
+    sendAuthPacket(dpck);
+
     qDebug() <<__FILE__ <<__LINE__ <<"Connected; authenticating";
 }
 
+
+void LRNetClient::sendAuthPacket(auth_packet_t & pck){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/new" );
+
+    osc::Blob b(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&pck)), sizeof(auth_packet_t));
+    oscOutStream << b << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
 void LRNetClient::sendPacket(){
-    char outbuf[OUTPUT_BUFFER_SIZE + sizeof(session_id_t) + 1];
-    memcpy(outbuf+1, &session, sizeof(session_id_t));
-    memcpy(outbuf+sizeof(session_id_t)+1, oscOutStream.Data(), oscOutStream.Size());
-    outbuf[0] = 's';
-    socket->write(outbuf, oscOutStream.Size() + sizeof(session_id_t) + 1);
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::requestRoster(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/get/roster" ) 
-            << true << 23 << (float)3.1415 << "hello" << osc::EndMessage;
-    sendPacket();
+            << 0 << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::readResponse()
 {
-    char inbuf[1024+33];
-    int bytesRead = socket->read(inbuf, 1024);
-    if (inbuf[0] == 'f'){
-        qDebug() <<"Login failed";
+
+    int bytesRead = socket->read(buffer.head(), buffer.remaining());
+    buffer.update(bytesRead);
+
+    osc::ReceivedPacket * inPack = NULL;
+    try{
+    inPack = new osc::ReceivedPacket(buffer.base(), buffer.filled());
+    }
+    catch(osc::MalformedPacketException e){
+        qDebug() << "Malformed Packet";
         return;
     }
-    else if (inbuf[0] == 's'){
-        qDebug() <<"Login success";
-        memcpy(&session, inbuf+1, sizeof(session_id_t));
-        qDebug() <<"Got a session " <<session;
-        requestRoster();
+
+    if (!inPack)
         return;
-    }
-    else if (inbuf[0] == 'p'){
-        qDebug() << "Pong";
-        return;
-    }
-    osc::ReceivedPacket inPack(inbuf, bytesRead);
+
+
     osc::ReceivedBundle * inBundle = NULL;
     osc::ReceivedMessage * inMsg = NULL;
     qDebug() <<"Got communication";
     
 
-    if (inPack.IsBundle()){
-        inBundle = new osc::ReceivedBundle(inPack);
+    if (inPack->IsBundle()){
+        try{
+            inBundle = new osc::ReceivedBundle(*inPack);
+        }
+        catch(osc::MalformedBundleException e){
+            qDebug() <<"Malformed Bundle " <<e.what();
+        }
     }
     else{
-        inMsg = new osc::ReceivedMessage(inPack);
-        std::cout << "Got message " <<inMsg->AddressPattern() <<std::endl;
-        const char * ap = inMsg->AddressPattern();
-        if (std::strcmp(ap, "/push/roster") == 0){
-            osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
-
-            while (!args.Eos()){
-                const char * memName;
-                const char * memSect;
-                int id;
-                args >> memName; args >> memSect; args >> id;
-                std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
-                emit newMember(QString(memName), QString(memSect), id);
-            }
+        try{
+            inMsg = new osc::ReceivedMessage(*inPack);
+            handleMessage(inMsg);
+            buffer.reset();
         }
-        std::cout <<"Address Pattern: " <<ap << std::endl;
+        catch(osc::MalformedMessageException e){
+            qDebug() <<"Malformed Message " <<e.what();
+        }
     }
+    delete inBundle;
+    delete inMsg;
+    delete inPack;
+}
+
+void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
+    std::cout << "Got message " <<inMsg->AddressPattern() <<std::endl;
+
+    const char * ap = inMsg->AddressPattern();
+
+    if (std::strcmp(ap, "/push/roster") == 0){
+        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
+
+        while (!args.Eos()){
+            const char * memName;
+            const char * memSect;
+            int id;
+            args >> memName; args >> memSect; args >> id;
+            std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
+            emit newMember(QString(memName), QString(memSect), id);
+        }
+    }
+
+
+    if (std::strcmp(ap, "/auth/success") == 0){
+        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
+
+            const session_id_t *tSess = NULL;
+            osc::Blob tSess_b;
+            try{
+            if (!args.Eos()){
+                args >> tSess_b;
+            }}
+            catch (osc::WrongArgumentTypeException e){
+                qDebug() << "Not a blob type";
+                return;
+            }
+            if (tSess_b.size != sizeof(session_id_t))
+                return;
+            tSess = reinterpret_cast<const session_id_t *>(tSess_b.data);
+            session = *tSess;
+    }
+
 }
 
 void LRNetClient::setRSAKey(RSA * key){
