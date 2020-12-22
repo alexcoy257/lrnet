@@ -18,12 +18,23 @@
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
 
+
+
 class LRNetClient : public QObject
     {
         Q_OBJECT
 
+public:
+    typedef enum{
+        CODE,
+        KEY
+    }AuthMethodE;
+
+private:
         RSA * authKey;
         AuthTypeE authType;
+        QString tempCode = "";
+        AuthMethodE authMethod = KEY;
 
         class Buffer{
             char _base[INPUT_BUFFER_SIZE];
@@ -58,6 +69,8 @@ class LRNetClient : public QObject
     public:
         LRNetClient(RSA * k = NULL);
         ~LRNetClient();
+
+
     
     signals:
         void responseReceived();
@@ -65,11 +78,14 @@ class LRNetClient : public QObject
         void timeout();
         void newMember(const QString& name, const QString& group, int id);
         void lostMember(int id);
+        void authenticated(AuthTypeE type);
     
     public slots:
         void tryConnect(const QString &host, int port);
         void requestRoster();
         void setRSAKey (RSA * key);
+        void setTempCode (const QString &_tempCode){tempCode = _tempCode;}
+        void setAuthMethod (AuthMethodE method){authMethod = method;}
 
     private slots:
         void startHandshake();
@@ -85,7 +101,7 @@ class LRNetClient : public QObject
 
         void sendPacket();
         void connectionTimedOut();
-        void sendAuthPacket(auth_packet_t & pck);
+        void sendKeyAuthPacket(auth_packet_t & pck);
         void handleMessage(osc::ReceivedMessage * inMsg);
         void sendPing();
         

@@ -5,9 +5,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_actComp(NULL)
-    , m_connectForm(new ConnectForm(NULL))
-    , m_openConnectFormButton(new QPushButton(NULL))
+    , m_chefForm(NULL)
+    , m_connectForm(new ConnectForm(this))
     , m_settings(REHEARSALCHEF_DOMAIN, REHEARSALCHEF_TITLE)
     , m_netClient(new LRNetClient())
     , m_keepAliveTimer(this)
@@ -16,21 +15,25 @@ MainWindow::MainWindow(QWidget *parent)
     , keyPair(NULL)
 {
     ui->setupUi(this);
-    //ui->m_channelStripArea->addStretch();
-    ui->m_channelStripArea->addStretch();
-    ui->m_rosterArea->addWidget(m_openConnectFormButton);
+
+    setCentralWidget(m_connectForm);
 
 
-
-    QObject::connect(m_openConnectFormButton, &QAbstractButton::released, m_connectForm, &QWidget::show);
     QObject::connect(m_connectForm, &ConnectForm::tryConnect, m_netClient, &LRNetClient::tryConnect);
+    QObject::connect(m_connectForm, &ConnectForm::updateCode, this, [=](const QString & code){qDebug() <<"Code: "<<code ;});
+    QObject::connect(m_connectForm, &ConnectForm::setToKeyAuth, this, [=](){qDebug() << "set key auth";});
+    QObject::connect(m_connectForm, &ConnectForm::setToCodeAuth, this, [=](){qDebug() << "set code auth";});
+
     QObject::connect(m_netClient, &LRNetClient::timeout, this, [=](){qDebug()<<"Timeout";});
     QObject::connect(m_netClient, &LRNetClient::connected, this,
                      [=](){
         qDebug()<<"Connected";
     });
-    QObject::connect(m_netClient, &LRNetClient::newMember, this, &MainWindow::addChannelStrip);
-    QObject::connect(m_netClient, &LRNetClient::lostMember, this, &MainWindow::deleteChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
+    QObject::connect(m_netClient, &LRNetClient::newMember, m_chefForm, &ChefForm::addChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::lostMember, m_chefForm, &ChefForm::deleteChannelStrip);
+
+
 
     /*
     m_channelStrip = new ChannelStrip(this);
@@ -49,43 +52,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 
-void MainWindow::highlightInsert(Compressor * cp){
-    if(m_actComp){
-        m_actComp->hide();
-        ui->m_actCompArea->removeWidget(m_actComp);
-    }
 
 
-    ui->m_actCompArea->addWidget(cp);
-    m_actComp = cp;
-    m_actComp->show();
-}
 
-void MainWindow::addChannelStrip(const QString& mName, const QString& sName, int id){
-
-    if (! m_clients.contains(id)){
-        LRMClient * cStruct = (LRMClient *)malloc(sizeof(LRMClient));
-        cStruct->cs = new ChannelStrip(this, mName);
-
-        cStruct->comp = new Compressor(this);
-        cStruct->comp->hide();
-        qDebug() <<"Widgets present: " << ui->m_channelStripArea->count() <<"\n";
-        ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
-        //ui->m_channelStripArea->addWidget(cStruct->cs, 0, Qt::AlignLeft);
-        //cStruct->cs->show();
-        QObject::connect(cStruct->cs, &ChannelStrip::setActive, this, [=](){highlightInsert(cStruct->comp);}, Qt::QueuedConnection);
-        m_clients[id] = cStruct;
-    }
-}
-
-void MainWindow::deleteChannelStrip(int id){
-
-    if (m_clients.contains(id)){
-        delete m_clients[id]->cs;
-        delete m_clients[id]->comp;
-        m_clients.remove(id);
-    }
-}
 
 MainWindow::~MainWindow()
 {
@@ -129,7 +98,6 @@ void MainWindow::keyInit(){
     }
     else{
         m_connectForm->m_lPublicKey->setPlainText(m_publicKey);
-        m_connectForm->m_keyCopyGenButton->setText("Copy Public Key");
     }
 
     BIO * t_pri = BIO_new(BIO_s_mem());
@@ -202,5 +170,15 @@ void MainWindow::saveSetup(){
     m_settings.setValue("PrivateKey",m_privateKey);
     m_settings.endGroup();
     m_settings.sync();
+}
+
+void MainWindow::handleAuth(AuthTypeE type){
+    Launcher * l = new Launcher(type, this);
+    if (type != NONE){
+        setCentralWidget(l);
+        connect(l, &Launcher::choseSuperChef, this, [=](){qDebug()<<"Chose superchef";});
+        connect(l, &Launcher::choseChef, this, [=](){qDebug()<<"Chose chef";});
+        connect(l, &Launcher::choseMember, this, [=](){qDebug()<<"Chose member";});
+    }
 }
 

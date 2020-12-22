@@ -15,7 +15,9 @@ LIBS += -L../lrnetclient -llrnetclient -lcrypto
 SOURCES += \
     channelstrip.cpp \
     channeltester.cpp \
+    chefform.cpp \
     compressor.cpp \
+    launcher.cpp \
     lrchef_connectform.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -25,7 +27,9 @@ HEADERS += \
     RehearsalChefabout.h \
     channelstrip.h \
     channeltester.h \
+    chefform.h \
     compressor.h \
+    launcher.h \
     lrchef_connectform.h \
     mainwindow.h \
     testworker.h
@@ -33,6 +37,7 @@ HEADERS += \
 FORMS += \
     channelStrip.ui \
     channeltester.ui \
+    chefform.ui \
     compressor.ui \
     mainwindow.ui
 

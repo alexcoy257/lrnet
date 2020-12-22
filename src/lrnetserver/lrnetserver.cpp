@@ -240,13 +240,6 @@ void LRNetServer::receivedClientInfo()
     QSslSocket* clientConnection = static_cast<QSslSocket*>(QObject::sender());
     
     //QHostAddress PeerAddress = clientConnection->peerAddress();
-    //cout << "JackTrip HUB SERVER: Client Connect Received from Address : "
-    //     << PeerAddress.toString().toStdString() << endl;
-
-    //Todo: Put this in a new area since TCP is a byte-oriented protocol and
-    //we have variable length messages.
-
-    ;
 
 
     //If a connection has filled up our buffer with contents that don't
@@ -277,7 +270,7 @@ void LRNetServer::receivedClientInfo()
         try{
             inBundle = new osc::ReceivedBundle(*inPack);
         }
-        catch(osc::MalformedBundleException e){
+        catch(const osc::MalformedBundleException & e){
             qDebug() <<"Malformed Bundle " <<e.what();
         }
     }
@@ -287,7 +280,7 @@ void LRNetServer::receivedClientInfo()
             handleMessage(clientConnection, inMsg);
             cBuf->reset();
         }
-        catch(osc::MalformedMessageException e){
+        catch(const osc::MalformedMessageException & e){
             qDebug() <<"Malformed Message " <<e.what();
         }
 
@@ -303,7 +296,7 @@ void LRNetServer::receivedClientInfo()
 
 void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg){
     cout <<"Address Pattern: " <<msg->AddressPattern() << endl;
-    if (std::strcmp(msg->AddressPattern(), "/auth/new") == 0){
+    if (std::strcmp(msg->AddressPattern(), "/auth/newbykey") == 0){
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
 
         osc::Blob b;
@@ -329,6 +322,16 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 sendAuthFail(socket);
             }
         }
+
+
+    }
+    if (std::strcmp(msg->AddressPattern(), "/auth/newbycode") == 0){
+        osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
+
+
+
+       sendAuthFail(socket);
+
 
 
     }

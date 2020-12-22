@@ -53,35 +53,37 @@ void LRNetClient::startHandshake()
     char netid[30] = "ac2456";
 
 
-    AuthPacket pck(netid);
-    unsigned int retlen;
-    RAND_bytes(pck.challenge, 214);
+    if (authMethod == KEY){
+        AuthPacket pck(netid);
+        unsigned int retlen;
+        RAND_bytes(pck.challenge, 214);
 
-    RSA_sign(NID_sha256, pck.challenge, 214, pck.sig, &retlen, authKey);
+        RSA_sign(NID_sha256, pck.challenge, 214, pck.sig, &retlen, authKey);
 
-    QByteArray batmp = QByteArray::fromRawData((const char *)pck.challenge, 214);
-    qDebug() <<"Challenging with challenge " <<batmp;
-    batmp = QByteArray::fromRawData((const char *)pck.sig, 214);
-    qDebug() <<"Signed " <<batmp;
+        QByteArray batmp = QByteArray::fromRawData((const char *)pck.challenge, 214);
+        qDebug() <<"Challenging with challenge " <<batmp;
+        batmp = QByteArray::fromRawData((const char *)pck.sig, 214);
+        qDebug() <<"Signed " <<batmp;
 
-    if(RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, authKey)){
-        qDebug() <<"Verified at send";
-    }else{
-        qDebug() <<"Failed to verify at send";
+        if(RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, authKey)){
+            qDebug() <<"Verified at send";
+        }else{
+            qDebug() <<"Failed to verify at send";
+        }
+
+        auth_packet_t dpck;
+        pck.pack(dpck);
+
+        sendKeyAuthPacket(dpck);
     }
-
-    auth_packet_t dpck;
-    pck.pack(dpck);
-
-    sendAuthPacket(dpck);
 
     qDebug() <<__FILE__ <<__LINE__ <<"Connected; authenticating";
 }
 
 
-void LRNetClient::sendAuthPacket(auth_packet_t & pck){
+void LRNetClient::sendKeyAuthPacket(auth_packet_t & pck){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/auth/new" );
+    oscOutStream << osc::BeginMessage( "/auth/newbykey" );
 
     osc::Blob b(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&pck)), sizeof(auth_packet_t));
     oscOutStream << b << osc::EndMessage;
@@ -110,7 +112,7 @@ void LRNetClient::readResponse()
     try{
     inPack = new osc::ReceivedPacket(buffer.base(), buffer.filled());
     }
-    catch(osc::MalformedPacketException e){
+    catch(const osc::MalformedPacketException & e){
         qDebug() << "Malformed Packet";
         return;
     }
@@ -128,7 +130,7 @@ void LRNetClient::readResponse()
         try{
             inBundle = new osc::ReceivedBundle(*inPack);
         }
-        catch(osc::MalformedBundleException e){
+        catch(const osc::MalformedBundleException & e){
             qDebug() <<"Malformed Bundle " <<e.what();
         }
     }
@@ -138,7 +140,7 @@ void LRNetClient::readResponse()
             handleMessage(inMsg);
             buffer.reset();
         }
-        catch(osc::MalformedMessageException e){
+        catch(const osc::MalformedMessageException & e){
             qDebug() <<"Malformed Message " <<e.what();
         }
     }
@@ -176,7 +178,7 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
                 args >> t_at_b;
             }
             }
-            catch (osc::WrongArgumentTypeException e){
+            catch (const osc::WrongArgumentTypeException & e){
                 qDebug() << "Auth success: Bad return type";
                 return;
             }
@@ -185,6 +187,9 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
             t_at = reinterpret_cast<const auth_type_t *>(t_at_b.data);
             session = t_at->session_id;
             authType = t_at->authType;
+
+            emit authenticated(authType);
+
             m_timeoutTimer.setSingleShot(false);
             m_timeoutTimer.setInterval(2000);
             m_timeoutTimer.callOnTimeout([=](){sendPing();});

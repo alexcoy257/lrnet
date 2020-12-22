@@ -10,17 +10,17 @@
 #include "channelstrip.h"
 #include "compressor.h"
 #include "channeltester.h"
+#include "chefform.h"
 #include "lrchef_connectform.h"
+#include "launcher.h"
+#include "../lrnetserver/auth_types.h"
 #include "../lrnetclient/lrnetclient.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; class ChannelStrip;}
 QT_END_NAMESPACE
 
-typedef struct{
-    ChannelStrip * cs;
-    Compressor * comp;
-}LRMClient;
+
 
 class MainWindow : public QMainWindow
 {
@@ -37,10 +37,11 @@ private:
     Ui::MainWindow *ui;
     ChannelStrip * m_channelStrip;
     Compressor * m_comp;
-    Compressor * m_actComp;
-    QHash<int, LRMClient *> m_clients;
+
+    ChefForm * m_chefForm;
+
+
     ConnectForm * m_connectForm;
-    QPushButton * m_openConnectFormButton;
     QSettings m_settings;
     LRNetClient * m_netClient;
     QTimer m_keepAliveTimer;
@@ -57,8 +58,6 @@ signals:
     void deleteChannel(int id);
 
 private slots:
-    void highlightInsert(Compressor * cp);
-    void addChannelStrip(const QString& mName, const QString& sName, int id);
-    void deleteChannelStrip(int id);
+    void handleAuth(AuthTypeE type);
 };
 #endif // MAINWINDOW_H
