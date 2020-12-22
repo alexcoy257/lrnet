@@ -35,7 +35,7 @@ public:
     explicit Roster(QObject *parent = nullptr);
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
-    void removeMember(session_id_t s_id);
+    void removeMember(Member::serial_t s_id);
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
