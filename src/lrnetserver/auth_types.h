@@ -31,6 +31,7 @@ public:
         std::memcpy(challenge, pkt.challenge, 214);
         std::memcpy(sig, pkt.sig, 256);
     }
+
     ~AuthPacket(){};
     /**
      * @brief pack(pkt) Packs instance's contents into dense struct pkt.

@@ -28,6 +28,7 @@
 #include "auth.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
+#define INPUT_BUFFER_SIZE 1024
 
 extern int gVerboseFlag;
 
@@ -41,16 +42,56 @@ class LRNetServer : public QObject
 {
     Q_OBJECT;
 
+    /**
+      * This type represents a session and which connection
+      * that session was last seen on. This type is useful for
+      * for publishers to publish messages to subscribers.
+      */
     typedef struct {
         session_id_t id;
         QSslSocket * lastSeenConnection;
         bool ShasCheckedIn;
     }sessionTriple;
 
+    class Buffer{
+        char _base[INPUT_BUFFER_SIZE];
+        char * _head = _base;
+        size_t _remaining = INPUT_BUFFER_SIZE;
+    public:
+        Buffer(){};
+        void update(size_t bytesRead){
+            _head += bytesRead;
+            _remaining -= bytesRead;
+        }
+        void reset(){
+            _head = _base;
+            _remaining = INPUT_BUFFER_SIZE;
+        }
+        char * head(){
+            return _head;
+        }
+        char * base(){
+            return _base;
+        }
+        size_t remaining(){
+            return _remaining;
+        }
+        size_t filled(){
+            return INPUT_BUFFER_SIZE - _remaining;
+        }
+    };
+
+    /**
+      * This type handles data associated with a particular
+      * connection. As connections are kept alive with /ping
+      * messages, the associated session can be kept alive as
+      * well.
+      */
     typedef struct {
         QMutex * mutex;
         session_id_t assocSession;
         bool ChasCheckedIn;
+        Buffer * buffer;
     }connectionPair;
 
 public:
@@ -76,7 +117,12 @@ private slots:
     void receivedClientInfo();
     void stopCheck();
     void handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg);
+    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream msgs);
+    void sendAuthResponse(QSslSocket * socket, auth_type_t at);
+    void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
+    void sendPong(QSslSocket * socket);
+
 
 signals:
     void Listening();
@@ -159,7 +205,19 @@ private:
     char buffer[OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream oscOutStream;
     //QVector<QSslSocket *>activeConnections;
+
+    /**
+     *  a hash table of sessions that have checked
+     *  in between 30 and 60 minutes ago. Associated
+     *  with mStimeoutTimer.
+     */
     QHash<session_id_t, sessionTriple>activeSessions;
+
+    /**
+     *  a hash table of connections that are still alive (and
+     *  have TCP buffers). Associated connections die after
+     *  20 seconds of no activity.
+     */
     QHash<QSslSocket *, connectionPair>activeConnections;
     Auth authorizer;
     

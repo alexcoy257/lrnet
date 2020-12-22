@@ -15,7 +15,11 @@ Auth::~Auth(){
 }
 
 
-
+/**
+ * @brief Auth::genSessionKey
+ * @return
+ * nonzero if the generation was succesful. Zero if something failed.
+ */
 session_id_t Auth::genSessionKey(){
   session_id_t id;
     if (RAND_bytes(reinterpret_cast<unsigned char *>(&id), sizeof(session_id_t)))

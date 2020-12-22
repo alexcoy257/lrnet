@@ -137,7 +137,7 @@ void LRNetServer::start()
     }
     
     if (1) {
-        cout << "JackTrip HUB SERVER: Enabling authentication" << endl;
+        cout << "LRNet Server: Enabling authentication" << endl;
         // Check that SSL is avaialable
         bool error = false;
         QString error_message;
@@ -195,7 +195,7 @@ void LRNetServer::start()
         }
     }
     
-    cout << "JackTrip HUB SERVER: Waiting for client connections..." << endl;
+    cout << "LRNet server: Waiting for client connections..." << endl;
     cout << "=======================================================" << endl;
     
     // Start our monitoring timer
@@ -214,6 +214,7 @@ void LRNetServer::receivedNewConnection()
         //Single threaded event loop: mutex not required
         //if(cMutex.tryLock()){
             if (activeConnections.contains(clientSocket)){
+                delete activeConnections[clientSocket].buffer;
                 activeConnections.remove(clientSocket);
             }
             clientSocket->deleteLater();
@@ -221,7 +222,17 @@ void LRNetServer::receivedNewConnection()
         //}
 
         });
-    cout << "JackTrip HUB SERVER: Client Connection Received!" << endl;
+    Buffer * cBuf = new Buffer();
+    if (cBuf){
+        activeConnections.insert(clientSocket, {new QMutex(), 0, false, cBuf});
+        cout << "LRNet server: New Connection Received!" << endl;
+    }
+    else{
+        clientSocket->close();
+        clientSocket->deleteLater();
+        cout << "Could not allocate buffer for new connection." << endl;
+    }
+
 }
 
 void LRNetServer::receivedClientInfo()
@@ -231,94 +242,60 @@ void LRNetServer::receivedClientInfo()
     //QHostAddress PeerAddress = clientConnection->peerAddress();
     //cout << "JackTrip HUB SERVER: Client Connect Received from Address : "
     //     << PeerAddress.toString().toStdString() << endl;
-         
-    char inbuf[1024];
-    clientConnection->read(inbuf, 1);
 
-    if (inbuf[0] == 'a'){
-        if ((unsigned) clientConnection->bytesAvailable() < sizeof(auth_packet_t)) {
-            // We don't have enough data for an authentication. Close the connection for
-            // non-cooperation.
-            clientConnection->close();
-            qDebug() <<__BASE_FILE__ <<__LINE__ <<"Not enough auth data";
-            return;
-        }
+    //Todo: Put this in a new area since TCP is a byte-oriented protocol and
+    //we have variable length messages.
 
-        clientConnection->read(inbuf+1, sizeof(auth_packet_t));
-        AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(inbuf+1));
-        QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
-        qDebug() <<"Have a challenge " <<batmp;
-        batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
-        qDebug() <<"Signed " <<batmp;
+    ;
 
-        auth_type_t at = authorizer.checkCredentials(pkt);
-        if( at.authType != NONE){
-            inbuf[0] = 's';
-            memcpy(inbuf + 1, &at.session_id, sizeof(session_id_t));
-            clientConnection->write(inbuf, 1 + sizeof(session_id_t));
-            qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-            activeSessions.insert(at.session_id, {at.session_id, clientConnection, true});
-            activeConnections.insert(clientConnection, {new QMutex(), at.session_id, false});
-        }
-        else
-        {
-            inbuf[0] = 'f';
-            clientConnection->write(inbuf, 1);
-            clientConnection->close();
-        }
-        return;
-    }
-    //Client claims to have sent a session id.
-    else if (inbuf[0] == 's'){
-        if ((signed)sizeof(session_id_t) - clientConnection->bytesAvailable() > 0) {
-            // We don't have enough data for an authentication. Close the connection for
-            // non-cooperation.
-            qDebug() <<__BASE_FILE__ <<__LINE__ <<"Not enough session data";
-            clientConnection->close();
-            return;
-        }
-        session_id_t tSess;
-        clientConnection->read(inbuf+1, sizeof(session_id_t));
-        memcpy(&tSess, inbuf+1, sizeof(session_id_t));
-        if (!activeSessions.contains(tSess)){
-            qDebug() << "No session found for " <<tSess;
-            return;
-        }
-        //qDebug() <<__BASE_FILE__ <<__LINE__ <<"Handle OSC message now.";
-        //Now, handle the OSC message.
-    }
-    else if (inbuf[0] == 'p'){
-        if (activeConnections.contains(clientConnection)){
-            activeConnections[clientConnection].ChasCheckedIn = true;
-            activeSessions[activeConnections[clientConnection].assocSession].ShasCheckedIn = true;
-            QMutexLocker lock(activeConnections[clientConnection].mutex);
-            const char toSend = 'p';
-            clientConnection->write(&toSend, 1);
-        }
-        else{
-            clientConnection->close();
-        }
-        return;
-    }
-    else {
+
+    //If a connection has filled up our buffer with contents that don't
+    //make a valid message, give up on that connection.
+    Buffer * cBuf = activeConnections[clientConnection].buffer;
+    if (cBuf->remaining() == 0){
         clientConnection->close();
+    }
+
+    int bytesRead = clientConnection->read(cBuf->head(), cBuf->remaining());
+    activeConnections[clientConnection].buffer->update(bytesRead);
+    osc::ReceivedPacket * inPack = NULL;
+    try{
+    inPack = new osc::ReceivedPacket(cBuf->base(), cBuf->filled());
+    }
+    catch(osc::MalformedPacketException e){
+        qDebug() << "Malformed Packet";
         return;
     }
 
-    int bytesRead = clientConnection->read(inbuf, 1024);
-    osc::ReceivedPacket inPack(inbuf, bytesRead);
+    if (!inPack)
+        return;
+
     osc::ReceivedBundle * inBundle = NULL;
     osc::ReceivedMessage * inMsg = NULL;
 
-    if (inPack.IsBundle()){
-        inBundle = new osc::ReceivedBundle(inPack);
+    if (inPack->IsBundle()){
+        try{
+            inBundle = new osc::ReceivedBundle(*inPack);
+        }
+        catch(osc::MalformedBundleException e){
+            qDebug() <<"Malformed Bundle " <<e.what();
+        }
     }
     else{
-        inMsg = new osc::ReceivedMessage(inPack);
-        handleMessage(clientConnection, inMsg);
+        try{
+            inMsg = new osc::ReceivedMessage(*inPack);
+            handleMessage(clientConnection, inMsg);
+            cBuf->reset();
+        }
+        catch(osc::MalformedMessageException e){
+            qDebug() <<"Malformed Message " <<e.what();
+        }
+
     }
 
-
+    delete inBundle;
+    delete inMsg;
+    delete inPack;
     QThread::msleep(100);
 
 
@@ -326,9 +303,126 @@ void LRNetServer::receivedClientInfo()
 
 void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg){
     cout <<"Address Pattern: " <<msg->AddressPattern() << endl;
-    if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
-        sendRoster(socket);
+    if (std::strcmp(msg->AddressPattern(), "/auth/new") == 0){
+        osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
+
+        osc::Blob b;
+        if (!args.Eos()){
+            args >> b;
         }
+        if (b.size == sizeof(auth_packet_t)){
+            AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(b.data)));
+
+            QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
+            qDebug() <<"Have a challenge " <<batmp;
+            batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
+            qDebug() <<"Signed " <<batmp;
+
+            auth_type_t at = authorizer.checkCredentials(pkt);
+            if( at.authType != NONE){
+                sendAuthResponse(socket, at);
+                qDebug() <<"Authenticated: Gave session id " <<at.session_id;
+                activeSessions.insert(at.session_id, {at.session_id, socket, true});
+            }
+            else
+            {
+                sendAuthFail(socket);
+            }
+        }
+
+
+    }
+    else
+    {
+        osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
+        session_id_t tSess = checkForValidSession(args);
+        if(tSess == 0)
+            return;
+        if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0)
+            sendRoster(socket);
+        if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
+            //All sessions should have active connections. If not, pinging updates the connection.
+            //tSess is in activeSessions at this point.
+            if (activeConnections.contains(socket)){
+                activeConnections[socket].ChasCheckedIn = true;
+                activeSessions[activeConnections[socket].assocSession].ShasCheckedIn = true;
+                QMutexLocker lock(activeConnections[socket].mutex); //Don't close connection after pong.
+                sendPong(socket);
+            } else{
+                activeSessions[tSess].lastSeenConnection = socket;
+            }
+        }
+    }
+
+}
+
+/**
+ * @brief LRNetServer::checkForValidSession
+ * @param msgs
+ * @return
+ * the session id if it is active, zero otherwise.
+ */
+
+session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream msgs){
+
+    const session_id_t * tSess;
+    osc::Blob tSess_b;
+    try{
+    if (!msgs.Eos()){
+        msgs >> tSess_b;
+    }}
+    catch (osc::WrongArgumentTypeException e){
+        qDebug() << "Not a blob type";
+        return 0;
+    }
+    if (tSess_b.size != sizeof(session_id_t))
+        return 0;
+    tSess = reinterpret_cast<const session_id_t *>(tSess_b.data);
+
+    if (!activeSessions.contains(*tSess)){
+        qDebug() << "No session found for " <<tSess;
+        return 0;
+    }
+    return *tSess;
+}
+
+void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/success" )
+            << osc::Blob(&at.session_id, sizeof(at.session_id));
+    switch (at.authType){
+    case SUPERCHEF:
+        oscOutStream<<"superchef";
+        break;
+    case CHEF:
+        oscOutStream<<"chef";
+        break;
+    case MEMBER:
+        oscOutStream<<"member";
+        break;
+
+    case NONE:
+        qDebug() <<"Unrecognized auth type";
+        oscOutStream<<"none";
+        break;
+    }
+
+    oscOutStream << osc::EndMessage;
+    qDebug() <<"Sending Session ID " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::sendAuthFail(QSslSocket * socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/failed" )
+            << 0 << osc::EndMessage;
+    qDebug() <<"Sending Auth Failed " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::sendPong(QSslSocket * socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/pong" )
+            << 0 << osc::EndMessage;
+    qDebug() <<"Sending Pong " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::sendRoster(QSslSocket * socket){
