@@ -53,12 +53,12 @@ class LRNetServer : public QObject
         bool ShasCheckedIn;
     }sessionTriple;
 
-    class Buffer{
+    class Buffer: public QObject{
         char _base[INPUT_BUFFER_SIZE];
         char * _head = _base;
         size_t _remaining = INPUT_BUFFER_SIZE;
     public:
-        Buffer(){};
+        Buffer(QObject * parent=nullptr):QObject(parent){};
         void update(size_t bytesRead){
             _head += bytesRead;
             _remaining -= bytesRead;

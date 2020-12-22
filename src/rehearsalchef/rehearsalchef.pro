@@ -15,31 +15,37 @@ LIBS += -L../lrnetclient -llrnetclient -lcrypto
 SOURCES += \
     channelstrip.cpp \
     channeltester.cpp \
+    chatform.cpp \
     chefform.cpp \
     compressor.cpp \
     launcher.cpp \
     lrchef_connectform.cpp \
     main.cpp \
     mainwindow.cpp \
+    memberform.cpp \
     rc_tests_1.cpp
 
 HEADERS += \
     RehearsalChefabout.h \
     channelstrip.h \
     channeltester.h \
+    chatform.h \
     chefform.h \
     compressor.h \
     launcher.h \
     lrchef_connectform.h \
     mainwindow.h \
+    memberform.h \
     testworker.h
 
 FORMS += \
     channelStrip.ui \
     channeltester.ui \
+    chatform.ui \
     chefform.ui \
     compressor.ui \
-    mainwindow.ui
+    mainwindow.ui \
+    memberform.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

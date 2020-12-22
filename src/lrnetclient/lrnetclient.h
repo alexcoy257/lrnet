@@ -35,6 +35,7 @@ private:
         AuthTypeE authType;
         QString tempCode = "";
         AuthMethodE authMethod = KEY;
+        char netid[30] = "ac2456";
 
         class Buffer{
             char _base[INPUT_BUFFER_SIZE];
@@ -79,6 +80,7 @@ private:
         void newMember(const QString& name, const QString& group, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);
+        void authFailed();
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -86,6 +88,9 @@ private:
         void setRSAKey (RSA * key);
         void setTempCode (const QString &_tempCode){tempCode = _tempCode;}
         void setAuthMethod (AuthMethodE method){authMethod = method;}
+        void setKeyAuthMethod(){setAuthMethod(KEY);}
+        void setCodeAuthMethod(){setAuthMethod(CODE);}
+        void tryToAuthenticate();
 
     private slots:
         void startHandshake();
@@ -102,6 +107,7 @@ private:
         void sendPacket();
         void connectionTimedOut();
         void sendKeyAuthPacket(auth_packet_t & pck);
+        void sendCodeAuthPacket();
         void handleMessage(osc::ReceivedMessage * inMsg);
         void sendPing();
         

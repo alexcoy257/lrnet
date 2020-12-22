@@ -50,9 +50,15 @@ void LRNetClient::startHandshake()
 {   
     emit connected();
 
-    char netid[30] = "ac2456";
+    tryToAuthenticate();
 
 
+
+
+    qDebug() <<__FILE__ <<__LINE__ <<"Connected; authenticating";
+}
+
+void LRNetClient::tryToAuthenticate(){
     if (authMethod == KEY){
         AuthPacket pck(netid);
         unsigned int retlen;
@@ -76,8 +82,9 @@ void LRNetClient::startHandshake()
 
         sendKeyAuthPacket(dpck);
     }
-
-    qDebug() <<__FILE__ <<__LINE__ <<"Connected; authenticating";
+    else if (authMethod==CODE){
+        sendCodeAuthPacket();
+    }
 }
 
 
@@ -87,6 +94,14 @@ void LRNetClient::sendKeyAuthPacket(auth_packet_t & pck){
 
     osc::Blob b(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&pck)), sizeof(auth_packet_t));
     oscOutStream << b << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::sendCodeAuthPacket(){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/newbycode" );
+    std::string code = tempCode.toStdString();
+    oscOutStream << code.data() << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
@@ -168,7 +183,7 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     }
 
 
-    if (std::strcmp(ap, "/auth/success") == 0){
+    else if (std::strcmp(ap, "/auth/success") == 0){
         osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
 
             const auth_type_t *t_at = NULL;
@@ -196,6 +211,9 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
             m_timeoutTimer.start();
     }
 
+     else if (std::strcmp(ap, "/auth/fail") == 0){
+            emit authFailed();
+     }
 }
 
 void LRNetClient::sendPing(){

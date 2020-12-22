@@ -207,24 +207,25 @@ void LRNetServer::start()
 void LRNetServer::receivedNewConnection()
 {
     QSslSocket *clientSocket = static_cast<QSslSocket *>(mTcpServer.nextPendingConnection());
-    connect(clientSocket, &QAbstractSocket::readyRead, this, &LRNetServer::receivedClientInfo);
-    connect(clientSocket, &QAbstractSocket::disconnected, clientSocket,
-            [=](){
-        qDebug() <<"Client disconnected, must remove";
-        //Single threaded event loop: mutex not required
-        //if(cMutex.tryLock()){
-            if (activeConnections.contains(clientSocket)){
-                delete activeConnections[clientSocket].buffer;
-                activeConnections.remove(clientSocket);
-            }
-            clientSocket->deleteLater();
-            //cMutex.unlock();
-        //}
 
-        });
     Buffer * cBuf = new Buffer();
     if (cBuf){
         activeConnections.insert(clientSocket, {new QMutex(), 0, false, cBuf});
+        connect(clientSocket, &QAbstractSocket::readyRead, this, &LRNetServer::receivedClientInfo);
+        connect(clientSocket, &QAbstractSocket::disconnected, clientSocket,
+                [=](){
+            qDebug() <<"Client disconnected, must remove";
+            //Single threaded event loop: mutex not required
+            //if(cMutex.tryLock()){
+                if (activeConnections.contains(clientSocket)){
+                    activeConnections[clientSocket].buffer->deleteLater();
+                    activeConnections.remove(clientSocket);
+                }
+                clientSocket->deleteLater();
+                //cMutex.unlock();
+            //}
+
+            });
         cout << "LRNet server: New Connection Received!" << endl;
     }
     else{
@@ -326,6 +327,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
     }
     if (std::strcmp(msg->AddressPattern(), "/auth/newbycode") == 0){
+        qDebug() <<"Auth by code not implemented: Sending fail.";
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
 
 

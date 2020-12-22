@@ -19,19 +19,27 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(m_connectForm);
 
 
-    QObject::connect(m_connectForm, &ConnectForm::tryConnect, m_netClient, &LRNetClient::tryConnect);
-    QObject::connect(m_connectForm, &ConnectForm::updateCode, this, [=](const QString & code){qDebug() <<"Code: "<<code ;});
-    QObject::connect(m_connectForm, &ConnectForm::setToKeyAuth, this, [=](){qDebug() << "set key auth";});
-    QObject::connect(m_connectForm, &ConnectForm::setToCodeAuth, this, [=](){qDebug() << "set code auth";});
+    QObject::connect(m_connectForm, &ConnectForm::tryConnect, this, &MainWindow::tryConnect);
 
-    QObject::connect(m_netClient, &LRNetClient::timeout, this, [=](){qDebug()<<"Timeout";});
+    QObject::connect(m_connectForm, &ConnectForm::updateCode, this, [=](const QString & code){
+        m_netClient->setTempCode(code);
+        QString base = "Updated code to: %1";
+        statusBar()->showMessage(base.arg(code));
+    });
+    QObject::connect(m_connectForm, &ConnectForm::setToKeyAuth, m_netClient, &LRNetClient::setKeyAuthMethod);
+    QObject::connect(m_connectForm, &ConnectForm::setToCodeAuth, m_netClient, &LRNetClient::setCodeAuthMethod);
+
+    QObject::connect(m_netClient, &LRNetClient::timeout, this, [=](){statusBar()->showMessage("Timed out");});
     QObject::connect(m_netClient, &LRNetClient::connected, this,
                      [=](){
         qDebug()<<"Connected";
+        QObject::disconnect(m_connectForm, &ConnectForm::tryConnect, this, &MainWindow::tryConnect);
+        m_connectForm->m_submitButton->setText("Login");
+        QObject::connect(m_connectForm, &ConnectForm::tryConnect, m_netClient, &LRNetClient::tryToAuthenticate);
     });
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
-    QObject::connect(m_netClient, &LRNetClient::newMember, m_chefForm, &ChefForm::addChannelStrip);
-    QObject::connect(m_netClient, &LRNetClient::lostMember, m_chefForm, &ChefForm::deleteChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
+
 
 
 
@@ -59,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete m_connectForm;
+    //delete m_connectForm;
     RSA_free(keyPair);
     saveSetup();
 }
@@ -154,6 +162,14 @@ void MainWindow::keyInit(){
         qDebug() <<"Key invalid";
     }
 
+    statusBar()->showMessage("SSL Okay");
+}
+
+
+void MainWindow::tryConnect(const QString & host, int port){
+    m_netClient->tryConnect(host, port);
+    QString base= "Connecting to %1 on %2";
+    statusBar()->showMessage(base.arg(host).arg(port));
 }
 
 void MainWindow::loadSetup(){
@@ -176,9 +192,22 @@ void MainWindow::handleAuth(AuthTypeE type){
     Launcher * l = new Launcher(type, this);
     if (type != NONE){
         setCentralWidget(l);
-        connect(l, &Launcher::choseSuperChef, this, [=](){qDebug()<<"Chose superchef";});
-        connect(l, &Launcher::choseChef, this, [=](){qDebug()<<"Chose chef";});
-        connect(l, &Launcher::choseMember, this, [=](){qDebug()<<"Chose member";});
+        connect(l, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
+        connect(l, &Launcher::choseChef, this, &MainWindow::launchChef);
+        connect(l, &Launcher::choseMember, this, &MainWindow::launchMember);
     }
 }
 
+void MainWindow::launchSuperChef(){
+qDebug()<<"Chose superchef";
+}
+
+void MainWindow::launchChef(){
+setCentralWidget(new ChefForm(this));
+QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
+}
+
+void MainWindow::launchMember(){
+setCentralWidget(new MemberForm(this));
+}

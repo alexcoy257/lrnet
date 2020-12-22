@@ -23,6 +23,7 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
 {
     m_ksw->show();
     m_csw->hide();
+    m_authByKeyButton->setChecked(true);
 
     tl_layout->addWidget(m_errLabel);
     m_errLabel->hide();

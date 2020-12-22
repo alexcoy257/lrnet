@@ -11,6 +11,7 @@
 #include "compressor.h"
 #include "channeltester.h"
 #include "chefform.h"
+#include "memberform.h"
 #include "lrchef_connectform.h"
 #include "launcher.h"
 #include "../lrnetserver/auth_types.h"
@@ -58,6 +59,11 @@ signals:
     void deleteChannel(int id);
 
 private slots:
+    void tryConnect(const QString & host, int port);
     void handleAuth(AuthTypeE type);
+    void launchSuperChef();
+    void launchChef();
+    void launchMember();
+
 };
 #endif // MAINWINDOW_H
