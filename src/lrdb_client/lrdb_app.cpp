@@ -8,6 +8,6 @@ LRdbApp::LRdbApp(int argc, char ** argv) : QCoreApplication(argc, argv)
     parser.addOption(showProgressOption);
     parser.process(*this);
 
-    client = QSharedPointer<LRdbClient>(new LRdbClient("lrdbread", "lrdbreadpw"));
+    //client = QSharedPointer<LRdbClient>(new LRdbClient("lrdbread", "lrdbreadpw"));
 
 }

@@ -7,6 +7,9 @@
 #include <QVariant>
 #include <QDebug>
 
+#include "lrdbsettings.h"
+#include "../lrnetserver/auth_types.h"
+
 class LRdbClient : public QObject
 {
     Q_OBJECT
@@ -14,7 +17,9 @@ class LRdbClient : public QObject
     bool madeConnection;
     bool connGood;
 public:
-    explicit LRdbClient(QString uname, QString pw, QString hostname = "localhost", QObject *parent = nullptr);
+    explicit LRdbClient(QString & uname, QString & pw, QString & database, QString & hostname, QObject *parent = nullptr);
+    explicit LRdbClient(const char* uname, const char* pw, const char* database, const char* hostname, QObject *parent = nullptr);
+    explicit LRdbClient(LRdbSettings & set, QObject *parent = nullptr);
     ~LRdbClient();
     bool netidExists(QString& netid);
     bool addKeyToNetid(QByteArray& key, QString& netid);
@@ -23,9 +28,14 @@ public:
     QVector<int> * getIDsForNetid(char * netid, int len);
     QByteArray * getKeyForID(int id);
     QString * getRoleForID(int id);
-
+    void setRoleForID(AuthTypeE role, int id);
+    void setRoleForNetID(AuthTypeE role, QString & netid);
+    bool tryToMakeSchema();
 signals:
 
+private:
+    void init(QString & uname, QString & pw, QString & database, QString & hostname);
+    void getPrivileges();
 };
 
 #endif // LRDBCLIENT_H
