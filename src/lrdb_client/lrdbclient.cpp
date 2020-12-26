@@ -218,7 +218,7 @@ void LRdbClient::setRoleForNetID(AuthTypeE role, QString & netid){
         sRole = "chef";
         break;
     case MEMBER:
-        sRole = "member";
+        sRole = "user";
         break;
     case NONE:
         break;
