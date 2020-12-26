@@ -1,8 +1,10 @@
 #include "auth.h"
 
 Auth::Auth():
-    readdb("lrnetread", "lrnetreadpw")
+readdb("lrnetread", "lrnetreadpw", "lrnetdb", "localhost", nullptr)
 {
+
+
   unsigned char testRand;
   if(!RAND_bytes(&testRand, 1)){
     qDebug() <<"Machine doesn't support rand_bytes";
@@ -52,6 +54,7 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
     AuthTypeE role = NONE;
 
     for (int id:*ids){
+        qDebug() <<"Checking uniqueid " <<id;
         QByteArray * key = readdb.getKeyForID(id);
 
         qDebug() <<"Got key from db:" <<*key <<"of length " <<key->length();

@@ -1,11 +1,28 @@
 #include "lrdbclient.h"
 #include <iostream>
+#include <QSqlError>
 
-LRdbClient::LRdbClient(QString uname, QString pw, QString hostname, QObject *parent) : QObject(parent)
+LRdbClient::LRdbClient(QString & uname, QString & pw, QString & database, QString & hostname, QObject *parent) : QObject(parent)
 {
+    init(uname, pw, database, hostname);
+}
+
+LRdbClient::LRdbClient(LRdbSettings & set, QObject * parent): QObject(parent){
+    init(set.username, set.password, set.database, set.host);
+}
+
+LRdbClient::LRdbClient(const char* uname, const char* pw, const char* database, const char* hostname, QObject *parent): QObject(parent){
+    QString un = QString::fromStdString(uname);
+    QString pwd = QString::fromStdString(pw);
+    QString db = QString::fromStdString(database);
+    QString hn = QString::fromStdString(hostname);
+    init(un, pwd, db, hn);
+}
+
+void LRdbClient::init(QString & uname, QString & pw, QString & database, QString & hostname){
     readDb = QSqlDatabase::addDatabase("QMYSQL");
     readDb.setHostName(hostname);
-    readDb.setDatabaseName("lrnetdb");
+    readDb.setDatabaseName(database);
     readDb.setUserName(uname);
     readDb.setPassword(pw);
     bool ok = readDb.open(); //bool ok
@@ -13,6 +30,7 @@ LRdbClient::LRdbClient(QString uname, QString pw, QString hostname, QObject *par
     if (ok){
         std::cout << "Database Okay \n ";
         connGood = true;
+        //getPrivileges();
     }
     else {
         std::cout << "Database Not okay \n ";
@@ -100,6 +118,9 @@ QByteArray * LRdbClient::getKeyForID(int id){
     return arr;
 }
 
+/**
+ * You must delete the QString produced by this method.
+ */
 QString * LRdbClient::getRoleForID(int id){
     QSqlQuery query(readDb);
     QString * str = NULL;
@@ -119,4 +140,100 @@ QString * LRdbClient::getRoleForID(int id){
 LRdbClient::~LRdbClient(){
     readDb.close();
    //std::cout << "Destructor called \n";
+}
+
+void LRdbClient::getPrivileges(){
+    QSqlQuery query(readDb);
+    QString * str = NULL;
+    query.prepare("SHOW GRANTS;");
+    if(query.exec()){
+        qDebug() << "Got grants";
+        while(query.next()){
+            str = new QString(query.value(0).toString());
+            qDebug() << *str;
+            delete str;
+        }
+    }
+}
+
+bool LRdbClient::tryToMakeSchema(){
+    if (!connGood){
+        return false;
+    }
+    QSqlQuery query(readDb);
+    QString qBase = "CREATE TABLE users (\
+    id int(11) NOT NULL AUTO_INCREMENT,\
+    netid varchar(30) NOT NULL,\
+    role enum('superchef','chef','user') DEFAULT NULL,\
+    pubkey varchar(460) DEFAULT NULL,\
+    PRIMARY KEY (id))";
+    query.prepare(qBase);
+    if(query.exec() && query.lastError().type() == QSqlError::NoError){
+        return true;
+    }
+    return false;
+}
+
+void LRdbClient::setRoleForID(AuthTypeE role, int id){
+    QSqlQuery query(readDb);
+    QString sRole = QString();
+    query.prepare("UPDATE users SET role=? WHERE id=?");
+    switch(role){
+        case SUPERCHEF:
+            sRole = "superchef";
+        break;
+    case CHEF:
+        sRole = "chef";
+        break;
+    case MEMBER:
+        sRole = "member";
+        break;
+    case NONE:
+        break;
+    }
+    if(!sRole.isNull()){
+        query.bindValue(0, QVariant(sRole));
+    }
+    else{
+        query.bindValue(0, QVariant(QString()));
+    }
+    query.bindValue(1, QVariant(id));
+
+    if(query.exec()){
+        qDebug() << "Succeeded to query role";
+
+
+    }
+}
+
+void LRdbClient::setRoleForNetID(AuthTypeE role, QString & netid){
+    QSqlQuery query(readDb);
+    QString sRole = QString();
+    query.prepare("UPDATE users SET role=? WHERE netid=?");
+    switch(role){
+        case SUPERCHEF:
+            sRole = "superchef";
+        break;
+    case CHEF:
+        sRole = "chef";
+        break;
+    case MEMBER:
+        sRole = "member";
+        break;
+    case NONE:
+        break;
+    }
+    if(!sRole.isNull()){
+        query.bindValue(0, QVariant(sRole));
+    }
+    else{
+        query.bindValue(0, QVariant(QString()));
+    }
+    query.bindValue(1, QVariant(netid));
+
+    if(query.exec()){
+        qDebug() << "Succeeded to query role";
+
+
+    }
 }
