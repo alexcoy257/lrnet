@@ -6,7 +6,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-LIBS += -L../lrnetclient -llrnetclient -lcrypto
+LIBS += -L../lrnetclient -llrnetclient
+
+!win32{
+LIBS += -lcrypto
+}
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

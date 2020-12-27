@@ -93,7 +93,19 @@ public:
     explicit ConnectForm(QWidget *parent = nullptr);
     ~ConnectForm();
 
+public slots:
+    void setHost(const QString & host){
+        m_hostBox->setText(host);
+    }
+    void setPort(int port){
+        const QString ptemp = QString::number(port);
+        qDebug() <<"Port is " <<port;
+        m_portBox->setText(ptemp);
+    }
+
 signals:
+    void updateHost(const QString & host);
+    void updatePort(int port);
     void tryConnect(const QString host, int port);
     void setToKeyAuth();
     void setToCodeAuth();
