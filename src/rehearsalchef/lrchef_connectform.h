@@ -98,6 +98,7 @@ signals:
     void setToKeyAuth();
     void setToCodeAuth();
     void updateCode(const QString & code);
+    void netidUpdated(const QString & netid);
 
 };
 

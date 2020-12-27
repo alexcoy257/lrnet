@@ -63,6 +63,7 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     QObject::connect(m_authByCodeButton, &QAbstractButton::toggled, this, &ConnectForm::setCodeAuth);
 
     QObject::connect(m_csw->m_authCodeBox, &QLineEdit::editingFinished, this, [=](){emit updateCode(m_csw->m_authCodeBox->text());});
+    QObject::connect(m_netidBox, &QLineEdit::editingFinished, this, [=](){emit netidUpdated( m_netidBox->text());});
 
 }
 

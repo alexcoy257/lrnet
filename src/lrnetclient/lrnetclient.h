@@ -85,12 +85,18 @@ private:
     public slots:
         void tryConnect(const QString &host, int port);
         void requestRoster();
+        void setNetid(const QString & nnetid);
         void setRSAKey (RSA * key);
         void setTempCode (const QString &_tempCode){tempCode = _tempCode;}
         void setAuthMethod (AuthMethodE method){authMethod = method;}
         void setKeyAuthMethod(){setAuthMethod(KEY);}
         void setCodeAuthMethod(){setAuthMethod(CODE);}
+        void updateName(const QString & nname);
+        void updateSection(const QString & nsection);
         void tryToAuthenticate();
+        void subSuperchef();
+        void subChef();
+        void subMember();
 
     private slots:
         void startHandshake();
@@ -104,10 +110,12 @@ private:
         session_id_t session;
         QTimer m_timeoutTimer;
 
+
         void sendPacket();
         void connectionTimedOut();
         void sendKeyAuthPacket(auth_packet_t & pck);
         void sendCodeAuthPacket();
+        void sendSmallMessage(QString & handle);
         void handleMessage(osc::ReceivedMessage * inMsg);
         void sendPing();
         

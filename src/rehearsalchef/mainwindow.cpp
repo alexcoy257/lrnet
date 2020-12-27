@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
     QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
+    QObject::connect(m_connectForm, &ConnectForm::netidUpdated, this, [&](const QString & nnetid){m_netid = nnetid; m_netClient->setNetid(nnetid);});
 
 
 
@@ -57,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     loadSetup();
     keyInit();
     m_netClient->setRSAKey( keyPair );
-
+    m_connectForm->m_netidBox->setText(m_netid);
 }
 
 
@@ -174,17 +175,31 @@ void MainWindow::tryConnect(const QString & host, int port){
 
 void MainWindow::loadSetup(){
     m_settings.beginGroup("/Auth");
+    m_netid = m_settings.value("Netid","").toString();
+    //qDebug()  <<"Netid: " <<m_netid;
     m_publicKey = m_settings.value("PublicKey","").toByteArray();
     m_privateKey = m_settings.value("PrivateKey","").toByteArray();
-    qDebug() <<"Public key: " <<m_publicKey;
+    //qDebug() <<"Public key: " <<m_publicKey;
     m_settings.endGroup();
+
+     m_settings.beginGroup("/Names");
+     m_name = m_settings.value("name","").toString();
+     m_section = m_settings.value("section","").toString();
+     m_settings.endGroup();
 }
 
 void MainWindow::saveSetup(){
     m_settings.beginGroup("/Auth");
+    m_settings.setValue("Netid", m_netid);
     m_settings.setValue("PublicKey",m_publicKey);
     m_settings.setValue("PrivateKey",m_privateKey);
     m_settings.endGroup();
+
+    m_settings.beginGroup("/Names");
+    m_settings.setValue("name",m_name);
+    m_settings.setValue("section",m_section);
+    m_settings.endGroup();
+
     m_settings.sync();
 }
 
@@ -200,14 +215,21 @@ void MainWindow::handleAuth(AuthTypeE type){
 
 void MainWindow::launchSuperChef(){
 qDebug()<<"Chose superchef";
+m_netClient->subSuperchef();
 }
 
 void MainWindow::launchChef(){
 setCentralWidget(new ChefForm(this));
 QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
+m_netClient->subChef();
 }
 
 void MainWindow::launchMember(){
 setCentralWidget(new MemberForm(this));
+((MemberForm *)centralWidget())->setName(m_name);
+((MemberForm *)centralWidget())->setSection(m_section);
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){m_name = nname;});
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){m_section = nsection;});
+m_netClient->subMember();
 }

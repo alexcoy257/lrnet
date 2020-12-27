@@ -22,7 +22,7 @@ void RosterTest::addMember()
     QString netid = "ac2456";
     bool gotSignal = false;
 
-    connections->append(connect(&roster, &Roster::memberAdded, this, [&](Member * mem){
+    connections->append(connect(&roster, &Roster::sigMemberUpdate, this, [&](Member * mem){
         if (mem->getNetID().compare("ac2456") == 0){
             gotSignal=true;
         }}));

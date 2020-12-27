@@ -5,6 +5,8 @@
 #include <QHash>
 #include "auth_types.h"
 
+class Roster;
+
 class Member: public QObject{
     Q_OBJECT
 public:
@@ -16,30 +18,61 @@ private:
     QString netid;
     QString name;
     QString section;
+    Roster * mRoster;
 public:
 
     explicit Member(QObject *parent = nullptr);
-    explicit Member(QString & netid, session_id_t s_id, QObject *parent = nullptr);
+    explicit Member(QString & netid, session_id_t s_id, Roster * roster, QObject *parent = nullptr);
     session_id_t getSessionID(){return s_id;}
     uint64_t getSerialID(){return serial;}
     QString & getNetID(){return netid;}
+    QString & getName(){return name;}
+    QString & getSection(){return section;}
+    void setName(QString & nname);
+    void setSection(QString & nsection);
 
 signals:
 };
 
 class Roster : public QObject
 {
+    friend class Member;
     Q_OBJECT
     QHash<Member::serial_t, Member *> members;
+    QHash<session_id_t, Member *> membersBySessionID;
+
+    QStringList sections = {"Piccolo",
+                            "Flute",
+                            "Oboe",
+                            "Bassoon",
+                            "Clarinet",
+                            "Bass Clarinet",
+                            "Horn",
+                            "Trumpet",
+                            "Trombone",
+                            "Euphonium",
+                            "Tuba",
+                            "Guitar",
+                            "Bass",
+                            "Drum Kit",
+                            "Percussion"
+                            };
+
+
 public:
     explicit Roster(QObject *parent = nullptr);
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
+    QStringList & getValidSections(){return sections;}
     void removeMember(Member::serial_t s_id);
+    void setNameBySessionID(QString & name, session_id_t s_id);
+    void setSectionBySessionID(QString & section, session_id_t s_id);
+    void setNameBySerialID(QString & name, Member::serial_t s_id);
+    void setSectionBySerialID(QString & section, Member::serial_t s_id);
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
-    void memberAdded(Member * member);
+    void sigMemberUpdate(Member * member);
     void memberRemoved(Member::serial_t id);
 
 };

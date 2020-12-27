@@ -227,3 +227,51 @@ void LRNetClient::sendPing(){
 void LRNetClient::setRSAKey(RSA * key){
     authKey = key;
 }
+
+void LRNetClient::sendSmallMessage(QString & handle){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( handle.toStdString().data() )
+    << osc::Blob(&session, sizeof(session))
+            << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::subSuperchef(){
+    QString handle = "/sub/superchef";
+    sendSmallMessage(handle);
+}
+
+void LRNetClient::subChef(){
+    QString handle = "/sub/chef";
+    sendSmallMessage(handle);
+}
+
+void LRNetClient::subMember(){
+    QString handle = "/sub/member";
+    sendSmallMessage(handle);
+}
+
+void LRNetClient::setNetid(const QString & nnetid){
+    QByteArray temp = nnetid.toLocal8Bit();
+    size_t len = qMax(29, nnetid.length());
+    std::memcpy(netid, temp.data(), len);
+    netid[len] = 0;
+}
+
+void LRNetClient::updateName(const QString & nname){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/update/name" )
+    << osc::Blob(&session, sizeof(session))
+    << nname.toStdString().data()
+            << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::updateSection(const QString & nsection){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/update/section" )
+    << osc::Blob(&session, sizeof(session))
+    << nsection.toStdString().data()
+            << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}

@@ -2,6 +2,7 @@
 #define MEMBERFORM_H
 
 #include <QWidget>
+
 #include "chatform.h"
 
 namespace Ui {
@@ -16,6 +17,12 @@ class MemberForm : public QWidget
 public:
     explicit MemberForm(QWidget *parent = nullptr);
     ~MemberForm();
+    void setName(const QString & nname);
+    void setSection(const QString & nsection);
+
+signals:
+    void nameUpdated(const QString & nname);
+    void sectionUpdated(const QString & nsection);
 
 private:
     Ui::MemberForm *ui;

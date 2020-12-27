@@ -102,6 +102,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     cout << "LRNet Server." << endl;
 
+    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyNewMemberSubs);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
@@ -316,7 +317,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             if( at.authType != NONE){
                 sendAuthResponse(socket, at);
                 qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                activeSessions.insert(at.session_id, {at.session_id, socket, true});
+                sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+                size_t nl = qMin(pkt.netid_length, (uint8_t)30);
+                memcpy(tt.netid, pkt.netid, nl);
+                tt.netid[nl] = 0;
+                activeSessions.insert(at.session_id, tt);
             }
             else
             {
@@ -340,11 +345,14 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
     else
     {
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
-        session_id_t tSess = checkForValidSession(args);
+        session_id_t tSess = checkForValidSession(args, socket);
+        AuthTypeE role = activeSessions[tSess].role;
         if(tSess == 0)
             return;
-        if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0)
-            sendRoster(socket);
+        if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                sendRoster(socket);
+        }
         if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
             //All sessions should have active connections. If not, pinging updates the connection.
             //tSess is in activeSessions at this point.
@@ -357,6 +365,32 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 activeSessions[tSess].lastSeenConnection = socket;
             }
         }
+        if (std::strcmp(msg->AddressPattern(), "/sub/member") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                qDebug() <<"Subscribed as member";
+            handleNewMember(&args, tSess);
+        }
+
+        if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
+            if (role & (SUPERCHEF | CHEF)){
+                qDebug() <<"Subscribed as chef";
+                sendRoster(socket);
+            }
+        }
+
+        if (std::strcmp(msg->AddressPattern(), "/sub/superchef") == 0){
+            if (role & (SUPERCHEF))
+                qDebug() <<"Subscribed as superchef";
+        }
+
+        //Future refactor: use an association list of updatable parameters
+        if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
+           handleNameUpdate(&args, tSess);
+        }
+
+        if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
+           handleSectionUpdate(&args, tSess);
+        }
     }
 
 }
@@ -368,7 +402,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
  * the session id if it is active, zero otherwise.
  */
 
-session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream msgs){
+session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket){
 
     const session_id_t * tSess;
     osc::Blob tSess_b;
@@ -388,6 +422,32 @@ session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStrea
         qDebug() << "No session found for " <<tSess;
         return 0;
     }
+
+    if (activeConnections[socket].assocSession != *tSess){
+        qDebug() <<"Sessions differ on this connection. Updating.";
+    }
+
+    activeConnections[socket].assocSession = *tSess;
+    /*
+    qDebug() <<"Found session with role ";
+    switch(activeSessions[*tSess].role){
+    case CHEF:
+        qDebug()<<"chef.";
+        break;
+    case SUPERCHEF:
+        qDebug()<<"superchef.";
+        break;
+    case MEMBER:
+        qDebug()<<"member.";
+        break;
+    case NONE:
+        qDebug()<<"none.";
+        break;
+    default:
+        qDebug()<<"unrecognized.";
+        break;
+    }
+*/
     return *tSess;
 }
 
@@ -542,3 +602,65 @@ int LRNetServer::releaseThread(int id)
 
 // TODO:
 // USE bool QAbstractSocket::isValid () const to check if socket is connect. if not, exit loop
+
+void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    QString netid = QString::fromStdString(activeSessions[tSess].netid);
+    mRoster.addMember(netid, tSess);
+    while (!args->Eos()){
+        const char * key;
+        const char * value;
+        try{
+        *args >> key;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+        }
+        if(!args->Eos()){
+            try{
+            *args >> value;
+            }catch(osc::WrongArgumentTypeException & e){
+                //Not a string.
+            }
+            QString qsKey = QString::fromStdString(key);
+            QString qsValue = QString::fromStdString(value);
+            if (qsKey.compare("name")){
+                 mRoster.setNameBySessionID(qsValue, tSess);
+            }
+            if (qsKey.compare("section")){
+                 mRoster.setSectionBySessionID(qsValue, tSess);
+            }
+        }
+
+    }
+}
+
+void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    if (!args->Eos()){
+        const char * name;
+        try{
+        *args >> name;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+        }
+
+        QString qsName = QString::fromStdString(name);
+             mRoster.setNameBySessionID(qsName, tSess);
+        }
+}
+
+void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    if (!args->Eos()){
+        const char * name;
+        try{
+        *args >> name;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+        }
+
+        QString qsName = QString::fromStdString(name);
+             mRoster.setSectionBySessionID(qsName, tSess);
+        }
+}
+
+void LRNetServer::notifyNewMemberSubs(Member * member){
+    qDebug() <<"Notifying subs " <<member->getNetID() <<" named " << member->getName();
+}

@@ -49,6 +49,9 @@ private:
     QByteArray m_privateKey;
     QByteArray m_publicKey;
     RSA * keyPair;
+    QString m_netid;
+    QString m_name;
+    QString m_section;
 
     void loadSetup();
     void keyInit();

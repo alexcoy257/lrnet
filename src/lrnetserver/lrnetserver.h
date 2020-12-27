@@ -26,6 +26,7 @@
 #include <osc/OscPrintReceivedElements.h>
 #include <osc/OscOutboundPacketStream.h>
 #include "auth.h"
+#include "lrnet_roster.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -51,6 +52,8 @@ class LRNetServer : public QObject
         session_id_t id;
         QSslSocket * lastSeenConnection;
         bool ShasCheckedIn;
+        AuthTypeE role;
+        char netid[31];
     }sessionTriple;
 
     class Buffer: public QObject{
@@ -117,11 +120,15 @@ private slots:
     void receivedClientInfo();
     void stopCheck();
     void handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg);
-    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream msgs);
+    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket);
     void sendAuthResponse(QSslSocket * socket, auth_type_t at);
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
     void sendPong(QSslSocket * socket);
+    void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void notifyNewMemberSubs(Member * member);
+    void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
 
 
 signals:
@@ -220,6 +227,7 @@ private:
      */
     QHash<QSslSocket *, connectionPair>activeConnections;
     Auth authorizer;
+    Roster mRoster;
     
 public :
     void setRequireAuth(bool requireAuth) { mRequireAuth = requireAuth; }
