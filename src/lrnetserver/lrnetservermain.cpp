@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include "lrnetserver.h"
 #include <getopt.h>
 
@@ -91,7 +91,7 @@ void parseInput(int argc, char** argv)
 
 int main(int argc, char** argv){
 
-  QApplication app(argc, argv, false);
+  QCoreApplication app(argc, argv, false);
       parseInput(argc, argv);
       LRNetServer * server = new LRNetServer();
       server->setCertFile(mCertFile);
