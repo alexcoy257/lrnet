@@ -20,6 +20,8 @@ public:
     explicit LRdbClient(QString & uname, QString & pw, QString & database, QString & hostname, QObject *parent = nullptr);
     explicit LRdbClient(const char* uname, const char* pw, const char* database, const char* hostname, QObject *parent = nullptr);
     explicit LRdbClient(LRdbSettings & set, QObject *parent = nullptr);
+    explicit LRdbClient(const QString & filename="/etc/lrnet/settings.json", QObject *parent = nullptr);
+    explicit LRdbClient(QObject *parent = nullptr);
     ~LRdbClient();
     bool netidExists(QString& netid);
     bool addKeyToNetid(QByteArray& key, QString& netid);

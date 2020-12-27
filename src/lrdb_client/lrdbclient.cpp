@@ -19,6 +19,20 @@ LRdbClient::LRdbClient(const char* uname, const char* pw, const char* database, 
     init(un, pwd, db, hn);
 }
 
+LRdbClient::LRdbClient(const QString & filename, QObject * parent): QObject(parent){
+    LRdbSettings temp(filename);
+    if (temp.validFile()){
+        init(temp.username, temp.password, temp.database, temp.host);
+    }
+}
+
+LRdbClient::LRdbClient(QObject * parent): QObject(parent){
+    LRdbSettings temp("/etc/lrnet/settings.json");
+    if (temp.validFile()){
+        init(temp.username, temp.password, temp.database, temp.host);
+    }
+}
+
 void LRdbClient::init(QString & uname, QString & pw, QString & database, QString & hostname){
     readDb = QSqlDatabase::addDatabase("QMYSQL");
     readDb.setHostName(hostname);
