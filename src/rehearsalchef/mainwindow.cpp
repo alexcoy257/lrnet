@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
     QObject::connect(m_connectForm, &ConnectForm::setToKeyAuth, m_netClient, &LRNetClient::setKeyAuthMethod);
     QObject::connect(m_connectForm, &ConnectForm::setToCodeAuth, m_netClient, &LRNetClient::setCodeAuthMethod);
+    QObject::connect(m_connectForm, &ConnectForm::updateHost, this, [=](const QString & host){m_hostname = host;});
+    QObject::connect(m_connectForm, &ConnectForm::updatePort, this, [=](int port){m_port = port;});
 
     QObject::connect(m_netClient, &LRNetClient::timeout, this, [=](){statusBar()->showMessage("Timed out");});
     QObject::connect(m_netClient, &LRNetClient::connected, this,
@@ -59,6 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     keyInit();
     m_netClient->setRSAKey( keyPair );
     m_connectForm->m_netidBox->setText(m_netid);
+    m_netClient->setNetid(m_netid);
+    m_connectForm->setHost(m_hostname);
+    m_connectForm->setPort(m_port);
 }
 
 
@@ -175,6 +180,8 @@ void MainWindow::tryConnect(const QString & host, int port){
 
 void MainWindow::loadSetup(){
     m_settings.beginGroup("/Auth");
+    m_hostname = m_settings.value("Host","localhost").toString();
+    m_port = m_settings.value("Port",4463).toInt();
     m_netid = m_settings.value("Netid","").toString();
     //qDebug()  <<"Netid: " <<m_netid;
     m_publicKey = m_settings.value("PublicKey","").toByteArray();
@@ -190,6 +197,8 @@ void MainWindow::loadSetup(){
 
 void MainWindow::saveSetup(){
     m_settings.beginGroup("/Auth");
+    m_settings.setValue("Host", m_hostname);
+    m_settings.setValue("Port", m_port);
     m_settings.setValue("Netid", m_netid);
     m_settings.setValue("PublicKey",m_publicKey);
     m_settings.setValue("PrivateKey",m_privateKey);
@@ -204,12 +213,11 @@ void MainWindow::saveSetup(){
 }
 
 void MainWindow::handleAuth(AuthTypeE type){
-    Launcher * l = new Launcher(type, this);
     if (type != NONE){
-        setCentralWidget(l);
-        connect(l, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
-        connect(l, &Launcher::choseChef, this, &MainWindow::launchChef);
-        connect(l, &Launcher::choseMember, this, &MainWindow::launchMember);
+        setCentralWidget(new Launcher(type, this));
+        connect((Launcher *)centralWidget(), &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
+        connect((Launcher *)centralWidget(), &Launcher::choseChef, this, &MainWindow::launchChef);
+        connect((Launcher *)centralWidget(), &Launcher::choseMember, this, &MainWindow::launchMember);
     }
 }
 

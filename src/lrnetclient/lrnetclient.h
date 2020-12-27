@@ -5,9 +5,25 @@
 #include <QSslSocket>
 #include <QTimer>
 
+
+#ifdef __WIN32__
+#define NDEBUG
+#include "osc/OscOutboundPacketStream.h"
+#include "osc/OscReceivedElements.h"
+#else
 #include <osc/OscOutboundPacketStream.h>
 #include <osc/OscReceivedElements.h>
+#endif
 #include "../lrnetserver/auth_types.h"
+
+#ifdef LIBLRNET_LIBRARY
+#warning "LIBLRNET_LIBRARY defined"
+#else
+#warning "LIBLRNET_LIBRARY not defined"
+#endif
+
+
+#include "../liblrnet_globals.h"
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
@@ -20,7 +36,7 @@
 
 
 
-class LRNetClient : public QObject
+class  LIBLRNET_EXPORT LRNetClient : public QObject
     {
         Q_OBJECT
 
@@ -35,7 +51,7 @@ private:
         AuthTypeE authType;
         QString tempCode = "";
         AuthMethodE authMethod = KEY;
-        char netid[30] = "ac2456";
+        char netid[30] = "";
 
         class Buffer{
             char _base[INPUT_BUFFER_SIZE];

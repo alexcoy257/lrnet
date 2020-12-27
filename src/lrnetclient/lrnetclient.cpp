@@ -61,15 +61,16 @@ void LRNetClient::startHandshake()
 void LRNetClient::tryToAuthenticate(){
     if (authMethod == KEY){
         AuthPacket pck(netid);
+        //qDebug() <<"Netid is: " <<netid;
         unsigned int retlen;
         RAND_bytes(pck.challenge, 214);
 
         RSA_sign(NID_sha256, pck.challenge, 214, pck.sig, &retlen, authKey);
 
-        QByteArray batmp = QByteArray::fromRawData((const char *)pck.challenge, 214);
-        qDebug() <<"Challenging with challenge " <<batmp;
-        batmp = QByteArray::fromRawData((const char *)pck.sig, 214);
-        qDebug() <<"Signed " <<batmp;
+        //QByteArray batmp = QByteArray::fromRawData((const char *)pck.challenge, 214);
+        //qDebug() <<"Challenging with challenge " <<batmp;
+        //batmp = QByteArray::fromRawData((const char *)pck.sig, 214);
+        //qDebug() <<"Signed " <<batmp;
 
         if(RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, authKey)){
             qDebug() <<"Verified at send";

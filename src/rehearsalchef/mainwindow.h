@@ -14,8 +14,13 @@
 #include "memberform.h"
 #include "lrchef_connectform.h"
 #include "launcher.h"
+#include "../liblrnet_globals.h"
+
+
 #include "../lrnetserver/auth_types.h"
 #include "../lrnetclient/lrnetclient.h"
+
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; class ChannelStrip;}
@@ -52,6 +57,8 @@ private:
     QString m_netid;
     QString m_name;
     QString m_section;
+    QString m_hostname;
+    int m_port;
 
     void loadSetup();
     void keyInit();

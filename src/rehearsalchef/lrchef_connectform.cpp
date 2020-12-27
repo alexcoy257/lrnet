@@ -64,6 +64,8 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
 
     QObject::connect(m_csw->m_authCodeBox, &QLineEdit::editingFinished, this, [=](){emit updateCode(m_csw->m_authCodeBox->text());});
     QObject::connect(m_netidBox, &QLineEdit::editingFinished, this, [=](){emit netidUpdated( m_netidBox->text());});
+    QObject::connect(m_hostBox, &QLineEdit::editingFinished, this, [=](){emit updateHost( m_hostBox->text());});
+    QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){emit updatePort( m_portBox->text().toInt());});
 
 }
 
