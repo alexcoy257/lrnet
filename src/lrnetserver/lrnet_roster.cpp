@@ -23,7 +23,7 @@ void Roster::addMember(QString &netid, session_id_t s_id){
  * Remove a member logged in with serial ID id.
  */
 
-void Roster::removeMember(Member::serial_t id){
+void Roster::removeMemberBySerialID(Member::serial_t id){
     Member * m = members.take(id);
     if (m){
     membersBySessionID.take(m->getSessionID());
@@ -32,7 +32,7 @@ void Roster::removeMember(Member::serial_t id){
     }
 }
 
-void Roster::removeMember(session_id_t s_id){
+void Roster::removeMemberBySessionID(session_id_t s_id){
     qDebug() <<"Remove a member by session id";
     Member * m = membersBySessionID.take(s_id);
     if(m){

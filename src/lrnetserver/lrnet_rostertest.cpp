@@ -48,7 +48,7 @@ void RosterTest::removeMember(){
             gotSignal=true;
         }}));
 
-    roster.removeMember((Member::serial_t)1);
+    roster.removeMemberBySerialID((Member::serial_t)1);
     QVERIFY2(gotSignal, "Didn't get memberRemoved signal with member 1.");
 
 }

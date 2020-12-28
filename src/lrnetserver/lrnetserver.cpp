@@ -225,7 +225,7 @@ void LRNetServer::receivedNewConnection()
                 if (activeConnections.contains(clientSocket)){
                     connectionPair myConn = activeConnections[clientSocket];
                     activeSessions[myConn.assocSession].lastSeenConnection=NULL;
-                    mRoster.removeMember(myConn.assocSession);
+                    mRoster.removeMemberBySessionID(myConn.assocSession);
                     activeChefs.remove(myConn.assocSession);
                     myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
