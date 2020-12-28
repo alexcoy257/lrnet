@@ -1,0 +1,3 @@
+[submodule "JackServer"]
+	path = src/JackServer
+	url = git@github.com:alexcoy257/JackServerTest.git
