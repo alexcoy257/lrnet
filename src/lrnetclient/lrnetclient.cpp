@@ -176,8 +176,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         while (!args.Eos()){
             const char * memName;
             const char * memSect;
-            int id;
-            args >> memName; args >> memSect; args >> id;
+            int64_t id;
+            args >> memName;
+            args >> memSect;
+            args >> id;
             std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
             emit newMember(QString(memName), QString(memSect), id);
         }
