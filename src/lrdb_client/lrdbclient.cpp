@@ -41,7 +41,7 @@ void LRdbClient::init(QString & uname, QString & pw, QString & database, QString
 bool LRdbClient::netidExists(QString& netid){
 
     QSqlQuery query;
-    query.prepare("SELECT netid FROM lrnetdb.users WHERE netid=?");
+    query.prepare("SELECT netid FROM users WHERE netid=?");
     query.bindValue(0, QVariant(netid));
     query.exec();
     bool nothing = false;
@@ -54,7 +54,7 @@ bool LRdbClient::netidExists(QString& netid){
 
 bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
     QSqlQuery query(readDb);
-    query.prepare("SELECT netid FROM lrnetdb.users WHERE netid=? AND pubkey=?");
+    query.prepare("SELECT netid FROM users WHERE netid=? AND pubkey=?");
     query.bindValue(0, QVariant(netid));
     query.bindValue(1, QVariant(key));
     if(query.exec())
@@ -69,7 +69,7 @@ bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
 
     if (nothing){
 
-        query.prepare("INSERT INTO lrnetdb.users (netid, pubkey) VALUES (?,?)");
+        query.prepare("INSERT INTO users (netid, pubkey) VALUES (?,?)");
         query.bindValue(0, QVariant(netid));
         query.bindValue(1, QVariant(key));
         if(query.exec())
@@ -84,7 +84,7 @@ bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
 QVector<int> * LRdbClient::getIDsForNetid(QString &netid){
     QSqlQuery query(readDb);
     QVector<int> * vec = new QVector<int>();
-    query.prepare("SELECT id FROM lrnetdb.users WHERE netid=?");
+    query.prepare("SELECT id FROM users WHERE netid=?");
     query.bindValue(0, QVariant(netid));
     if(query.exec()){
         qDebug() << "Succeeded to query";
@@ -105,7 +105,7 @@ QVector<int> * LRdbClient::getIDsForNetid(char * netid, int len){
 QByteArray * LRdbClient::getKeyForID(int id){
     QSqlQuery query(readDb);
     QByteArray * arr = NULL;
-    query.prepare("SELECT pubkey FROM lrnetdb.users WHERE id=?");
+    query.prepare("SELECT pubkey FROM users WHERE id=?");
     query.bindValue(0, QVariant(id));
     if(query.exec()){
         qDebug() << "Succeeded to query getkey";
@@ -124,7 +124,7 @@ QByteArray * LRdbClient::getKeyForID(int id){
 QString * LRdbClient::getRoleForID(int id){
     QSqlQuery query(readDb);
     QString * str = NULL;
-    query.prepare("SELECT role FROM lrnetdb.users WHERE id=?");
+    query.prepare("SELECT role FROM users WHERE id=?");
     query.bindValue(0, QVariant(id));
     if(query.exec()){
         qDebug() << "Succeeded to query role";
