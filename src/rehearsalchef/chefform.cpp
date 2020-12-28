@@ -34,7 +34,8 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, int i
 void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id){
     LRMClient * client = m_clients[id];
     if(client){
-        client ->cs;
+        client ->cs->setName(mName);
+        client->cs->setSection(sName);
     }
 }
 
