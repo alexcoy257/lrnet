@@ -50,3 +50,7 @@ void ChannelStrip::setName(const QString & nname){
     name = nname;
     ui->cs_cName->setText(nname);
 }
+
+void ChannelStrip::setSection(const QString & nsection){
+    section = nsection;
+}

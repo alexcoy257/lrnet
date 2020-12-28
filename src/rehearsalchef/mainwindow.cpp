@@ -238,7 +238,12 @@ void MainWindow::launchMember(){
 setCentralWidget(new MemberForm(this));
 ((MemberForm *)centralWidget())->setName(m_name);
 ((MemberForm *)centralWidget())->setSection(m_section);
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){m_name = nname;});
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){m_section = nsection;});
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){
+    m_name = nname;
+    m_netClient->updateName(nname);});
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){
+    m_section = nsection;
+    m_netClient->updateSection(nsection);
+});
 m_netClient->subMember();
 }
