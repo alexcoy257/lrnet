@@ -229,6 +229,7 @@ m_netClient->subSuperchef();
 void MainWindow::launchChef(){
 setCentralWidget(new ChefForm(this));
 QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)centralWidget(), &ChefForm::updateChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
 m_netClient->subChef();
 }
