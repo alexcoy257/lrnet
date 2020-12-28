@@ -1,7 +1,7 @@
 #include "auth.h"
 
 Auth::Auth():
-readdb("lrnetread", "lrnetreadpw", "lrnetdb", "localhost", nullptr)
+readdb(nullptr)
 {
 
 

@@ -6,9 +6,14 @@
 
 using std::endl;
 
-LRdbSettings::LRdbSettings(QObject *parent) : QObject(parent)
+LRdbSettings::LRdbSettings(const QString & filename, QObject *parent) : QObject(parent)
 {
-
+    switch(loadSettingsFile(*const_cast<QString *>(&filename))){
+    case 1:
+        valid = false;
+    case 0:
+        valid = true;
+    }
 }
 
 int LRdbSettings::loadSettingsFile(QString & filename){

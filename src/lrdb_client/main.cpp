@@ -70,7 +70,7 @@ int main(int argc, char** argv){
 
     int c;
     unsigned int action = 0;
-    QString fn = QString::fromStdString("settings.json");
+    QString fn = QString();
     QString netid = QString();
     QString kfn = QString();
     AuthTypeE role = NONE;
@@ -127,12 +127,15 @@ int main(int argc, char** argv){
     }
 
     LRdbSettings s;
+    if (!fn.isNull()){
+        s.loadSettingsFile(fn);
+    }
 
 
-    s.loadSettingsFile(fn);
 
 
-    LRdbClient client(s);
+
+    LRdbClient client(nullptr);
 
     if (action & MAKE_SCHEMA){
         bool success = client.tryToMakeSchema();
