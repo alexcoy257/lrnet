@@ -9,3 +9,5 @@ lrdb_client_app.depends = lrdb_client
 lrnetserver.depends = lrmixer lrdb_client JackServerTest
 }
 rehearsalchef.depends = lrnetclient JackServerTest
+
+JackServerTest
