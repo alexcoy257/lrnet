@@ -41,6 +41,8 @@ class Roster : public QObject
     QHash<Member::serial_t, Member *> members;
     QHash<session_id_t, Member *> membersBySessionID;
 
+
+
     QStringList sections = {"Piccolo",
                             "Flute",
                             "Oboe",
@@ -60,11 +62,16 @@ class Roster : public QObject
 
 
 public:
+    enum MemberEventE{
+        MEMBER_CAME,
+        MEMBER_UPDATE,
+    };
     explicit Roster(QObject *parent = nullptr);
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
     QStringList & getValidSections(){return sections;}
-    void removeMember(Member::serial_t s_id);
+    void removeMember(Member::serial_t id);
+    void removeMember(session_id_t s_id);
     void setNameBySessionID(QString & name, session_id_t s_id);
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);
@@ -72,7 +79,7 @@ public:
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
-    void sigMemberUpdate(Member * member);
+    void sigMemberUpdate(Member * member, MemberEventE);
     void memberRemoved(Member::serial_t id);
 
 };

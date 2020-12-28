@@ -56,7 +56,10 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
             while (i.hasNext()){
                 i.next();
                 if (!(i.value().ShasCheckedIn)){
+
                     activeSessions.remove(i.key());
+                    activeChefs.remove(i.key());
+
                 }
                 else{
                 i.value().ShasCheckedIn = false;
@@ -102,7 +105,8 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     cout << "LRNet Server." << endl;
 
-    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyNewMemberSubs);
+    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyChefsMemEvent);
+    QObject::connect(&mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
@@ -219,7 +223,11 @@ void LRNetServer::receivedNewConnection()
             //Single threaded event loop: mutex not required
             //if(cMutex.tryLock()){
                 if (activeConnections.contains(clientSocket)){
-                    activeConnections[clientSocket].buffer->deleteLater();
+                    connectionPair myConn = activeConnections[clientSocket];
+                    activeSessions[myConn.assocSession].lastSeenConnection=NULL;
+                    mRoster.removeMember(myConn.assocSession);
+                    activeChefs.remove(myConn.assocSession);
+                    myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
                 }
                 clientSocket->deleteLater();
@@ -374,7 +382,8 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
             if (role & (SUPERCHEF | CHEF)){
                 qDebug() <<"Subscribed as chef";
-                sendRoster(socket);
+                handleNewChef(&args, tSess);
+                //sendRoster(socket);
             }
         }
 
@@ -402,7 +411,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
  * the session id if it is active, zero otherwise.
  */
 
-session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket){
+session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream & msgs, QSslSocket * socket){
 
     const session_id_t * tSess;
     osc::Blob tSess_b;
@@ -494,8 +503,14 @@ void LRNetServer::sendPong(QSslSocket * socket){
 void LRNetServer::sendRoster(QSslSocket * socket){
     
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/push/roster" ) 
-            << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1 << osc::EndMessage;
+    oscOutStream << osc::BeginMessage( "/push/roster" );
+    for(Member * m:mRoster.getMembers()){
+        oscOutStream << m->getName().toStdString().c_str();
+        oscOutStream << m->getSection().toStdString().c_str();
+        oscOutStream << (int64_t)m->getSerialID();
+}
+          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+          oscOutStream << osc::EndMessage;
     qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
@@ -633,17 +648,24 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
     }
 }
 
+void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    activeChefs.insert(tSess, tSess);
+    sendRoster(activeSessions[tSess].lastSeenConnection);
+}
+
 void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
-        const char * name;
+        const char * name = NULL;
         try{
         *args >> name;
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
+            name = NULL;
+            qDebug() <<e.what();
         }
-
+        if (name){
         QString qsName = QString::fromStdString(name);
-             mRoster.setNameBySessionID(qsName, tSess);
+             mRoster.setNameBySessionID(qsName, tSess);}
         }
 }
 
@@ -654,13 +676,52 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
         *args >> name;
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
+            name=NULL;
         }
 
+
+        if(name){
         QString qsName = QString::fromStdString(name);
              mRoster.setSectionBySessionID(qsName, tSess);
         }
+        }
 }
 
-void LRNetServer::notifyNewMemberSubs(Member * member){
-    qDebug() <<"Notifying subs " <<member->getNetID() <<" named " << member->getName();
+void LRNetServer::notifyChefsMemLeft(Member::serial_t id){
+    qDebug() <<"Generate mem left message";
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/roster/memberleft" );
+    oscOutStream << (int64_t)id;
+    oscOutStream << osc::EndMessage;
+    broadcastToChefs();
+}
+
+void LRNetServer::notifyChefsMemEvent(Member * m, Roster::MemberEventE event){
+    oscOutStream.Clear();
+    switch (event){
+    case Roster::MEMBER_CAME:
+        oscOutStream << osc::BeginMessage( "/push/roster/newmember" );
+        break;
+    case Roster::MEMBER_UPDATE:
+        oscOutStream << osc::BeginMessage( "/push/roster/updatemember" );
+        break;
+    }
+        oscOutStream << m->getName().toStdString().c_str();
+        oscOutStream << m->getSection().toStdString().c_str();
+        oscOutStream << (int64_t)m->getSerialID();
+
+          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+          oscOutStream << osc::EndMessage;
+    broadcastToChefs();
+
+}
+
+void LRNetServer::broadcastToChefs(){
+    for (session_id_t t:activeChefs.keys()){
+        QSslSocket * conn = activeSessions[t].lastSeenConnection;
+        if (conn){
+            qDebug() <<"Sending Member Update " <<conn->write(oscOutStream.Data(), oscOutStream.Size());
+        }
+
+    }
 }

@@ -120,13 +120,16 @@ private slots:
     void receivedClientInfo();
     void stopCheck();
     void handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg);
-    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket);
+    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream & msgs, QSslSocket * socket);
     void sendAuthResponse(QSslSocket * socket, auth_type_t at);
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
     void sendPong(QSslSocket * socket);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
-    void notifyNewMemberSubs(Member * member);
+    void notifyChefsMemEvent(Member * member, Roster::MemberEventE event);
+    void notifyChefsMemLeft(Member::serial_t id);
+    void broadcastToChefs();
+    void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
 
@@ -219,6 +222,13 @@ private:
      *  with mStimeoutTimer.
      */
     QHash<session_id_t, sessionTriple>activeSessions;
+
+    /**
+     *  a hash table of chefs who have checked
+     *  in between 30 and 60 minutes ago.
+     *  Used for publishing new member events.
+     */
+    QHash<session_id_t, session_id_t>activeChefs;
 
     /**
      *  a hash table of connections that are still alive (and
