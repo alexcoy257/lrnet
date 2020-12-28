@@ -22,7 +22,7 @@ Member::Member(QObject * parent): QObject(parent)
 }
 
 void Member::setName(QString & nname){
-    qDebug() <<"Set name ";
+    qDebug() <<"Set name " <<nname;
     name = nname;
 }
 
