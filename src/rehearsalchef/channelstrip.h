@@ -17,6 +17,7 @@ public:
     explicit ChannelStrip(QWidget *parent = nullptr, QString cname = "");
     ~ChannelStrip();
     void setCompressorZone(QLayout *zone);
+    void setName(const QString & nname);
 
 private:
     //QWidget * m_parent;
