@@ -4,7 +4,7 @@ include(../lrnet.pri)
 CONFIG += c++11 console
 CONFIG += qt
 
-QT += sql network
+QT += sql network widgets
 
 
 #LIBS += -lssl -lcrypto
