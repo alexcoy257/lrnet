@@ -6,11 +6,12 @@ HEADERS += $$PWD/liblrnet_globals.h
 #message($$DLLDESTDIR)
 macx{
 CONFIG += sdk_no_version_check
-LIBS += -L/usr/local/lib/jack \
-    -L/usr/local/opt/openssl/lib \
+LIBS += -L/Volumes/Alex_Coy_Projects_2/jack2/lib \
+    -L/Volumes/Alex_Coy_Projects_2/openssl-bin/lib
+#    -L/usr/local/lib
 
 INCLUDEPATH += /usr/local/include \
-    /usr/local/opt/openssl/include
+    /Volumes/Alex_Coy_Projects_2/openssl-bin/include
 DEFINES += __MAC_OSX__
 }
 

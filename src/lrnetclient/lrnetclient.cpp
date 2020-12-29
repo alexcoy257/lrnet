@@ -261,9 +261,10 @@ void LRNetClient::subMember(){
 
 void LRNetClient::setNetid(const QString & nnetid){
     QByteArray temp = nnetid.toLocal8Bit();
-    size_t len = qMax(29, nnetid.length());
+    size_t len = qMin(29, nnetid.length());
     std::memcpy(netid, temp.data(), len);
     netid[len] = 0;
+    qDebug() <<"netid is now" <<netid;
 }
 
 void LRNetClient::updateName(const QString & nname){
