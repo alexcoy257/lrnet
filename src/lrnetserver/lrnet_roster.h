@@ -48,7 +48,7 @@ class Roster : public QObject
     QHash<session_id_t, Member *> membersBySessionID;
 
 
-    static const int gMaxThreads = 2;
+    static const int gMaxThreads = 16;
     int mTotalRunningThreads; ///< Number of Threads running in the pool
     QThreadPool mThreadPool; ///< The Thread Pool
 
@@ -86,10 +86,11 @@ public:
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
+    void stopAllThreads();
 
 
     QMutex mMutex;
-    int releaseThread(int id);
+    int releaseThread(Member::serial_t id);
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);

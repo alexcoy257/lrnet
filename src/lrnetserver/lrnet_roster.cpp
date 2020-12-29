@@ -25,6 +25,30 @@ void Roster::addMember(QString &netid, session_id_t s_id){
     Member * newMem = new Member(netid, s_id, this);
     members[newMem->getSerialID()]=newMem;
     membersBySessionID[s_id]=newMem;
+    JackTripWorker * w = new JackTripWorker(newMem->getSerialID(), this, 10, JackTrip::ZEROS, "JackTrip");
+    newMem->setThread(w);
+    w->setBufferStrategy(1);
+
+    {
+        QMutexLocker lock(&mMutex);
+        w->setJackTrip(
+                                        "localhost",
+                                        60001,
+                                        60000,
+                                        1,
+                                        false
+                                        ); /// \todo temp default to 1 channel
+}
+        mThreadPool.start(w, QThread::TimeCriticalPriority);
+        // wait until one is complete before another spawns
+        while (w->isSpawning()) { QThread::msleep(10);
+        /*qDebug() << "Loop wait for spawning;";*/}
+
+         QThread::msleep(100);
+        //qDebug() << "mPeerAddress" << id <<  mActiveAddress[id].address << mActiveAddress[id].port;
+
+
+
      qDebug() <<"New member " <<newMem->getNetID();
     emit sigMemberUpdate(newMem, MEMBER_CAME);
 }
@@ -71,12 +95,24 @@ void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     emit sigMemberUpdate(members[s_id], MEMBER_UPDATE);
 }
 
-int Roster::releaseThread(int id)
-{
+int Roster::releaseThread(Member::serial_t id)
+{   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
     members[id]->setThread(NULL);
 \
     mTotalRunningThreads--;
 
     return 0; /// \todo Check if we really need to return an argument here
+}
+
+void Roster::stopAllThreads()
+{
+    QHashIterator<Member::serial_t, Member *> iterator(members);
+    while (iterator.hasNext()) {
+        if (iterator.value()->getThread() != nullptr) {
+            iterator.value()->getThread()->stopThread();
+        }
+        iterator.next();
+    }
+    mThreadPool.waitForDone();
 }

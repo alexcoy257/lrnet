@@ -58,14 +58,14 @@
 using std::cout; using std::endl;
 
 //*******************************************************************************
-JackTripWorker::JackTripWorker(Roster* udphublistener, int BufferQueueLength, JackTrip::underrunModeT UnderRunMode, QString clientName) :
+JackTripWorker::JackTripWorker(uint64_t id, Roster* udphublistener, int BufferQueueLength, JackTrip::underrunModeT UnderRunMode, QString clientName) :
     mUdpHubListener(udphublistener),
     m_connectDefaultAudioPorts(false),
     mBufferQueueLength(BufferQueueLength),
     mUnderRunMode(UnderRunMode),
     mClientName(clientName),
     mSpawning(false),
-    mID(0),
+    mID(id),
     mNumChans(1),
     mIOStatTimeout(0)
   #ifdef WAIR // wair
@@ -93,7 +93,7 @@ JackTripWorker::~JackTripWorker()
 
 
 //*******************************************************************************
-void JackTripWorker::setJackTrip(int id,
+void JackTripWorker::setJackTrip(
                                  QString client_address,
                                  uint16_t server_port,
                                  uint16_t client_port,
@@ -104,7 +104,7 @@ void JackTripWorker::setJackTrip(int id,
         QMutexLocker locker(&mMutex);
         mSpawning = true;
     }
-    mID = id;
+    mID = 0;
     // Set the jacktrip address and ports
     //mClientAddress.setAddress(client_address);
     mClientAddress = client_address;
@@ -228,11 +228,13 @@ void JackTripWorker::run()
         jacktrip.setBroadcast(mBroadcastQueue);
         jacktrip.setUseRtUdpPriority(mUseRtUdpPriority);
 
-        if (gVerboseFlag) cout << "---> JackTripWorker: setJackTripFromClientHeader..." << endl;
+        /*if (gVerboseFlag)*/ cout << "---> JackTripWorker: setJackTripFromClientHeader..." << endl;
         int PeerConnectionMode = setJackTripFromClientHeader(jacktrip);
         if ( PeerConnectionMode == -1 ) {
+            cout << "Must relase thread" <<endl;
             mUdpHubListener->releaseThread(mID);
-            { QMutexLocker locker(&mMutex); mSpawning = false; }
+            { QMutexLocker locker(&mMutex); mSpawning = false;
+            cout << "Setting spawning to false." <<endl;}
             return;
         }
 

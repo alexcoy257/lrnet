@@ -71,7 +71,7 @@ class JackTripWorker : public QObject, public QRunnable
 
 public:
     /// \brief The class constructor
-    JackTripWorker(Roster* udphublistener, int BufferQueueLength = gDefaultQueueLength, JackTrip::underrunModeT UnderRunMode = JackTrip::WAVETABLE, QString clientName = "");
+    JackTripWorker(uint64_t id, Roster* udphublistener, int BufferQueueLength = gDefaultQueueLength, JackTrip::underrunModeT UnderRunMode = JackTrip::WAVETABLE, QString clientName = "");
     /// \brief The class destructor
     virtual ~JackTripWorker();
 
@@ -84,7 +84,7 @@ public:
     /// \brief Sets the JackTripWorker properties
     /// \param id ID number
     /// \param address
-    void setJackTrip(int id,
+    void setJackTrip(
                      QString client_address,
                      uint16_t server_port,
                      uint16_t client_port,
@@ -141,7 +141,7 @@ private:
     volatile bool mSpawning;
     QMutex mMutex; ///< Mutex to protect mSpawning
 
-    int mID; ///< ID thread number
+    uint64_t mID; ///< ID thread number
     int mNumChans; ///< Number of Channels
 
     int mBufferStrategy;

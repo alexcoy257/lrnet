@@ -530,6 +530,7 @@ void LRNetServer::stopCheck()
     if (mStopped || sSigInt) {
         cout << "LRNet Server: Stopped" << endl;
         mStopCheckTimer.stop();
+        mRoster.stopAllThreads();
         mTcpServer.close();
         emit signalStopped();
     }
