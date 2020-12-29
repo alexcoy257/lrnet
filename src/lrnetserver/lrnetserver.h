@@ -27,6 +27,7 @@
 #include <osc/OscOutboundPacketStream.h>
 #include "auth.h"
 #include "lrnet_roster.h"
+#include "../JackServerTest/jackinterface.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -174,7 +175,7 @@ private:
     //QUdpSocket mUdpHubSocket; ///< The UDP socket
     //QHostAddress mPeerAddress; ///< The Peer Address
 
-    QThreadPool mThreadPool; ///< The Thread Pool
+
 
     SslServer mTcpServer;
     int mServerPort; //< Server known port number
@@ -193,8 +194,8 @@ private:
     volatile bool mStopped;
     static bool sSigInt;
     QTimer mStopCheckTimer;
-    int mTotalRunningThreads; ///< Number of Threads running in the pool
-    QMutex mMutex;
+
+
     QMutex sMutex;
     QMutex cMutex;
 
@@ -239,6 +240,8 @@ private:
     Auth authorizer;
     Roster mRoster;
     
+    JackInterface jackServer;
+
 public :
     void setRequireAuth(bool requireAuth) { mRequireAuth = requireAuth; }
     void setCertFile(QString certFile) { mCertFile = certFile; }

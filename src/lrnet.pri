@@ -11,6 +11,7 @@ LIBS += -L/usr/local/lib/jack \
 
 INCLUDEPATH += /usr/local/include \
     /usr/local/opt/openssl/include
+DEFINES += __MAC_OSX__
 }
 
 win32{
@@ -23,4 +24,10 @@ INCLUDEPATH += C:/Qt/Tools/osc
 SOURCES += $$OSCDIR/OscOutboundPacketStream.cpp \
     $$OSCDIR/OscReceivedElements.cpp \
     $$OSCDIR/OscTypes.cpp
+
+DEFINES += __WIN32__
+}
+
+linux{
+DEFINES += __LINUX__
 }

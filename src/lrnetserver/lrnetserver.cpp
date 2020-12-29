@@ -33,7 +33,6 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mWAIR(false),
     #endif // endwhere
 
-    , mTotalRunningThreads(0)
     , mStimeoutTimer()
     , mCtimeoutTimer ()
     , cThread(new QThread())
@@ -91,17 +90,12 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     });
 
     //mCtimeoutTimer->moveToThread(cThread);
-    mCtimeoutTimer.start();
+    //mCtimeoutTimer.start();
     //cThread->exec();
 
 
 
-    qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
-    mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
-    qDebug() << "mThreadPool maxThreadCount set to" << mThreadPool.maxThreadCount();
 
-    //mJTWorkers = new JackTripWorker(this);
-    mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
 
     cout << "LRNet Server." << endl;
 
@@ -110,14 +104,31 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
+
+
+
+    jackServer.setDriver("dummy");
+    {
+    QString tmp = "rate";
+    QVariant vtmp = 48000;
+    jackServer.setParameter(tmp,vtmp);
+    }
+
+    {
+    QString tmp = "period";
+    QVariant vtmp = 64;
+    jackServer.setParameter(tmp,vtmp);
+    }
+
+    jackServer.start();
 }
 
 
 //*******************************************************************************
 LRNetServer::~LRNetServer()
 {
-    QMutexLocker lock(&mMutex);
-    mThreadPool.waitForDone();
+    jackServer.stop();
+
     //delete mJTWorker;
 }
 
@@ -517,7 +528,7 @@ void LRNetServer::sendRoster(QSslSocket * socket){
 void LRNetServer::stopCheck()
 {
     if (mStopped || sSigInt) {
-        cout << "JackTrip HUB SERVER: Stopped" << endl;
+        cout << "LRNet Server: Stopped" << endl;
         mStopCheckTimer.stop();
         mTcpServer.close();
         emit signalStopped();
@@ -545,8 +556,8 @@ void LRNetServer::bindUdpSocket(QUdpSocket& udpsocket, int port)
 //*******************************************************************************
 // check by comparing 32-bit addresses
 int LRNetServer::isNewAddress(QString address, uint16_t port)
-{
-    QMutexLocker lock(&mMutex);
+{ return 0;
+    //QMutexLocker lock(&mMutex);
     bool busyAddress = false;
     int id = 0;
 
@@ -582,7 +593,7 @@ int LRNetServer::isNewAddress(QString address, uint16_t port)
         }
     }
     if (!busyAddress) {
-        mTotalRunningThreads++;
+        //mTotalRunningThreads++;
     }
     return ((busyAddress) ? -1 : id);
 }
@@ -591,7 +602,7 @@ int LRNetServer::isNewAddress(QString address, uint16_t port)
 //*******************************************************************************
 int LRNetServer::getPoolID(QString address, uint16_t port)
 {
-    QMutexLocker lock(&mMutex);
+    //QMutexLocker lock(&mMutex);
     //for (int id = 0; id<mThreadPool.activeThreadCount(); id++ )
     for (int id = 0; id<gMaxThreads; id++ )
     {
@@ -602,17 +613,6 @@ int LRNetServer::getPoolID(QString address, uint16_t port)
 }
 
 
-//*******************************************************************************
-int LRNetServer::releaseThread(int id)
-{
-    QMutexLocker lock(&mMutex);
-    mActiveAddress[id].address = "";
-    mActiveAddress[id].port = 0;
-    mTotalRunningThreads--;
-
-    mActiveAddress[id].clientName = "";
-    return 0; /// \todo Check if we really need to return an argument here
-}
 
 
 // TODO:

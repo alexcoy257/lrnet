@@ -3,6 +3,18 @@
 
 Roster::Roster(QObject *parent) : QObject(parent)
 {
+
+    qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
+    mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
+    qDebug() << "mThreadPool maxThreadCount set to" << mThreadPool.maxThreadCount();
+
+    //mJTWorkers = new JackTripWorker(this);
+    mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
+}
+
+Roster::~Roster(){
+    QMutexLocker lock(&mMutex);
+    mThreadPool.waitForDone();
 }
 
 void Roster::addMember(QString &netid, session_id_t s_id){
@@ -57,4 +69,14 @@ void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
 void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     members[s_id]->setSection(section);
     emit sigMemberUpdate(members[s_id], MEMBER_UPDATE);
+}
+
+int Roster::releaseThread(int id)
+{
+    QMutexLocker lock(&mMutex);
+    members[id]->setThread(NULL);
+\
+    mTotalRunningThreads--;
+
+    return 0; /// \todo Check if we really need to return an argument here
 }

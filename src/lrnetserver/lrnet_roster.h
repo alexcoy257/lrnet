@@ -3,7 +3,9 @@
 
 #include <QObject>
 #include <QHash>
+#include <QThreadPool>
 #include "auth_types.h"
+#include "JackTripWorker.h"
 
 class Roster;
 
@@ -19,6 +21,8 @@ private:
     QString name;
     QString section;
     Roster * mRoster;
+    JackTripWorker * assocThread = NULL;
+
 public:
 
     explicit Member(QObject *parent = nullptr);
@@ -30,6 +34,8 @@ public:
     QString & getSection(){return section;}
     void setName(QString & nname);
     void setSection(QString & nsection);
+    void setThread(JackTripWorker * thread){assocThread=thread;}
+    JackTripWorker * getThread(){return assocThread;}
 
 signals:
 };
@@ -42,6 +48,9 @@ class Roster : public QObject
     QHash<session_id_t, Member *> membersBySessionID;
 
 
+    static const int gMaxThreads = 2;
+    int mTotalRunningThreads; ///< Number of Threads running in the pool
+    QThreadPool mThreadPool; ///< The Thread Pool
 
     QStringList sections = {"Piccolo",
                             "Flute",
@@ -67,6 +76,7 @@ public:
         MEMBER_UPDATE,
     };
     explicit Roster(QObject *parent = nullptr);
+    ~Roster();
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
     QStringList & getValidSections(){return sections;}
@@ -76,6 +86,10 @@ public:
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
+
+
+    QMutex mMutex;
+    int releaseThread(int id);
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
