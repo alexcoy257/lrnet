@@ -6,6 +6,8 @@
 #include <QThreadPool>
 #include "auth_types.h"
 #include "JackTripWorker.h"
+#include "portpool.h"
+
 
 class Roster;
 
@@ -22,6 +24,7 @@ private:
     QString section;
     Roster * mRoster;
     JackTripWorker * assocThread = NULL;
+    int mPort;
 
 public:
 
@@ -35,6 +38,8 @@ public:
     void setName(QString & nname);
     void setSection(QString & nsection);
     void setThread(JackTripWorker * thread){assocThread=thread;}
+    void setPort(int port){mPort = port;}
+    int getPort(){return mPort;}
     JackTripWorker * getThread(){return assocThread;}
 
 signals:
@@ -90,6 +95,7 @@ public:
 
 
     QMutex mMutex;
+    PortPool mPortPool;
     int releaseThread(Member::serial_t id);
 
 signals:

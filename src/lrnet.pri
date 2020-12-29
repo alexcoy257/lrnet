@@ -31,3 +31,5 @@ DEFINES += __WIN32__
 linux{
 DEFINES += __LINUX__
 }
+
+DEFINES += WAIRTOHUB

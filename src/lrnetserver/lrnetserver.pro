@@ -14,12 +14,14 @@ TARGET = lrnetserver
 HEADERS += lrnetserver.h \
            auth_types.h \
            lrnet_roster.h \
+           portpool.h \
            sslserver.h \
            auth.h \
            JackTripWorker.h
 SOURCES += lrnetserver.cpp \
             lrnet_member.cpp \
             lrnet_roster.cpp \
+            portpool.cpp \
             sslserver.cpp \
             lrnetservermain.cpp \
             /usr/local/include/osc/*.cpp \

@@ -2,6 +2,7 @@
 #include <QDebug>
 
 Roster::Roster(QObject *parent) : QObject(parent)
+  //, mPortPool()
 {
 
     qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
@@ -25,16 +26,20 @@ void Roster::addMember(QString &netid, session_id_t s_id){
     Member * newMem = new Member(netid, s_id, this);
     members[newMem->getSerialID()]=newMem;
     membersBySessionID[s_id]=newMem;
+
     JackTripWorker * w = new JackTripWorker(newMem->getSerialID(), this, 10, JackTrip::ZEROS, "JackTrip");
     newMem->setThread(w);
     w->setBufferStrategy(1);
+    newMem->setPort(mPortPool.getPort());
+    //newMem->setPort(61002);
+    qDebug() <<"Assigned UDP Port:" << newMem->getPort();
 
     {
         QMutexLocker lock(&mMutex);
         w->setJackTrip(
                                         "localhost",
-                                        60001,
-                                        60000,
+                                        newMem->getPort(),
+                                        newMem->getPort(),
                                         1,
                                         false
                                         ); /// \todo temp default to 1 channel
@@ -99,7 +104,7 @@ int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
     members[id]->setThread(NULL);
-\
+    mPortPool.returnPort(members[id]->getPort());
     mTotalRunningThreads--;
 
     return 0; /// \todo Check if we really need to return an argument here

@@ -187,6 +187,7 @@ void JackTripWorker::run()
         //JackTrip jacktrip(JackTrip::SERVERPINGSERVER, JackTrip::UDP, mNumChans, 2);
 #endif
 
+        gVerboseFlag=true;
         jacktrip.setConnectDefaultAudioPorts(m_connectDefaultAudioPorts);
 
         // Set our underrun mode
@@ -240,16 +241,17 @@ void JackTripWorker::run()
 
         // Start Threads and event loop
         if (gVerboseFlag) cout << "---> JackTripWorker: startProcess..." << endl;
-        //jacktrip.startProcess(
-         //   #ifdef WAIRTOHUB // wair
-         //           mID
-        //    #endif // endwhere
-        //            );
+        jacktrip.startProcess(
+            #ifdef WAIRTOHUB // wair
+                    mID
+            #endif // endwhere
+                    );
         // if (gVerboseFlag) cout << "---> JackTripWorker: start..." << endl;
         // jacktrip.start(); // ########### JamTest Only #################
 
         // Thread is already spawning, so release the lock
-        { QMutexLocker locker(&mMutex); mSpawning = false; }
+        { QMutexLocker locker(&mMutex); mSpawning = false;
+        if (gVerboseFlag) cout << "---> JackTripWorker: released spawning lock: spawned." << endl;}
 
         event_loop.exec(); // Excecution will block here until exit() the QEventLoop
         //--------------------------------------------------------------------------

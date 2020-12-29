@@ -327,11 +327,12 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (b.size == sizeof(auth_packet_t)){
             AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(b.data)));
 
-            QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
-            qDebug() <<"Have a challenge " <<batmp;
-            batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
-            qDebug() <<"Signed " <<batmp;
+            //QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
+            //qDebug() <<"Have a challenge " <<batmp;
+            //batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
+            //qDebug() <<"Signed " <<batmp;
 
+            qDebug() <<"Checking for " <<pkt.netid;
             auth_type_t at = authorizer.checkCredentials(pkt);
             if( at.authType != NONE){
                 sendAuthResponse(socket, at);
