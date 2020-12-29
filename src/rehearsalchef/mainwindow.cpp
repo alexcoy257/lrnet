@@ -73,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete m_netClient;
     //delete m_connectForm;
     RSA_free(keyPair);
     saveSetup();
@@ -240,7 +241,8 @@ setCentralWidget(new MemberForm(this));
 ((MemberForm *)centralWidget())->setSection(m_section);
 QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){
     m_name = nname;
-    m_netClient->updateName(nname);});
+    m_netClient->updateName(nname);
+});
 QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){
     m_section = nsection;
     m_netClient->updateSection(nsection);

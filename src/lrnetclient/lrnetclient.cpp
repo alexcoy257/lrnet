@@ -201,10 +201,11 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
 
             emit authenticated(authType);
 
+            /*
             m_timeoutTimer.setSingleShot(false);
             m_timeoutTimer.setInterval(2000);
             m_timeoutTimer.callOnTimeout([=](){sendPing();});
-            m_timeoutTimer.start();
+            m_timeoutTimer.start();*/
     }
 
      else if (std::strcmp(ap, "/auth/fail") == 0){
@@ -266,6 +267,7 @@ void LRNetClient::setNetid(const QString & nnetid){
 }
 
 void LRNetClient::updateName(const QString & nname){
+    qDebug() <<"Update Name";
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/update/name" )
     << osc::Blob(&session, sizeof(session))

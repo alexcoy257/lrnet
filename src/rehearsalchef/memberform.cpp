@@ -9,13 +9,18 @@ MemberForm::MemberForm(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->chatArea->addWidget(m_chatForm);
-    QObject::connect(ui->nameChoice, &QLineEdit::editingFinished, this, [=](){emit nameUpdated(ui->nameChoice->text());
-    qDebug()<<"Name updated";});
+    QObject::connect(ui->nameChoice, &QLineEdit::editingFinished, this, &MemberForm::updateName);
     QObject::connect(ui->sectionChoice, &QComboBox::currentTextChanged, this, [=](){emit sectionUpdated(ui->sectionChoice->currentText());});
+}
+
+void MemberForm::updateName(){
+    ui->nameChoice->clearFocus();
+    emit nameUpdated(ui->nameChoice->text());
 }
 
 MemberForm::~MemberForm()
 {
+    QObject::disconnect(ui->nameChoice, &QLineEdit::editingFinished, this, &MemberForm::updateName);
     delete ui;
     delete m_chatForm;
 }

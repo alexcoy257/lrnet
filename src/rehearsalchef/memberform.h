@@ -27,6 +27,10 @@ signals:
 private:
     Ui::MemberForm *ui;
     ChatForm * m_chatForm;
+
+    void updateName();
+
+
 };
 
 #endif // MEMBERFORM_H
