@@ -104,6 +104,7 @@ private:
         void authenticated(AuthTypeE type);
         void authFailed();
         void gotUdpPort(int port);
+        void serverJTReady();
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -117,9 +118,11 @@ private:
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
         void tryToAuthenticate();
+
         void subSuperchef();
         void subChef();
         void subMember();
+        void startJackTrip();
 
     private slots:
         void startHandshake();
