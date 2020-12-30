@@ -13,11 +13,11 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
-   <item row="2" column="1" rowspan="3">
+  <layout class="QGridLayout" name="mainGridLayout">
+   <item row="2" column="1" rowspan="4">
     <layout class="QVBoxLayout" name="chatArea"/>
    </item>
-   <item row="6" column="0">
+   <item row="7" column="0">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -30,17 +30,34 @@
      </property>
     </spacer>
    </item>
-   <item row="4" column="0">
-    <widget class="QPushButton" name="audioSettingsButton">
-     <property name="text">
-      <string>Advanced</string>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="0">
     <widget class="QRadioButton" name="udpAudioButton">
      <property name="text">
       <string>UDP Audio</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="SectionArea">
+     <item>
+      <widget class="QLabel" name="sectionLabel">
+       <property name="text">
+        <string>Section</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="sectionChoice"/>
+     </item>
+    </layout>
+   </item>
+   <item row="6" column="0">
+    <widget class="QPushButton" name="startJackTripButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Start JackTrip</string>
      </property>
     </widget>
    </item>
@@ -50,6 +67,19 @@
       <string>TCP Audio</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="NameArea">
@@ -78,42 +108,19 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0">
-    <widget class="QPushButton" name="startAudioButton">
-     <property name="text">
-      <string>Start Audio</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="SectionArea">
-     <item>
-      <widget class="QLabel" name="sectionLabel">
-       <property name="text">
-        <string>Section</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="sectionChoice"/>
-     </item>
-    </layout>
-   </item>
-   <item row="1" column="1">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
+   <item row="4" column="0">
+    <widget class="JackParameterForm" name="jackServer" native="true"/>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>JackParameterForm</class>
+   <extends>QWidget</extends>
+   <header>jackparameterform.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -21,8 +21,8 @@ public:
     unsigned char challenge[214]; //256-42 = 214
     unsigned char sig[256];
     AuthPacket(char * qs_netid){
-        netid_length = strlen(qs_netid)>30 ? 30:strlen(qs_netid);
-        std::memcpy(netid, qs_netid, netid_length);
+        netid_length = strlen(qs_netid)>29 ? 29:strlen(qs_netid);
+        std::memcpy(netid, qs_netid, netid_length+1);
     }
 
     AuthPacket(auth_packet_t &pkt){

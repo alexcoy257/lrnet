@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "chatform.h"
+#include "../JackServerTest/jackparameterform.h"
 
 namespace Ui {
 class MemberForm;
@@ -24,9 +25,14 @@ public:
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
+    void startJackTrip();
 
 private:
     Ui::MemberForm *ui;
+    //JackParameterForm * m_jackForm;
+
+    void updateName();
+
 };
 
 #endif // MEMBERFORM_H

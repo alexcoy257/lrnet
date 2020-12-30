@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include "lrnetserver.h"
 #include <getopt.h>
+#include <signal.h>
 
 int gVerboseFlag = 0;
 QString mCertFile = "";
@@ -88,12 +89,44 @@ void parseInput(int argc, char** argv)
 
 }
 
+#if defined (__LINUX__) || (__MAC_OSX__)
+static int setupUnixSignalHandler(void (*handler)(int))
+{
+    //Setup our SIGINT handler.
+    struct sigaction sigInt;
+    sigInt.sa_handler = handler;
+    sigemptyset(&sigInt.sa_mask);
+    sigInt.sa_flags = 0;
+    sigInt.sa_flags |= SA_RESTART;
+
+    int result = 0;
+    if (sigaction(SIGINT, &sigInt, 0)) {
+        std::cout << "Unable to register SIGINT handler" << std::endl;
+        result |= 1;
+    }
+    if (sigaction(SIGTERM, &sigInt, 0)) {
+        std::cout << "Unable to register SIGTERM handler" << std::endl;
+        result |= 2;
+    }
+    return result;
+}
+#endif
+
 
 int main(int argc, char** argv){
 
   QCoreApplication app(argc, argv, false);
       parseInput(argc, argv);
-      LRNetServer * server = new LRNetServer();
+      QScopedPointer<LRNetServer> server(new LRNetServer());
+
+      QObject::connect(server.data(), &LRNetServer::signalStopped, &app,
+                       &QCoreApplication::quit, Qt::QueuedConnection);
+      QObject::connect(server.data(), &LRNetServer::signalError, &app,
+                       &QCoreApplication::quit, Qt::QueuedConnection);
+
+#if defined (__LINUX__) || (__MAC_OSX__)
+            setupUnixSignalHandler(LRNetServer::sigIntHandler);
+#endif
       server->setCertFile(mCertFile);
       server->setKeyFile(mKeyFile);
       server->start();

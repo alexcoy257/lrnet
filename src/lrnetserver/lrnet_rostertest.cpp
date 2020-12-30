@@ -32,12 +32,12 @@ void RosterTest::addMember()
 
     for (Member * m:roster.getMembers()){
         QCOMPARE(m->getNetID(), "ac2456");
-        QCOMPARE(m->getSerialID(), 0);
+        QCOMPARE(m->getSerialID(), 0UL);
     }
 
     netid = "aa1111";
     roster.addMember(netid, 3);
-    QCOMPARE(roster.getMembers()[1]->getSerialID(), 1);
+    QCOMPARE(roster.getMembers()[1]->getSerialID(), 1UL);
 }
 
 void RosterTest::removeMember(){
@@ -48,7 +48,7 @@ void RosterTest::removeMember(){
             gotSignal=true;
         }}));
 
-    roster.removeMember(1);
+    roster.removeMemberBySerialID((Member::serial_t)1);
     QVERIFY2(gotSignal, "Didn't get memberRemoved signal with member 1.");
 
 }

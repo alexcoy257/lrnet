@@ -27,6 +27,7 @@
 #include <osc/OscOutboundPacketStream.h>
 #include "auth.h"
 #include "lrnet_roster.h"
+#include "../JackServerTest/jackinterface.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -120,13 +121,16 @@ private slots:
     void receivedClientInfo();
     void stopCheck();
     void handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg);
-    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket);
+    session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream & msgs, QSslSocket * socket);
     void sendAuthResponse(QSslSocket * socket, auth_type_t at);
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
     void sendPong(QSslSocket * socket);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
-    void notifyNewMemberSubs(Member * member);
+    void notifyChefsMemEvent(Member * member, Roster::MemberEventE event);
+    void notifyChefsMemLeft(Member::serial_t id);
+    void broadcastToChefs();
+    void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
 
@@ -175,13 +179,13 @@ private:
 
     /** \brief Sends whatever is in the osc outbound stream to all active connections
      */
-    void pushAll();
+    void broadcastToAll();
 
 
     //QUdpSocket mUdpHubSocket; ///< The UDP socket
     //QHostAddress mPeerAddress; ///< The Peer Address
 
-    QThreadPool mThreadPool; ///< The Thread Pool
+
 
     SslServer mTcpServer;
     int mServerPort; //< Server known port number
@@ -200,8 +204,8 @@ private:
     volatile bool mStopped;
     static bool sSigInt;
     QTimer mStopCheckTimer;
-    int mTotalRunningThreads; ///< Number of Threads running in the pool
-    QMutex mMutex;
+
+
     QMutex sMutex;
     QMutex cMutex;
 
@@ -231,6 +235,13 @@ private:
     QHash<session_id_t, sessionTriple>activeSessions;
 
     /**
+     *  a hash table of chefs who have checked
+     *  in between 30 and 60 minutes ago.
+     *  Used for publishing new member events.
+     */
+    QHash<session_id_t, session_id_t>activeChefs;
+
+    /**
      *  a hash table of connections that are still alive (and
      *  have TCP buffers). Associated connections die after
      *  20 seconds of no activity.
@@ -239,6 +250,8 @@ private:
     Auth authorizer;
     Roster mRoster;
     
+    JackInterface jackServer;
+
 public :
     void setRequireAuth(bool requireAuth) { mRequireAuth = requireAuth; }
     void setCertFile(QString certFile) { mCertFile = certFile; }

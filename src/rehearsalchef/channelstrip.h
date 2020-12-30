@@ -17,6 +17,8 @@ public:
     explicit ChannelStrip(QWidget *parent = nullptr, QString cname = "");
     ~ChannelStrip();
     void setCompressorZone(QLayout *zone);
+    void setName(const QString & nname);
+    void setSection(const QString & sname);
 
 private:
     //QWidget * m_parent;
@@ -26,6 +28,7 @@ private:
     void focusInEvent(QFocusEvent * event);
     void focusOutEvent(QFocusEvent * event);
     QString name;
+    QString section;
 
 signals:
     void setActive();

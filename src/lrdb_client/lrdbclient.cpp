@@ -108,6 +108,9 @@ QVector<int> * LRdbClient::getIDsForNetid(QString &netid){
         }
 
     }
+    else{
+        qDebug() <<__FUNCTION__ <<__LINE__ << "Failed to get ids for netid " <<netid;
+    }
     return vec;
 }
 

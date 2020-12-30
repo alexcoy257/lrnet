@@ -169,23 +169,18 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     std::cout << "Got message " <<inMsg->AddressPattern() <<std::endl;
 
     const char * ap = inMsg->AddressPattern();
+    osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
 
     if (std::strcmp(ap, "/push/roster") == 0){
-        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
 
         while (!args.Eos()){
-            const char * memName;
-            const char * memSect;
-            int id;
-            args >> memName; args >> memSect; args >> id;
-            std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
-            emit newMember(QString(memName), QString(memSect), id);
+            handleMemberGroup(args, MEMBER_ADD);
         }
     }
 
 
     else if (std::strcmp(ap, "/auth/success") == 0){
-        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
+
 
             const auth_type_t *t_at = NULL;
             osc::Blob t_at_b;
@@ -206,15 +201,31 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
 
             emit authenticated(authType);
 
+            /*
             m_timeoutTimer.setSingleShot(false);
             m_timeoutTimer.setInterval(2000);
             m_timeoutTimer.callOnTimeout([=](){sendPing();});
-            m_timeoutTimer.start();
+            m_timeoutTimer.start();*/
     }
 
      else if (std::strcmp(ap, "/auth/fail") == 0){
             emit authFailed();
      }
+
+    else if (std::strcmp(ap, "/push/roster/newmember") == 0){
+        handleMemberGroup(args, MEMBER_ADD);
+    }
+
+    else if (std::strcmp(ap, "/push/roster/updatemember") == 0){
+            handleMemberGroup(args, MEMBER_UPDATE);
+        }
+    else if (std::strcmp(ap, "/push/roster/memberleft") == 0){
+          handleRemoveMember(args);
+    }
+
+    else if (std::strcmp(ap, "/config/udpport") == 0){
+          handleNewUdpPort(args);
+    }
 
     else if (std::strcmp(ap, "/push/chat") == 0){
         osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
@@ -264,12 +275,14 @@ void LRNetClient::subMember(){
 
 void LRNetClient::setNetid(const QString & nnetid){
     QByteArray temp = nnetid.toLocal8Bit();
-    size_t len = qMax(29, nnetid.length());
+    size_t len = qMin(29, nnetid.length());
     std::memcpy(netid, temp.data(), len);
     netid[len] = 0;
+    qDebug() <<"netid is now" <<netid;
 }
 
 void LRNetClient::updateName(const QString & nname){
+    qDebug() <<"Update Name";
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/update/name" )
     << osc::Blob(&session, sizeof(session))
@@ -296,4 +309,60 @@ void LRNetClient::sendChat(const QString &chatMsg)
     << chatMsg.toStdString().data()
         << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type){
+    const char * memName;
+    const char * memSect;
+    int64_t id;
+    try{
+    args >> memName;
+    args >> memSect;
+    args >> id;
+    std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
+    switch (type){
+    case MEMBER_ADD:
+    emit newMember(QString(memName), QString(memSect), id);
+        break;
+    case MEMBER_UPDATE:
+    emit updateMember(QString(memName), QString(memSect), id);
+        break;
+    }
+    }
+    catch (osc::WrongArgumentTypeException & e){
+        qDebug() <<"Member group argument was a bad type";
+    }
+    catch (osc::MissingArgumentException & e){
+        qDebug() <<"Not enough data for member group";
+    }
+}
+
+void LRNetClient::handleRemoveMember(osc::ReceivedMessageArgumentStream & args){
+    int64_t id;
+    try{
+    args >> id;
+    std::cout << "Remove member " <<id  << std::endl;
+    emit lostMember(id);
+    }
+    catch (osc::WrongArgumentTypeException & e){
+        qDebug() <<"Member remove ID was a bad type";
+    }
+    catch (osc::MissingArgumentException & e){
+        qDebug() <<"Not enough data for removing a member";
+    }
+}
+
+void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
+    int32_t port;
+    try{
+    args >> port;
+    std::cout << "New UDP Port " <<port  << std::endl;
+    emit gotUdpPort(port);
+    }
+    catch (osc::WrongArgumentTypeException & e){
+        qDebug() <<"UDP Port was a bad type";
+    }
+    catch (osc::MissingArgumentException & e){
+        qDebug() <<"Not enough data for new UDP port";
+    }
 }

@@ -31,6 +31,7 @@ public:
 public slots:
     void highlightInsert(Compressor * cp);
     void addChannelStrip(const QString& mName, const QString& sName, int id);
+    void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void deleteChannelStrip(int id);
 
 private:

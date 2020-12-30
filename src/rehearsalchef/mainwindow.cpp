@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_privateKey({})
     , m_publicKey({})
     , keyPair(NULL)
+    , m_jacktrip( new RCJTWorker(this, 10, JackTrip::ZEROS, ""))
 {
     ui->setupUi(this);
 
@@ -72,7 +73,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    m_jacktrip->stopThread();
     delete ui;
+    delete m_netClient;
     //delete m_connectForm;
     RSA_free(keyPair);
     saveSetup();
@@ -230,6 +233,7 @@ void MainWindow::launchChef(){
 
 setCentralWidget(new ChefForm(this));
 QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)centralWidget(), &ChefForm::updateChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
 QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
@@ -238,13 +242,40 @@ m_netClient->subChef();
 
 void MainWindow::launchMember(){
 setCentralWidget(new MemberForm(this));
-((MemberForm *)centralWidget())->setName(m_name);
-((MemberForm *)centralWidget())->setSection(m_section);
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){m_name = nname;});
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, m_netClient, &LRNetClient::updateName);
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){m_section = nsection;});
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, m_netClient, &LRNetClient::updateSection);
 QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
 QObject::connect(((MemberForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+
+((MemberForm *)centralWidget())->setName(m_name);
+((MemberForm *)centralWidget())->setSection(m_section);
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){
+    m_name = nname;
+    m_netClient->updateName(nname);
+});
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){
+    m_section = nsection;
+    m_netClient->updateSection(nsection);
+});
 m_netClient->subMember();
+
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+
+QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
+
+}
+
+void MainWindow::setUdpPort(int port){
+    m_jacktrip->setJackTrip(m_hostname, port, port, 2, true);
+}
+
+
+
+void MainWindow::startJackTrip(){
+    QObject::disconnect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    qDebug() << "Want to start JackTrip";
+
+    m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
+}
+
+void MainWindow::releaseThread(int n){
+
 }

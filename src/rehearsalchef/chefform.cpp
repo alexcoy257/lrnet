@@ -34,8 +34,16 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, int i
     }
 }
 
-void ChefForm::deleteChannelStrip(int id){
+void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id){
+    LRMClient * client = m_clients[id];
+    if(client){
+        client ->cs->setName(mName);
+        client->cs->setSection(sName);
+    }
+}
 
+void ChefForm::deleteChannelStrip(int id){
+    qDebug() <<"Remove channel strip " <<id;
     if (m_clients.contains(id)){
         delete m_clients[id]->cs;
         delete m_clients[id]->comp;

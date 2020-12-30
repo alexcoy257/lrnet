@@ -82,6 +82,11 @@ private:
         };
 
         Buffer buffer;
+
+        enum MemberInfoTypeE{
+            MEMBER_ADD,
+            MEMBER_UPDATE
+        };
     
     public:
         LRNetClient(RSA * k = NULL);
@@ -94,10 +99,12 @@ private:
         void connected();
         void timeout();
         void newMember(const QString& name, const QString& group, int id);
+        void updateMember(const QString& name, const QString& group, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);
         void authFailed();
         void chatReceived(const QString& name, const QString& chatMsg);
+        void gotUdpPort(int port);
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -136,6 +143,9 @@ private:
         void sendSmallMessage(QString & handle);
         void handleMessage(osc::ReceivedMessage * inMsg);
         void sendPing();
+        void handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type);
+        void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
+        void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
         
     };
 

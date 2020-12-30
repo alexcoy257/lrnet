@@ -42,6 +42,7 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
     return {0, NONE};
 #endif
 
+    //qDebug() <<"Checking credentials for " <<pck.netid;
     QScopedPointer<QVector<int>> ids(readdb.getIDsForNetid(pck.netid, pck.netid_length));
 
     if (ids->isEmpty()){

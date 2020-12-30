@@ -33,7 +33,6 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mWAIR(false),
     #endif // endwhere
 
-    , mTotalRunningThreads(0)
     , mStimeoutTimer()
     , mCtimeoutTimer ()
     , cThread(new QThread())
@@ -56,7 +55,10 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
             while (i.hasNext()){
                 i.next();
                 if (!(i.value().ShasCheckedIn)){
+
                     activeSessions.remove(i.key());
+                    activeChefs.remove(i.key());
+
                 }
                 else{
                 i.value().ShasCheckedIn = false;
@@ -88,32 +90,45 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     });
 
     //mCtimeoutTimer->moveToThread(cThread);
-    mCtimeoutTimer.start();
+    //mCtimeoutTimer.start();
     //cThread->exec();
 
 
 
-    qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
-    mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
-    qDebug() << "mThreadPool maxThreadCount set to" << mThreadPool.maxThreadCount();
 
-    //mJTWorkers = new JackTripWorker(this);
-    mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
 
     cout << "LRNet Server." << endl;
 
-    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyNewMemberSubs);
+    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyChefsMemEvent);
+    QObject::connect(&mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
+
+
+
+    jackServer.setDriver("dummy");
+    {
+    QString tmp = "rate";
+    QVariant vtmp = 48000;
+    jackServer.setParameter(tmp,vtmp);
+    }
+
+    {
+    QString tmp = "period";
+    QVariant vtmp = 64;
+    jackServer.setParameter(tmp,vtmp);
+    }
+
+    jackServer.start();
 }
 
 
 //*******************************************************************************
 LRNetServer::~LRNetServer()
 {
-    QMutexLocker lock(&mMutex);
-    mThreadPool.waitForDone();
+    jackServer.stop();
+
     //delete mJTWorker;
 }
 
@@ -219,7 +234,11 @@ void LRNetServer::receivedNewConnection()
             //Single threaded event loop: mutex not required
             //if(cMutex.tryLock()){
                 if (activeConnections.contains(clientSocket)){
-                    activeConnections[clientSocket].buffer->deleteLater();
+                    connectionPair myConn = activeConnections[clientSocket];
+                    activeSessions[myConn.assocSession].lastSeenConnection=NULL;
+                    mRoster.removeMemberBySessionID(myConn.assocSession);
+                    activeChefs.remove(myConn.assocSession);
+                    myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
                 }
                 clientSocket->deleteLater();
@@ -308,11 +327,12 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (b.size == sizeof(auth_packet_t)){
             AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(b.data)));
 
-            QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
-            qDebug() <<"Have a challenge " <<batmp;
-            batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
-            qDebug() <<"Signed " <<batmp;
+            //QByteArray batmp = QByteArray::fromRawData((const char *)pkt.challenge, 214);
+            //qDebug() <<"Have a challenge " <<batmp;
+            //batmp = QByteArray::fromRawData((const char *)pkt.sig, 214);
+            //qDebug() <<"Signed " <<batmp;
 
+            qDebug() <<"Checking for " <<pkt.netid;
             auth_type_t at = authorizer.checkCredentials(pkt);
             if( at.authType != NONE){
                 sendAuthResponse(socket, at);
@@ -374,7 +394,8 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
             if (role & (SUPERCHEF | CHEF)){
                 qDebug() <<"Subscribed as chef";
-                sendRoster(socket);
+                handleNewChef(&args, tSess);
+                //sendRoster(socket);
             }
         }
 
@@ -407,7 +428,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
  * the session id if it is active, zero otherwise.
  */
 
-session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream msgs, QSslSocket * socket){
+session_id_t LRNetServer::checkForValidSession(osc::ReceivedMessageArgumentStream & msgs, QSslSocket * socket){
 
     const session_id_t * tSess;
     osc::Blob tSess_b;
@@ -499,16 +520,23 @@ void LRNetServer::sendPong(QSslSocket * socket){
 void LRNetServer::sendRoster(QSslSocket * socket){
     
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/push/roster" ) 
-            << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1 << osc::EndMessage;
+    oscOutStream << osc::BeginMessage( "/push/roster" );
+    for(Member * m:mRoster.getMembers()){
+        oscOutStream << m->getName().toStdString().c_str();
+        oscOutStream << m->getSection().toStdString().c_str();
+        oscOutStream << (int64_t)m->getSerialID();
+}
+          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+          oscOutStream << osc::EndMessage;
     qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::stopCheck()
 {
     if (mStopped || sSigInt) {
-        cout << "JackTrip HUB SERVER: Stopped" << endl;
+        cout << "LRNet Server: Stopped" << endl;
         mStopCheckTimer.stop();
+        mRoster.stopAllThreads();
         mTcpServer.close();
         emit signalStopped();
     }
@@ -535,8 +563,8 @@ void LRNetServer::bindUdpSocket(QUdpSocket& udpsocket, int port)
 //*******************************************************************************
 // check by comparing 32-bit addresses
 int LRNetServer::isNewAddress(QString address, uint16_t port)
-{
-    QMutexLocker lock(&mMutex);
+{ return 0;
+    //QMutexLocker lock(&mMutex);
     bool busyAddress = false;
     int id = 0;
 
@@ -572,7 +600,7 @@ int LRNetServer::isNewAddress(QString address, uint16_t port)
         }
     }
     if (!busyAddress) {
-        mTotalRunningThreads++;
+        //mTotalRunningThreads++;
     }
     return ((busyAddress) ? -1 : id);
 }
@@ -581,7 +609,7 @@ int LRNetServer::isNewAddress(QString address, uint16_t port)
 //*******************************************************************************
 int LRNetServer::getPoolID(QString address, uint16_t port)
 {
-    QMutexLocker lock(&mMutex);
+    //QMutexLocker lock(&mMutex);
     //for (int id = 0; id<mThreadPool.activeThreadCount(); id++ )
     for (int id = 0; id<gMaxThreads; id++ )
     {
@@ -592,17 +620,6 @@ int LRNetServer::getPoolID(QString address, uint16_t port)
 }
 
 
-//*******************************************************************************
-int LRNetServer::releaseThread(int id)
-{
-    QMutexLocker lock(&mMutex);
-    mActiveAddress[id].address = "";
-    mActiveAddress[id].port = 0;
-    mTotalRunningThreads--;
-
-    mActiveAddress[id].clientName = "";
-    return 0; /// \todo Check if we really need to return an argument here
-}
 
 
 // TODO:
@@ -645,6 +662,11 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
     }
 }
 
+void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    activeChefs.insert(tSess, tSess);
+    sendRoster(activeSessions[tSess].lastSeenConnection);
+}
+
 void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
         osc::Blob b;
@@ -654,11 +676,14 @@ void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, se
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
             qDebug() << "Wrong type of argument: handleNameUpdate";
+            name = NULL;
+            qDebug() <<e.what();
         }
-
+        if (name){
         QString qsName = QString::fromStdString(name);
         mRoster.setNameBySessionID(qsName, tSess);
         }
+    }
 }
 
 void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
@@ -670,15 +695,54 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
             qDebug() << "Wrong type of argument: handleSectionUpdate";
+            name=NULL;
         }
 
+
+        if(name){
         QString qsName = QString::fromStdString(name);
              mRoster.setSectionBySessionID(qsName, tSess);
         }
+        }
 }
 
-void LRNetServer::notifyNewMemberSubs(Member * member){
-    qDebug() <<"Notifying subs " <<member->getNetID() <<" named " << member->getName();
+void LRNetServer::notifyChefsMemLeft(Member::serial_t id){
+    qDebug() <<"Generate mem left message";
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/roster/memberleft" );
+    oscOutStream << (int64_t)id;
+    oscOutStream << osc::EndMessage;
+    broadcastToChefs();
+}
+
+void LRNetServer::notifyChefsMemEvent(Member * m, Roster::MemberEventE event){
+    oscOutStream.Clear();
+    switch (event){
+    case Roster::MEMBER_CAME:
+        oscOutStream << osc::BeginMessage( "/push/roster/newmember" );
+        break;
+    case Roster::MEMBER_UPDATE:
+        oscOutStream << osc::BeginMessage( "/push/roster/updatemember" );
+        break;
+    }
+        oscOutStream << m->getName().toStdString().c_str();
+        oscOutStream << m->getSection().toStdString().c_str();
+        oscOutStream << (int64_t)m->getSerialID();
+
+          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+          oscOutStream << osc::EndMessage;
+    broadcastToChefs();
+
+}
+
+void LRNetServer::broadcastToChefs(){
+    for (session_id_t t:activeChefs.keys()){
+        QSslSocket * conn = activeSessions[t].lastSeenConnection;
+        if (conn){
+            qDebug() <<"Sending Member Update " <<conn->write(oscOutStream.Data(), oscOutStream.Size());
+        }
+
+    }
 }
 
 void LRNetServer::pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess) {
@@ -697,11 +761,11 @@ void LRNetServer::pushChatMessage(osc::ReceivedMessageArgumentStream * args, ses
                      << qsName.toStdString().data()
                      << msg
                          << osc::EndMessage;
-        pushAll();
+        broadcastToAll();
     }
 }
 
-void LRNetServer::pushAll() {
+void LRNetServer::broadcastToAll() {
     for (QSslSocket * socket : activeConnections.keys()) {
         socket->write(oscOutStream.Data(), oscOutStream.Size());
     }

@@ -45,3 +45,12 @@ void ChannelStrip::showCompressor(){
     //this->hide();
     qDebug() <<"Compressor " <<(cs_compressor.isVisible()?"visible":"invisible") <<" \n";
 }
+
+void ChannelStrip::setName(const QString & nname){
+    name = nname;
+    ui->cs_cName->setText(nname);
+}
+
+void ChannelStrip::setSection(const QString & nsection){
+    section = nsection;
+}
