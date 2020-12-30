@@ -222,6 +222,7 @@ void JackTripWorker::run()
         //jacktrip.setPeerAddress(ClientAddress.toString().toLatin1().constData());
         jacktrip.setPeerAddress(mClientAddress);
         jacktrip.setBindPorts(mServerPort);
+        if (gVerboseFlag) cout<< "---> JackTripWorker: server port: " <<mServerPort << endl;
         //jacktrip.setPeerPorts(mClientPort);
         jacktrip.setBufferStrategy(mBufferStrategy);
         jacktrip.setNetIssuesSimulation(mSimulatedLossRate,

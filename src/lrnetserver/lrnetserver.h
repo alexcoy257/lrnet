@@ -27,6 +27,7 @@
 #include <osc/OscOutboundPacketStream.h>
 #include "auth.h"
 #include "lrnet_roster.h"
+#include "lrnet_member.h"
 #include "../JackServerTest/jackinterface.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
@@ -39,6 +40,10 @@ typedef struct {
     int16_t port;
     QString clientName;
 } addressPortNameTriple;
+
+class Roster;
+class Member;
+
 
 class LRNetServer : public QObject
 {
@@ -126,8 +131,10 @@ private slots:
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
     void sendPong(QSslSocket * socket);
+    void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
-    void notifyChefsMemEvent(Member * member, Roster::MemberEventE event);
+    void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);
+    void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
     void notifyChefsMemLeft(Member::serial_t id);
     void broadcastToChefs();
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
@@ -238,7 +245,7 @@ private:
      */
     QHash<QSslSocket *, connectionPair>activeConnections;
     Auth authorizer;
-    Roster mRoster;
+    Roster * mRoster;
     
     JackInterface jackServer;
 
@@ -247,6 +254,8 @@ public :
     void setCertFile(QString certFile) { mCertFile = certFile; }
     void setKeyFile(QString keyFile) { mKeyFile = keyFile; }
     void setCredsFile(QString credsFile) { mCredsFile = credsFile; }
+
+    QHash<session_id_t, sessionTriple> & getActiveSessions(){return activeSessions;};
     
     
     void setIOStatTimeout(int timeout) { mIOStatTimeout = timeout; }

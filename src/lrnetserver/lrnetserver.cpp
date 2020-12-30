@@ -40,6 +40,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     , mIOStatTimeout(0)
 
     , oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
+    , mRoster(new Roster(this, nullptr))
 
 {
 
@@ -99,8 +100,10 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     cout << "LRNet Server." << endl;
 
-    QObject::connect(&mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyChefsMemEvent);
-    QObject::connect(&mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
+    QObject::connect(mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyChefsMemEvent);
+    QObject::connect(mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::sendMemberUdpPort);
+    QObject::connect(mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
+    QObject::connect(mRoster, &Roster::jackTripStarted, this, &LRNetServer::sendJackTripReady);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
@@ -236,7 +239,7 @@ void LRNetServer::receivedNewConnection()
                 if (activeConnections.contains(clientSocket)){
                     connectionPair myConn = activeConnections[clientSocket];
                     activeSessions[myConn.assocSession].lastSeenConnection=NULL;
-                    mRoster.removeMemberBySessionID(myConn.assocSession);
+                    mRoster->removeMemberBySessionID(myConn.assocSession);
                     activeChefs.remove(myConn.assocSession);
                     myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
@@ -412,6 +415,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
            handleSectionUpdate(&args, tSess);
         }
+
+        if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
+           mRoster->startJackTrip(tSess);
+        }
     }
 
 }
@@ -516,7 +523,7 @@ void LRNetServer::sendRoster(QSslSocket * socket){
     
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/push/roster" );
-    for(Member * m:mRoster.getMembers()){
+    for(Member * m:mRoster->getMembers()){
         oscOutStream << m->getName().toStdString().c_str();
         oscOutStream << m->getSection().toStdString().c_str();
         oscOutStream << (int64_t)m->getSerialID();
@@ -531,7 +538,7 @@ void LRNetServer::stopCheck()
     if (mStopped || sSigInt) {
         cout << "LRNet Server: Stopped" << endl;
         mStopCheckTimer.stop();
-        mRoster.stopAllThreads();
+        mRoster->stopAllThreads();
         mTcpServer.close();
         emit signalStopped();
     }
@@ -622,7 +629,7 @@ int LRNetServer::getPoolID(QString address, uint16_t port)
 
 void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
-    mRoster.addMember(netid, tSess);
+    mRoster->addMember(netid, tSess);
     while (!args->Eos()){
         const char * key;
         const char * value;
@@ -639,11 +646,11 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
             }
             QString qsKey = QString::fromStdString(key);
             QString qsValue = QString::fromStdString(value);
-            if (qsKey.compare("name")){
-                 mRoster.setNameBySessionID(qsValue, tSess);
+            if (qsKey.compare("name")==0){
+                 mRoster->setNameBySessionID(qsValue, tSess);
             }
-            if (qsKey.compare("section")){
-                 mRoster.setSectionBySessionID(qsValue, tSess);
+            if (qsKey.compare("section")==0){
+                 mRoster->setSectionBySessionID(qsValue, tSess);
             }
         }
 
@@ -667,7 +674,7 @@ void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, se
         }
         if (name){
         QString qsName = QString::fromStdString(name);
-             mRoster.setNameBySessionID(qsName, tSess);}
+             mRoster->setNameBySessionID(qsName, tSess);}
         }
 }
 
@@ -684,7 +691,7 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
 
         if(name){
         QString qsName = QString::fromStdString(name);
-             mRoster.setSectionBySessionID(qsName, tSess);
+             mRoster->setSectionBySessionID(qsName, tSess);
         }
         }
 }
@@ -698,13 +705,13 @@ void LRNetServer::notifyChefsMemLeft(Member::serial_t id){
     broadcastToChefs();
 }
 
-void LRNetServer::notifyChefsMemEvent(Member * m, Roster::MemberEventE event){
+void LRNetServer::notifyChefsMemEvent(Member * m, RosterNS::MemberEventE event){
     oscOutStream.Clear();
     switch (event){
-    case Roster::MEMBER_CAME:
+    case RosterNS::MEMBER_CAME:
         oscOutStream << osc::BeginMessage( "/push/roster/newmember" );
         break;
-    case Roster::MEMBER_UPDATE:
+    case RosterNS::MEMBER_UPDATE:
         oscOutStream << osc::BeginMessage( "/push/roster/updatemember" );
         break;
     }
@@ -718,6 +725,16 @@ void LRNetServer::notifyChefsMemEvent(Member * m, Roster::MemberEventE event){
 
 }
 
+void LRNetServer::sendMemberUdpPort(Member * m, RosterNS::MemberEventE event){
+    if (event == RosterNS::MEMBER_CAME){
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage( "/config/udpport" )
+        << m->getPort();
+        oscOutStream << osc::EndMessage;
+        activeSessions[m->getSessionID()].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
+    }
+}
+
 void LRNetServer::broadcastToChefs(){
     for (session_id_t t:activeChefs.keys()){
         QSslSocket * conn = activeSessions[t].lastSeenConnection;
@@ -726,4 +743,12 @@ void LRNetServer::broadcastToChefs(){
         }
 
     }
+}
+
+void LRNetServer::sendJackTripReady(session_id_t s_id){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/jacktripready" )
+    << true;
+    oscOutStream << osc::EndMessage;
+    activeSessions[s_id].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
 }

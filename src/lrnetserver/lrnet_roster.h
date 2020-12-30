@@ -8,42 +8,20 @@
 #include "JackTripWorker.h"
 #include "portpool.h"
 
-
-class Roster;
-
-class Member: public QObject{
-    Q_OBJECT
-public:
-    typedef quint64 serial_t;
-private:
-    session_id_t s_id;
-    static serial_t currentSerial;
-    serial_t serial;
-    QString netid;
-    QString name;
-    QString section;
-    Roster * mRoster;
-    JackTripWorker * assocThread = NULL;
-    int mPort;
-
-public:
-
-    explicit Member(QObject *parent = nullptr);
-    explicit Member(QString & netid, session_id_t s_id, Roster * roster, QObject *parent = nullptr);
-    session_id_t getSessionID(){return s_id;}
-    uint64_t getSerialID(){return serial;}
-    QString & getNetID(){return netid;}
-    QString & getName(){return name;}
-    QString & getSection(){return section;}
-    void setName(QString & nname);
-    void setSection(QString & nsection);
-    void setThread(JackTripWorker * thread){assocThread=thread;}
-    void setPort(int port){mPort = port;}
-    int getPort(){return mPort;}
-    JackTripWorker * getThread(){return assocThread;}
-
-signals:
+namespace RosterNS {
+enum MemberEventE{
+    MEMBER_CAME,
+    MEMBER_UPDATE,
 };
+}
+
+#include "lrnet_member.h"
+
+
+class LRNetServer;
+class Member;
+
+
 
 class Roster : public QObject
 {
@@ -51,6 +29,8 @@ class Roster : public QObject
     Q_OBJECT
     QHash<Member::serial_t, Member *> members;
     QHash<session_id_t, Member *> membersBySessionID;
+
+    LRNetServer * m_server;
 
 
     static const int gMaxThreads = 16;
@@ -74,13 +54,12 @@ class Roster : public QObject
                             "Percussion"
                             };
 
+    void removeMember(Member * m);
+
 
 public:
-    enum MemberEventE{
-        MEMBER_CAME,
-        MEMBER_UPDATE,
-    };
-    explicit Roster(QObject *parent = nullptr);
+
+    explicit Roster(LRNetServer *server = nullptr, QObject *parent = nullptr);
     ~Roster();
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
@@ -93,6 +72,8 @@ public:
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
     void stopAllThreads();
 
+    void startJackTrip(session_id_t s_id);
+
 
     QMutex mMutex;
     PortPool mPortPool;
@@ -100,8 +81,10 @@ public:
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
-    void sigMemberUpdate(Member * member, MemberEventE);
+    void sigMemberUpdate(Member * member, RosterNS::MemberEventE);
     void memberRemoved(Member::serial_t id);
+    void jackTripStarted(session_id_t s_id);
+
 
 };
 

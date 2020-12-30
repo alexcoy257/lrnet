@@ -30,6 +30,12 @@ void RosterTest::addMember()
     roster.addMember(netid, 1);
     QVERIFY2(gotSignal, "Didn't get memberAdded signal with member ac2456.");
 
+    gotSignal = false;
+    roster.addMember(netid, 1);
+    QVERIFY2(!gotSignal, "Got signal for member with duplicate sessionI");
+
+
+
     for (Member * m:roster.getMembers()){
         QCOMPARE(m->getNetID(), "ac2456");
         QCOMPARE(m->getSerialID(), 0UL);
@@ -51,6 +57,40 @@ void RosterTest::removeMember(){
     roster.removeMemberBySerialID((Member::serial_t)1);
     QVERIFY2(gotSignal, "Didn't get memberRemoved signal with member 1.");
 
+    roster.removeMemberBySerialID((Member::serial_t)0);
+}
+
+void RosterTest::memberUdpPortReturn(){
+
+    QString netid = "ac2456";
+    int i=0;
+    int ports[4];
+    connections->append(connect(&roster, &Roster::sigMemberUpdate, this, [&](Member * mem){
+        ports[i++]=mem->getPort();
+                        }));
+
+    roster.addMember(netid, 1);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+    qDebug() <<"Add member ac2456,1";
+    roster.removeMemberBySessionID((session_id_t)1);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+    qDebug() <<"Remvoe member ac2456, 1";
+
+    roster.addMember(netid, 2);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+
+    roster.addMember(netid, 3);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+
+    roster.removeMemberBySessionID((session_id_t)2);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+    roster.addMember(netid, 4);
+    QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
+
+    QCOMPARE(ports[0], 61002);
+    QCOMPARE(ports[1], 61002);
+    QCOMPARE(ports[2], 61003);
+    QCOMPARE(ports[3], 61002);
 }
 
 void RosterTest::cleanupTestCase(){

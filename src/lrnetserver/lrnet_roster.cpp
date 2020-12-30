@@ -1,7 +1,9 @@
 #include "lrnet_roster.h"
+#include "lrnetserver.h"
 #include <QDebug>
 
-Roster::Roster(QObject *parent) : QObject(parent)
+Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
+  , m_server(server)
   //, mPortPool()
 {
 
@@ -23,9 +25,17 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 
     if (netid.length()==0)
         return;
+
+    //Can't log in twice on the same session
+    if (membersBySessionID.contains(s_id))
+        return;
+
     Member * newMem = new Member(netid, s_id, this);
+
     members[newMem->getSerialID()]=newMem;
     membersBySessionID[s_id]=newMem;
+
+
 
     JackTripWorker * w = new JackTripWorker(newMem->getSerialID(), this, 10, JackTrip::ZEROS, "JackTrip");
     newMem->setThread(w);
@@ -36,26 +46,42 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 
     {
         QMutexLocker lock(&mMutex);
-        w->setJackTrip(
-                                        "localhost",
+
+#ifdef ROSTER_TEST_NO_SERVER
+#warning "Testing roster independently of the server."
+#endif
+#ifndef ROSTER_TEST_NO_SERVER
+        w->setJackTrip(m_server->getActiveSessions()[s_id].lastSeenConnection->peerAddress().toString(),
                                         newMem->getPort(),
                                         newMem->getPort(),
                                         1,
                                         false
                                         ); /// \todo temp default to 1 channel
+#endif
 }
-        mThreadPool.start(w, QThread::TimeCriticalPriority);
-        // wait until one is complete before another spawns
-        while (w->isSpawning()) { QThread::msleep(10);
-        /*qDebug() << "Loop wait for spawning;";*/}
 
-         QThread::msleep(100);
-        //qDebug() << "mPeerAddress" << id <<  mActiveAddress[id].address << mActiveAddress[id].port;
 
 
 
      qDebug() <<"New member " <<newMem->getNetID();
-    emit sigMemberUpdate(newMem, MEMBER_CAME);
+    emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
+}
+
+void Roster::startJackTrip(session_id_t s_id){
+    JackTripWorker * w = membersBySessionID[s_id]->getThread();
+    if (!w){
+        qDebug() <<"JackTripWorker not set";
+        return;
+    }
+    mThreadPool.start(w, QThread::TimeCriticalPriority);
+    // wait until one is complete before another spawns
+    emit jackTripStarted(s_id);
+
+    //while (w->isSpawning()) { QThread::msleep(10);
+    ///*qDebug() << "Loop wait for spawning;";*/}
+
+     //QThread::msleep(100);
+    //qDebug() << "mPeerAddress" << id <<  mActiveAddress[id].address << mActiveAddress[id].port;
 }
 
 /**
@@ -68,8 +94,7 @@ void Roster::removeMemberBySerialID(Member::serial_t id){
     Member * m = members.take(id);
     if (m){
     membersBySessionID.take(m->getSessionID());
-    delete m;
-    emit memberRemoved(id);
+    removeMember(m);
     }
 }
 
@@ -77,35 +102,49 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
     qDebug() <<"Remove a member by session id";
     Member * m = membersBySessionID.take(s_id);
     if(m){
-    emit memberRemoved((Member::serial_t)m->getSerialID());
     members.take(m->getSerialID());
-    delete m;
+    removeMember(m);
     }
+}
+
+/**
+ * @brief Roster::removeMember
+ * @param m
+ * m should not be null! This function is only available privately.
+ */
+
+void Roster::removeMember(Member * m){
+    Member::serial_t id = m->getSerialID();
+    mPortPool.returnPort(m->getPort());
+    delete m;
+    emit memberRemoved(id);
 }
 
 void Roster::setNameBySessionID(QString &name, session_id_t s_id){
     membersBySessionID[s_id]->setName(name);
-    emit sigMemberUpdate(membersBySessionID[s_id], MEMBER_UPDATE);
+    emit sigMemberUpdate(membersBySessionID[s_id], RosterNS::MEMBER_UPDATE);
 }
 void Roster::setSectionBySessionID(QString & section, session_id_t s_id){
     membersBySessionID[s_id]->setSection(section);
-    emit sigMemberUpdate(membersBySessionID[s_id], MEMBER_UPDATE);
+    emit sigMemberUpdate(membersBySessionID[s_id], RosterNS::MEMBER_UPDATE);
 }
 void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
     members[s_id]->setName(name);
-    emit sigMemberUpdate(members[s_id], MEMBER_UPDATE);
+    emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
 }
 void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     members[s_id]->setSection(section);
-    emit sigMemberUpdate(members[s_id], MEMBER_UPDATE);
+    emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
 }
 
 int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
+    if (members[id]){
     members[id]->setThread(NULL);
     mPortPool.returnPort(members[id]->getPort());
     mTotalRunningThreads--;
+    }
 
     return 0; /// \todo Check if we really need to return an argument here
 }

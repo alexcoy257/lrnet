@@ -13,6 +13,7 @@ LIBS += -L$$DLLDESTDIR -llrdb_client -lssl -lcrypto -llrnetjackservertest -ljack
 TARGET = lrnetserver
 HEADERS += lrnetserver.h \
            auth_types.h \
+           lrnet_member.h \
            lrnet_roster.h \
            portpool.h \
            sslserver.h \

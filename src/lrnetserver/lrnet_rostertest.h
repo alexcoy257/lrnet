@@ -18,6 +18,7 @@ private slots:
     void init();
     void addMember();
     void removeMember();
+    void memberUdpPortReturn();
     void cleanup();
     void cleanupTestCase();
 
