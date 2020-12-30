@@ -6,7 +6,6 @@
 
 #include "channelstrip.h"
 #include "compressor.h"
-#include "chatform.h"
 
 namespace Ui {
 class ChefForm;
@@ -22,11 +21,9 @@ class ChefForm : public QWidget
 
     Compressor * m_actComp;
     QHash<int, LRMClient *> m_clients;
-
 public:
     explicit ChefForm(QWidget *parent = nullptr);
     ~ChefForm();
-    ChatForm * m_chatForm;
 
 public slots:
     void highlightInsert(Compressor * cp);

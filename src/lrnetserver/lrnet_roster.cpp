@@ -121,15 +121,3 @@ void Roster::stopAllThreads()
     }
     mThreadPool.waitForDone();
 }
-
-QString Roster::getNameBySessionID(session_id_t s_id){
-    if (!membersBySessionID.contains(s_id)){
-            return QString("Chef");
-    } else{
-    QString qsName = membersBySessionID[s_id]->getName();
-    if (qsName.isEmpty()){
-        qsName = membersBySessionID[s_id]->getNetID();
-    }
-    return qsName;
-    }
-}

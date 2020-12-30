@@ -91,7 +91,6 @@ public:
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
-    QString getNameBySessionID(session_id_t s_id);
     void stopAllThreads();
 
 

@@ -3,18 +3,15 @@
 
 ChefForm::ChefForm(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ChefForm),
-    m_chatForm(new ChatForm(this))
+    ui(new Ui::ChefForm)
 {
     ui->setupUi(this);
     ui->m_channelStripArea->addStretch();
-    ui->chatArea->addWidget(m_chatForm);
 }
 
 ChefForm::~ChefForm()
 {
     delete ui;
-    delete m_chatForm;
 }
 
 void ChefForm::addChannelStrip(const QString& mName, const QString& sName, int id){
