@@ -30,6 +30,7 @@ SOURCES += $$OSCDIR/OscOutboundPacketStream.cpp \
     $$OSCDIR/OscTypes.cpp
 
 DEFINES += __WIN32__
+DEFINES += __WIN_32__
 }
 
 linux{

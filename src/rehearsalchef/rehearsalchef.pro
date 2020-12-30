@@ -6,6 +6,12 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
+win32{
+INCLUDEPATH += C:\Users\alexc\Documents\libjacktrip_libs\include
+LIBS += -LC:\Users\alexc\Documents\libjacktrip_libs\lib
+INCLUDEPATH += "C:\Program Files\JACK2\include"
+}
+
 LIBS += -L../lrnetclient -llrnetclient -llrnetjackservertest -ljacktrip
 
 !win32{
