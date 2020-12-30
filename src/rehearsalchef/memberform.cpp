@@ -9,6 +9,9 @@ MemberForm::MemberForm(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->chatArea->addWidget(m_chatForm);
+    ui->chatArea->addWidget(new QLabel("test"));
+    m_chatForm->setVisible(true);
+    m_chatForm->show();
     QObject::connect(ui->nameChoice, &QLineEdit::editingFinished, this, [=](){emit nameUpdated(ui->nameChoice->text());
     qDebug()<<"Name updated";});
     QObject::connect(ui->sectionChoice, &QComboBox::currentTextChanged, this, [=](){emit sectionUpdated(ui->sectionChoice->currentText());});

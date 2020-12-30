@@ -97,6 +97,7 @@ private:
         void lostMember(int id);
         void authenticated(AuthTypeE type);
         void authFailed();
+        void chatReceived(const QString& name, const QString& chatMsg);
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -113,6 +114,7 @@ private:
         void subSuperchef();
         void subChef();
         void subMember();
+        void sendChat(const QString &chatMsg);
 
     private slots:
         void startHandshake();

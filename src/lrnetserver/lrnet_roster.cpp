@@ -45,3 +45,15 @@ void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     members[s_id]->setSection(section);
     emit sigMemberUpdate(members[s_id]);
 }
+
+QString Roster::getNameBySessionID(session_id_t s_id){
+    if (!membersBySessionID.contains(s_id)){
+            return QString("Chef");
+    } else{
+    QString qsName = membersBySessionID[s_id]->getName();
+    if (qsName.isEmpty()){
+        qsName = membersBySessionID[s_id]->getNetID();
+    }
+    return qsName;
+    }
+}

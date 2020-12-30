@@ -19,6 +19,7 @@ public:
     ~MemberForm();
     void setName(const QString & nname);
     void setSection(const QString & nsection);
+    ChatForm * m_chatForm;
 
 signals:
     void nameUpdated(const QString & nname);
@@ -26,7 +27,6 @@ signals:
 
 private:
     Ui::MemberForm *ui;
-    ChatForm * m_chatForm;
 };
 
 #endif // MEMBERFORM_H

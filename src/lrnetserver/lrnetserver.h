@@ -167,6 +167,16 @@ private:
 
     }
     
+    /** \brief Prepares the chat message then calls pushAll
+     *  \param args contains message
+     *  \param tSess contains session ID
+     */
+    void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
+
+    /** \brief Sends whatever is in the osc outbound stream to all active connections
+     */
+    void pushAll();
+
 
     //QUdpSocket mUdpHubSocket; ///< The UDP socket
     //QHostAddress mPeerAddress; ///< The Peer Address

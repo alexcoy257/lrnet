@@ -383,6 +383,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 qDebug() <<"Subscribed as superchef";
         }
 
+        if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
+            pushChatMessage(&args, tSess);
+        }
+
         //Future refactor: use an association list of updatable parameters
         if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
            handleNameUpdate(&args, tSess);
@@ -391,6 +395,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
            handleSectionUpdate(&args, tSess);
         }
+
     }
 
 }
@@ -606,19 +611,26 @@ int LRNetServer::releaseThread(int id)
 void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
     mRoster.addMember(netid, tSess);
+    osc::Blob b;
+    *args >> b;
     while (!args->Eos()){
+        // Make sure to verify the first arguement isn't a Blob.  If so, uncomment the following code
+        // osc::Blob b;
+        // *args >> b;
         const char * key;
         const char * value;
         try{
         *args >> key;
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
+            qDebug() << "Wrong type of argument: handeNewMember 1";
         }
         if(!args->Eos()){
             try{
             *args >> value;
             }catch(osc::WrongArgumentTypeException & e){
                 //Not a string.
+                qDebug() << "Wrong type of argument: handleNewMember 2";
             }
             QString qsKey = QString::fromStdString(key);
             QString qsValue = QString::fromStdString(value);
@@ -635,25 +647,29 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
 
 void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
+        osc::Blob b;
         const char * name;
         try{
-        *args >> name;
+        *args >> b; *args >> name;
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
+            qDebug() << "Wrong type of argument: handleNameUpdate";
         }
 
         QString qsName = QString::fromStdString(name);
-             mRoster.setNameBySessionID(qsName, tSess);
+        mRoster.setNameBySessionID(qsName, tSess);
         }
 }
 
 void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
+        osc::Blob b;
         const char * name;
         try{
-        *args >> name;
+        *args >> b; *args >> name;
         }catch(osc::WrongArgumentTypeException & e){
             //Not a string.
+            qDebug() << "Wrong type of argument: handleSectionUpdate";
         }
 
         QString qsName = QString::fromStdString(name);
@@ -663,4 +679,30 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
 
 void LRNetServer::notifyNewMemberSubs(Member * member){
     qDebug() <<"Notifying subs " <<member->getNetID() <<" named " << member->getName();
+}
+
+void LRNetServer::pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess) {
+    if (!args->Eos()){
+        osc::Blob b;
+        const char * msg;
+        try{
+            *args >> b; *args >> msg;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+            qDebug() << "Wrong type of argument: pushChatMessage";
+        }
+        QString qsName = mRoster.getNameBySessionID(tSess);
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage( "/push/chat" )
+                     << qsName.toStdString().data()
+                     << msg
+                         << osc::EndMessage;
+        pushAll();
+    }
+}
+
+void LRNetServer::pushAll() {
+    for (QSslSocket * socket : activeConnections.keys()) {
+        socket->write(oscOutStream.Data(), oscOutStream.Size());
+    }
 }
