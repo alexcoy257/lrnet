@@ -1,4 +1,7 @@
 DLLDESTDIR=$$PWD/lib
+LIBINCDIR=$$PWD/include
+
+INCLUDEPATH += $$LIBINCDIR
 LIBS += -L$$DLLDESTDIR
 HEADERS += $$PWD/liblrnet_globals.h
 

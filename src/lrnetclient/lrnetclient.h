@@ -103,6 +103,7 @@ private:
         void lostMember(int id);
         void authenticated(AuthTypeE type);
         void authFailed();
+        void gotUdpPort(int port);
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -142,6 +143,7 @@ private:
         void sendPing();
         void handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type);
         void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
+        void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
         
     };
 

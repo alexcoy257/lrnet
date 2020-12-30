@@ -222,6 +222,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     else if (std::strcmp(ap, "/push/roster/memberleft") == 0){
           handleRemoveMember(args);
     }
+
+    else if (std::strcmp(ap, "/config/udpport") == 0){
+          handleNewUdpPort(args);
+    }
 }
 
 void LRNetClient::sendPing(){
@@ -324,5 +328,20 @@ void LRNetClient::handleRemoveMember(osc::ReceivedMessageArgumentStream & args){
     }
     catch (osc::MissingArgumentException & e){
         qDebug() <<"Not enough data for removing a member";
+    }
+}
+
+void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
+    int32_t port;
+    try{
+    args >> port;
+    std::cout << "New UDP Port " <<port  << std::endl;
+    emit gotUdpPort(port);
+    }
+    catch (osc::WrongArgumentTypeException & e){
+        qDebug() <<"UDP Port was a bad type";
+    }
+    catch (osc::MissingArgumentException & e){
+        qDebug() <<"Not enough data for new UDP port";
     }
 }

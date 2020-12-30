@@ -6,7 +6,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-LIBS += -L../lrnetclient -llrnetclient
+LIBS += -L../lrnetclient -llrnetclient -llrnetjackservertest
 
 !win32{
 LIBS += -lcrypto
@@ -42,6 +42,7 @@ HEADERS += \
     memberform.h \
     testworker.h
 
+
 FORMS += \
     channelStrip.ui \
     channeltester.ui \
@@ -50,6 +51,7 @@ FORMS += \
     compressor.ui \
     mainwindow.ui \
     memberform.ui
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
