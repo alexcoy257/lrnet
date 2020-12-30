@@ -226,6 +226,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     else if (std::strcmp(ap, "/config/udpport") == 0){
           handleNewUdpPort(args);
     }
+
+    else if (std::strcmp(ap, "/member/jacktripready") == 0){
+          emit serverJTReady();
+    }
 }
 
 void LRNetClient::sendPing(){
@@ -344,4 +348,12 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
     catch (osc::MissingArgumentException & e){
         qDebug() <<"Not enough data for new UDP port";
     }
+}
+
+void LRNetClient::startJackTrip(){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
+    << osc::Blob(&session, sizeof(session))
+    << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
 }

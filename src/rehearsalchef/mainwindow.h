@@ -82,6 +82,7 @@ private slots:
     void launchMember();
     void setUdpPort(int port);
     void startJackTrip();
+    void startJackTripThread();
 
 
 };
