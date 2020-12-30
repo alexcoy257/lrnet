@@ -52,7 +52,10 @@
     </layout>
    </item>
    <item row="6" column="0">
-    <widget class="QPushButton" name="startAudioButton">
+    <widget class="QPushButton" name="startJackTripButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Start JackTrip</string>
      </property>
@@ -105,15 +108,8 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0">
-    <widget class="QPushButton" name="audioSettingsButton">
-     <property name="text">
-      <string>Advanced</string>
-     </property>
-    </widget>
-   </item>
    <item row="4" column="0">
-    <widget class="JackParameterForm" name="widget" native="true"/>
+    <widget class="JackParameterForm" name="jackServer" native="true"/>
    </item>
   </layout>
  </widget>

@@ -44,7 +44,9 @@ public:
      void sendAllParameters();
 
 signals:
-     void setParameter(QString & name, QVariant & value);
+     //void setParameter(QString & name, QVariant & value);
+    void jackStarted();
+    void jackStopped();
 
 private:
      void sendNewRate(const QString & rate);

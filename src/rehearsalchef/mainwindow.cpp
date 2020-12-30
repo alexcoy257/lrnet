@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_privateKey({})
     , m_publicKey({})
     , keyPair(NULL)
+    , m_jacktrip( new RCJTWorker(this, 10, JackTrip::ZEROS, ""))
 {
     ui->setupUi(this);
 
@@ -72,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    m_jacktrip->stopThread();
     delete ui;
     delete m_netClient;
     //delete m_connectForm;
@@ -248,4 +250,26 @@ QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, thi
     m_netClient->updateSection(nsection);
 });
 m_netClient->subMember();
+
+QObject::connect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+
+QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
+
+}
+
+void MainWindow::setUdpPort(int port){
+    m_jacktrip->setJackTrip(m_hostname, port, port, 2, true);
+}
+
+
+
+void MainWindow::startJackTrip(){
+    QObject::disconnect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    qDebug() << "Want to start JackTrip";
+
+    m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
+}
+
+void MainWindow::releaseThread(int n){
+
 }

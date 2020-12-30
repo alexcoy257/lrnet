@@ -6,7 +6,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-LIBS += -L../lrnetclient -llrnetclient -llrnetjackservertest
+LIBS += -L../lrnetclient -llrnetclient -llrnetjackservertest -ljacktrip
 
 !win32{
 LIBS += -lcrypto
@@ -27,7 +27,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     memberform.cpp \
-    rc_tests_1.cpp
+    rc_tests_1.cpp \
+    rcjtworker.cpp
 
 HEADERS += \
     RehearsalChefabout.h \
@@ -40,6 +41,7 @@ HEADERS += \
     lrchef_connectform.h \
     mainwindow.h \
     memberform.h \
+    rcjtworker.h \
     testworker.h
 
 

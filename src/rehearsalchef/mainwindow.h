@@ -16,6 +16,8 @@
 #include "launcher.h"
 #include "../liblrnet_globals.h"
 
+#include "rcjtworker.h"
+
 
 #include "../lrnetserver/auth_types.h"
 #include "../lrnetclient/lrnetclient.h"
@@ -37,6 +39,7 @@ public:
     ~MainWindow();
 
 public slots:
+    void releaseThread(int n);
 
 
 private:
@@ -60,6 +63,9 @@ private:
     QString m_hostname;
     int m_port;
 
+    RCJTWorker * m_jacktrip;
+    QThreadPool m_jacktripthreadpool;
+
     void loadSetup();
     void keyInit();
     void saveSetup();
@@ -74,6 +80,9 @@ private slots:
     void launchSuperChef();
     void launchChef();
     void launchMember();
+    void setUdpPort(int port);
+    void startJackTrip();
+
 
 };
 #endif // MAINWINDOW_H

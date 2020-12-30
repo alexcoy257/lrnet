@@ -102,6 +102,8 @@ public slots:
 
 signals:
     void paramsAvailable();
+    void jackStarted();
+    void jackStopped();
 
 private:
     QScopedPointer<jackctl_server_t, JackServerDeleter> jackServer;

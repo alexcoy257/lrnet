@@ -24,6 +24,7 @@ public:
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
+    void startJackTrip();
 
 private:
     Ui::MemberForm *ui;
