@@ -8,7 +8,7 @@ QT += sql network widgets
 
 
 #LIBS += -lssl -lcrypto
-LIBS += -L$$DLLDESTDIR -llrdb_client -lssl -lcrypto -llrnetjackservertest -ljack -ljackserver -ljacktrip
+LIBS += -L$$DLLDESTDIR -llrdb_client -lssl -lcrypto -llrnetjackserver -ljack -ljackserver -ljacktrip
 
 TARGET = lrnetserver
 HEADERS += lrnetserver.h \

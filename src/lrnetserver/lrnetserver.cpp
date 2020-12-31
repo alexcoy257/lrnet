@@ -114,13 +114,13 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     {
     QString tmp = "rate";
     QVariant vtmp = 48000;
-    jackServer.setParameter(tmp,vtmp);
+    jackServer.setDriverParameter(tmp,vtmp);
     }
 
     {
     QString tmp = "period";
     QVariant vtmp = 64;
-    jackServer.setParameter(tmp,vtmp);
+    jackServer.setDriverParameter(tmp,vtmp);
     }
 
     if(jackServer.start())
