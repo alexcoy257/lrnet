@@ -14,7 +14,13 @@
 #include "memberform.h"
 #include "lrchef_connectform.h"
 #include "launcher.h"
+
+#ifdef LIBLRNET_LIBRARY
+#undef LIBLRNET_LIBRARY
+#endif
 #include "../liblrnet_globals.h"
+
+
 
 #include "rcjtworker.h"
 

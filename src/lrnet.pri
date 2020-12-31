@@ -19,9 +19,12 @@ DEFINES += __MAC_OSX__
 }
 
 win32{
-LIBS += "C:/Qt/Tools/OpenSSL/Win_x64/lib/libcrypto.lib"
-
-INCLUDEPATH += C:/Qt/Tools/OpenSSL/Win_x64/include
+CONFIG += static
+DEFINES += STATIC_LRNET
+#LIBS += "C:/Qt/Tools/OpenSSL/Win_x64/lib/libcrypto.lib"
+#INCLUDEPATH += C:/Qt/Tools/OpenSSL/Win_x64/include
+INCLUDEPATH += C:/msys64/mingw64/include
+LIBS += -lcrypto
 
 OSCDIR = C:/Qt/Tools/osc/osc
 INCLUDEPATH += C:/Qt/Tools/osc
