@@ -215,6 +215,8 @@ void JackTripWorker::run()
         QObject::connect(this, SIGNAL(signalRemoveThread()),
                          &jacktrip, SLOT(slotStopProcesses()), Qt::QueuedConnection);
 
+        QObject::connect(&jacktrip, &JackTrip::jackPortsReady, this, &JackTripWorker::signalJackReady);
+
         //ClientAddress.setAddress(mClientAddress);
         // If I don't type this line, I get a bus error in the next line.
         // I still haven't figure out why

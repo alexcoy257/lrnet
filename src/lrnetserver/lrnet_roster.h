@@ -31,6 +31,9 @@ class Roster : public QObject
     QHash<session_id_t, Member *> membersBySessionID;
 
     LRNetServer * m_server;
+    jack_status_t * m_jackStatus;
+    jack_client_t * m_jackClient;
+
 
 
     static const int gMaxThreads = 16;
@@ -60,6 +63,8 @@ class Roster : public QObject
 public:
 
     explicit Roster(LRNetServer *server = nullptr, QObject *parent = nullptr);
+    ///Assumes Jack is already running. Returns nonzero if failure.
+    bool initJackClient();
     ~Roster();
     void addMember(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}

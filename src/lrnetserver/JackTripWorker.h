@@ -46,8 +46,9 @@
 #include <QHostAddress>
 #include <QMutex>
 
+#include <jacktrip/jacktrip_types.h>
 #include <jacktrip/JackTrip.h>
-//#include <jacktrip/jacktrip_globals.h>
+#include <jacktrip/jacktrip_globals.h>
 
 
 //class JackTrip; // forward declaration
@@ -111,13 +112,23 @@ public:
     void setIOStatTimeout(int timeout) { mIOStatTimeout = timeout; }
     void setIOStatStream(QSharedPointer<std::ofstream> statStream) { mIOStatStream = statStream; }
     
+
+signals:
+    void jackPortsReady(QVarLengthArray<audioPortHandle_t> from,
+                        QVarLengthArray<audioPortHandle_t> to,
+                        QVarLengthArray<audioPortHandle_t> broadcast);
 private slots:
     void slotTest()
     { std::cout << "--- JackTripWorker TEST SLOT ---" << std::endl; }
+    void signalJackReady(QVarLengthArray<audioPortHandle_t> from,
+                         QVarLengthArray<audioPortHandle_t> to,
+                         QVarLengthArray<audioPortHandle_t> broadcast){emit jackPortsReady(from, to, broadcast);}
 
 
 signals:
     void signalRemoveThread();
+
+
 
 private:
     int setJackTripFromClientHeader(JackTrip& jacktrip);

@@ -1,11 +1,15 @@
 #include "lrnet_roster.h"
 #include "lrnetserver.h"
 #include <QDebug>
+#include <jack/jack.h>
 
 Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
   , m_server(server)
+  , m_jackStatus(NULL)
+  , m_jackClient(NULL)
   //, mPortPool()
 {
+
 
     qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
     mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
@@ -13,6 +17,19 @@ Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
 
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
+}
+
+bool Roster::initJackClient(){
+    m_jackClient = jack_client_open("lrhubpatcher", JackNoStartServer, m_jackStatus);
+    if (!m_jackClient){
+        qDebug() <<"Couldn't make hub patcher client";
+        return 1;
+    }
+    if(jack_activate(m_jackClient)){
+        qDebug() << "Cannot activate jack client\n";
+        return 2;
+    }
+    return 0;
 }
 
 Roster::~Roster(){
@@ -60,6 +77,14 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 #endif
 }
 
+    QObject::connect(w, &JackTripWorker::jackPortsReady, this, [=](QVarLengthArray<jack_port_t *> from,
+                     QVarLengthArray<jack_port_t *> to,
+                     QVarLengthArray<jack_port_t *> broadcast
+                     ){
+        jack_connect(m_jackClient, jack_port_name(from[0]), jack_port_name(to[0]));
+        jack_connect(m_jackClient, jack_port_name(from[0]), jack_port_name(to[1]));
+
+    });
 
 
 
