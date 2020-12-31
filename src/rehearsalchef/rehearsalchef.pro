@@ -12,7 +12,7 @@ LIBS += -llrnetclient -llrnetjackserver -ljacktrip
 
 win32{
 CONFIG += static
-DEFINES += STATIC_LRLIBJACKSERVER STATIC_LIBJACKTRIP
+DEFINES += STATIC_LRLIBJACKSERVER #STATIC_LIBJACKTRIP
 INCLUDEPATH += C:\Users\alexc\Documents\lrnet_deps\include
 CONFIG(debug, debug|release){
 LIBS += -LC:\Users\alexc\Documents\lrnet_deps\debug\lib
@@ -21,12 +21,14 @@ else{
 LIBS += -LC:\Users\alexc\Documents\lrnet_deps\release\lib
 }
 
-INCLUDEPATH += "C:\Program Files\JACK2\include"
+#INCLUDEPATH += "C:\Program Files\JACK2\include"
 DEFINES += CONFIG_PORTAUDIO
-LIBS += "C:\Program Files\JACK2\lib\libjack64.lib"
-LIBS += "C:\Program Files\JACK2\lib\libjackserver64.lib"
-LIBS += "C:\msys64\mingw64\lib\libportaudio.a"
-LIBS += -lsetupapi -lwinmm
+LIBS += "C:\msys64\mingw64\lib\libjack64.dll.a"
+LIBS += "C:\msys64\mingw64\lib\libjackserver64.dll.a"
+#LIBS += "C:\msys64\mingw64\lib\libportaudio.a"
+LIBS += -mthreads -IC:/msys64/mingw64/include -LC:/msys64/mingw64/lib
+LIBS += -lportaudio -lwinmm -lm -luuid -lsetupapi -lole32
+#LIBS += -lsetupapi -lwinmm
 
 #LIBS += $$DLLDESTDIR\liblrnetclient.a
 # -llrnetjackservertest -ljacktrip
