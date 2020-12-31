@@ -17,24 +17,11 @@
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="m_actCompArea"/>
    </item>
-   <item row="0" column="1">
-    <widget class="QTableView" name="tableView">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>400</width>
-       <height>400</height>
-      </size>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0" colspan="2">
     <layout class="QHBoxLayout" name="m_channelStripArea"/>
+   </item>
+   <item row="0" column="1">
+    <layout class="QVBoxLayout" name="chatArea"/>
    </item>
   </layout>
  </widget>

@@ -230,6 +230,16 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     else if (std::strcmp(ap, "/member/jacktripready") == 0){
           emit serverJTReady();
     }
+
+    else if (std::strcmp(ap, "/push/chat") == 0){
+        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
+        const char * chatName;
+        const char * chatMsg;
+        args >> chatName; args >> chatMsg;
+        qDebug() << "Name <" <<chatName <<">: " << chatMsg;
+
+        emit chatReceived(QString(chatName), QString(chatMsg));
+    }
 }
 
 void LRNetClient::sendPing(){
@@ -355,5 +365,16 @@ void LRNetClient::startJackTrip(){
     oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
     << osc::Blob(&session, sizeof(session))
     << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::sendChat(const QString &chatMsg)
+{
+    qDebug() << "Sending chat: " << chatMsg;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/send/chat" )
+    << osc::Blob(&session, sizeof(session))
+    << chatMsg.toStdString().data()
+        << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }

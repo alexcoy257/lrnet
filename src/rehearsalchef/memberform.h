@@ -18,6 +18,9 @@ class MemberForm : public QWidget
 public:
     explicit MemberForm(QWidget *parent = nullptr);
     ~MemberForm();
+
+    ChatForm * m_chatForm;
+
     void setName(const QString & nname);
     void setSection(const QString & nsection);
 
@@ -28,7 +31,6 @@ signals:
 
 private:
     Ui::MemberForm *ui;
-    ChatForm * m_chatForm;
     //JackParameterForm * m_jackForm;
 
     void updateName();
