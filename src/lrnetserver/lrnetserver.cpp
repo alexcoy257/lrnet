@@ -362,12 +362,19 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
     }
     if (std::strcmp(msg->AddressPattern(), "/auth/newbycode") == 0){
-        qDebug() <<"Auth by code not implemented: Sending fail.";
+        qDebug() <<"Auth by code short circuit. Sending member auth.";
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
+        auth_type_t at = {authorizer.genSessionKey(), MEMBER};
+        sendAuthResponse(socket, at);
+        qDebug() <<"Authenticated: Gave session id " <<at.session_id;
+        sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+        char nonetid[8] = "nonetid";
+        memcpy(tt.netid, nonetid, 7);
+        tt.netid[8] = 0;
+        activeSessions.insert(at.session_id, tt);
 
 
-
-       sendAuthFail(socket);
+       //sendAuthFail(socket);
 
 
 

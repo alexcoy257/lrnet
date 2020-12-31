@@ -122,7 +122,9 @@ private slots:
     { std::cout << "--- JackTripWorker TEST SLOT ---" << std::endl; }
     void signalJackReady(QVarLengthArray<audioPortHandle_t> from,
                          QVarLengthArray<audioPortHandle_t> to,
-                         QVarLengthArray<audioPortHandle_t> broadcast){emit jackPortsReady(from, to, broadcast);}
+                         QVarLengthArray<audioPortHandle_t> broadcast){
+        qDebug() <<"Jack ports ready!";
+        emit jackPortsReady(from, to, broadcast);}
 
 
 signals:

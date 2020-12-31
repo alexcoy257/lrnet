@@ -28,7 +28,7 @@ class Auth : public QObject{
 
   signals:
 
-  private:
+public:
   session_id_t genSessionKey();
 };
 
