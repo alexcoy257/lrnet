@@ -421,6 +421,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 qDebug() <<"Subscribed as superchef";
         }
 
+        if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
+            pushChatMessage(&args, tSess);
+        }
+
         //Future refactor: use an association list of updatable parameters
         if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
            handleNameUpdate(&args, tSess);
@@ -746,6 +750,31 @@ void LRNetServer::sendMemberUdpPort(Member * m, RosterNS::MemberEventE event){
         << m->getPort();
         oscOutStream << osc::EndMessage;
         activeSessions[m->getSessionID()].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
+    }
+}
+
+void LRNetServer::pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess) {
+    if (!args->Eos()){
+        const char * msg;
+        try{
+            *args >> msg;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+            qDebug() << "Wrong type of argument: pushChatMessage";
+        }
+        QString qsName = mRoster->getNameBySessionID(tSess);
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage( "/push/chat" )
+                     << qsName.toStdString().data()
+                     << msg
+                         << osc::EndMessage;
+        broadcastToAll();
+    }
+}
+
+void LRNetServer::broadcastToAll() {
+    for (QSslSocket * socket : activeConnections.keys()) {
+        socket->write(oscOutStream.Data(), oscOutStream.Size());
     }
 }
 

@@ -145,6 +145,17 @@ void Roster::removeMember(Member * m){
     emit memberRemoved(id);
 }
 
+QString Roster::getNameBySessionID(session_id_t s_id){
+    if (!membersBySessionID.contains(s_id)){
+            return QString("Chef");
+    } else{
+    QString qsName = membersBySessionID[s_id]->getName();
+    if (qsName.isEmpty()){
+        qsName = membersBySessionID[s_id]->getNetID();
+    }
+    return qsName;
+    }
+}
 void Roster::setNameBySessionID(QString &name, session_id_t s_id){
     membersBySessionID[s_id]->setName(name);
     emit sigMemberUpdate(membersBySessionID[s_id], RosterNS::MEMBER_UPDATE);

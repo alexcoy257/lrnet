@@ -71,6 +71,7 @@ public:
     QStringList & getValidSections(){return sections;}
     void removeMemberBySerialID(Member::serial_t id);
     void removeMemberBySessionID(session_id_t s_id);
+    QString getNameBySessionID(session_id_t s_id);
     void setNameBySessionID(QString & name, session_id_t s_id);
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);

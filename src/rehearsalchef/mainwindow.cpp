@@ -234,6 +234,8 @@ setCentralWidget(new ChefForm(this));
 QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)centralWidget(), &ChefForm::updateChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
+QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 m_netClient->subChef();
 }
 
@@ -249,6 +251,8 @@ QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, thi
     m_section = nsection;
     m_netClient->updateSection(nsection);
 });
+QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
+QObject::connect(((MemberForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 m_netClient->subMember();
 
 QObject::connect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);

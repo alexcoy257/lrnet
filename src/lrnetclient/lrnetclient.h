@@ -105,6 +105,7 @@ private:
         void authFailed();
         void gotUdpPort(int port);
         void serverJTReady();
+        void chatReceived(const QString& name, const QString& chatMsg);
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -118,6 +119,7 @@ private:
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
         void tryToAuthenticate();
+        void sendChat(const QString &chatMsg);
 
         void subSuperchef();
         void subChef();
