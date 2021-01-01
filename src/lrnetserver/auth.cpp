@@ -1,5 +1,18 @@
 #include "auth.h"
 
+/*
+using ossl::RSA;
+using ossl::RSA_new;
+using ossl::RSA_free;
+
+using ossl::BIO;
+using ossl::BIO_s_mem;
+using ossl::BIO_new;
+using ossl::BIO_free;
+
+using ossl::RAND_bytes;
+*/
+
 Auth::Auth():
 readdb(nullptr)
 {

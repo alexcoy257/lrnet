@@ -29,6 +29,7 @@
 #include "lrnet_roster.h"
 #include "lrnet_member.h"
 #include "../JackServerTest/jackinterface.h"
+#include "lrnetserver_types.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -44,23 +45,13 @@ typedef struct {
 class Roster;
 class Member;
 
+using LRServer_types::sessionTriple;
 
 class LRNetServer : public QObject
 {
     Q_OBJECT;
 
-    /**
-      * This type represents a session and which connection
-      * that session was last seen on. This type is useful for
-      * for publishers to publish messages to subscribers.
-      */
-    typedef struct {
-        session_id_t id;
-        QSslSocket * lastSeenConnection;
-        bool ShasCheckedIn;
-        AuthTypeE role;
-        char netid[31];
-    }sessionTriple;
+
 
     class Buffer: public QObject{
         char _base[INPUT_BUFFER_SIZE];

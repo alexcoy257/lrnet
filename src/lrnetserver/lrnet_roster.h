@@ -15,11 +15,17 @@ enum MemberEventE{
 };
 }
 
+
 #include "lrnet_member.h"
+#include "lrnetserver_types.h"
+
+using LRServer_types::sessionTriple;
+
+
 
 
 class LRNetServer;
-class Member;
+//class MemberNS::Member;
 
 
 
@@ -79,6 +85,8 @@ public:
     void stopAllThreads();
 
     void startJackTrip(session_id_t s_id);
+
+    QHash<session_id_t, sessionTriple> & getActiveSessions();
 
 
     QMutex mMutex;

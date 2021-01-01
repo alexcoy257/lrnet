@@ -123,12 +123,14 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     jackServer.setDriverParameter(tmp,vtmp);
     }
 
-    if(jackServer.start())
+    if(!jackServer.start()){
        if(mRoster->initJackClient()){
            qDebug() <<"Couldn't connect hub patcher, quitting";
            QCoreApplication::quit();
        }
-
+    }else{
+        qDebug() << "jackServer.start() returned nonzero";
+    }
 
 
 }

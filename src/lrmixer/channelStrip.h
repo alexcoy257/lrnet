@@ -19,6 +19,11 @@ Compilation options: -lang cpp -scal -ftz 0
 #include <math.h>
 #include <sys/mman.h>
 
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
+#include <faust/gui/QTUI.h>
+#include <faust/audio/jack-dsp.h>
+
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS ChannelStrip

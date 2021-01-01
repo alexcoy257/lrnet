@@ -15,10 +15,12 @@ HEADERS += lrnetserver.h \
            auth_types.h \
            lrnet_member.h \
            lrnet_roster.h \
+           lrnetserver_types.h \
            portpool.h \
            sslserver.h \
            auth.h \
-           JackTripWorker.h
+           JackTripWorker.h \
+           channelStrip.h
 SOURCES += lrnetserver.cpp \
             lrnet_member.cpp \
             lrnet_roster.cpp \

@@ -201,6 +201,8 @@ void JackTripWorker::run()
             jacktrip.setClientName(mClientName);
         }
 
+        jacktrip.setJackPortAreas(mFromSpace, mToSpace, mBroadcastSpace, mPortSpaceSize);
+
         // Connect signals and slots
         // -------------------------
         if (gVerboseFlag) cout << "---> JackTripWorker: Connecting signals and slots..." << endl;
