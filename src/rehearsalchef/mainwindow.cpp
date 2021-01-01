@@ -277,6 +277,7 @@ void MainWindow::startJackTrip(){
 }
 
 void MainWindow::startJackTripThread(){
+    //QThread::msleep(500);
     m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
 }
 
