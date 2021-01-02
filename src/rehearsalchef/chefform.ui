@@ -14,14 +14,35 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
-   </item>
-   <item row="1" column="0" colspan="2">
+   <item row="2" column="0" colspan="2">
     <layout class="QHBoxLayout" name="m_channelStripArea"/>
    </item>
-   <item row="0" column="1">
+   <item row="1" column="1">
     <layout class="QVBoxLayout" name="chatArea"/>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="m_authArea">
+     <item>
+      <widget class="QLabel" name="authLabel">
+       <property name="toolTip">
+        <string>Sets the authorization code members can use to connect with</string>
+       </property>
+       <property name="text">
+        <string>Auth Code</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="authCodeEdit">
+       <property name="placeholderText">
+        <string>Set authorization code here...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

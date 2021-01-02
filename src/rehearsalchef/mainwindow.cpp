@@ -236,6 +236,7 @@ QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)centralWid
 QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
 QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
 QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
 m_netClient->subChef();
 }
 

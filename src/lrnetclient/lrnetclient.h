@@ -120,6 +120,7 @@ private:
         void updateSection(const QString & nsection);
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
+        void sendAuthCode(const QString &chatMsg);
 
         void subSuperchef();
         void subChef();
@@ -149,6 +150,8 @@ private:
         void handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type);
         void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
         void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
+        void handleNewChat(osc::ReceivedMessageArgumentStream & args);
+        void handleAuthCode(osc::ReceivedMessageArgumentStream & args);
         
     };
 

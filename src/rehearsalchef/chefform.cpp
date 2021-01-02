@@ -9,6 +9,8 @@ ChefForm::ChefForm(QWidget *parent) :
     ui->setupUi(this);
     ui->m_channelStripArea->addStretch();
     ui->chatArea->addWidget(m_chatForm);
+
+    QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
 }
 
 ChefForm::~ChefForm()
@@ -61,4 +63,9 @@ void ChefForm::highlightInsert(Compressor * cp){
     ui->m_actCompArea->addWidget(cp);
     m_actComp = cp;
     m_actComp->show();
+}
+
+void ChefForm::updateAuthCode(){
+    ui->authCodeEdit->clearFocus();
+    emit authCodeUpdated(ui->authCodeEdit->text());
 }
