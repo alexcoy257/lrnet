@@ -2,7 +2,8 @@
 #define OSCSTREAMBUFFER_H
 
 #include <QObject>
-
+#include <cstring>
+#include <QDebug>
 
 class OSCStreamingBuffer: public QObject{
     constexpr static int inputSize = 1024;
@@ -16,7 +17,8 @@ public:
     void update(size_t bytesRead){
         _head += bytesRead;
         _remaining -= bytesRead;
-        mSize = *((int32_t*)_base);
+        mSize = *((size_t*)_base);
+        qDebug() << filled() << "bytes read. Expecting" <<mSize;
     }
 
     int32_t messageSize(){
@@ -24,18 +26,18 @@ public:
     }
 
     bool haveFullMessage(){
-        return (_head - _base) >= mSize;
+        return (_head - _base)+1 >= (unsigned)mSize;
     }
     QByteArray * getMessage(){
         QByteArray * toRet = NULL;
         if(haveFullMessage()){
-            toRet = new QByteArray(_base + sizeof(int32_t), messageSize());
+            toRet = new QByteArray(_base + sizeof(size_t), messageSize());
         }
 
         std::memmove(_base, _base + mSize, filled()-mSize);
         _remaining += mSize;
         _head = _base;
-        mSize = *((int32_t*)_base);
+        mSize = *((size_t*)_base);
         return toRet;
     }
     void reset(){

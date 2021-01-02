@@ -20,7 +20,8 @@ HEADERS += lrnetserver.h \
            sslserver.h \
            auth.h \
            JackTripWorker.h \
-           channelStrip.h
+           channelStrip.h \
+           ../common/oscstreambuffer.h
 SOURCES += lrnetserver.cpp \
             lrnet_member.cpp \
             lrnet_roster.cpp \

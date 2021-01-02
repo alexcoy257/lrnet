@@ -292,6 +292,8 @@ void LRNetServer::receivedClientInfo()
     QScopedPointer<QByteArray> arr(cBuf->getMessage());
     if (!arr) return;
 
+    qDebug() <<"Full message: " <<*arr;
+
     osc::ReceivedPacket * inPack = NULL;
     try{
         inPack = new osc::ReceivedPacket(arr->data(), arr->length());
