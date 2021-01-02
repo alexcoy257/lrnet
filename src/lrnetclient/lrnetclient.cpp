@@ -480,7 +480,7 @@ void LRNetClient::updateAuthCodeEnabled(bool enabled){
     << enabled
     << osc::EndMessage;
 
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
 }
 
 void LRNetClient::sendControlUpdate(int64_t id, QVector<float> & controls){
@@ -502,13 +502,4 @@ void LRNetClient::writeStreamToSocket(){
     size_t s = oscOutStream.Size();
     socket->write((const char *)&s, sizeof(size_t));
     socket->write(oscOutStream.Data(), s);
-}
-
-void LRNetClient::updateAuthCodeEnabled(bool enabled){
-    oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/auth/setcodeenabled" )
-    << osc::Blob(&session, sizeof(session))
-    << enabled
-    << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
