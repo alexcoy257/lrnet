@@ -4,7 +4,7 @@ license: "MIT Style STK-4.2"
 name: "compressor"
 version: "0.0"
 Code generated with Faust 2.27.2 (https://faust.grame.fr)
-Compilation options: -lang cpp -light -scal -ftz 0
+Compilation options: -lang cpp -scal -ftz 0
 ------------------------------------------------------------ */
 
 #ifndef  __ChannelStrip_H__
@@ -33,6 +33,7 @@ class ChannelStrip : public dsp {
  private:
 	
 	FAUSTFLOAT fVslider0;
+	FAUSTFLOAT fVslider1;
 	FAUSTFLOAT fCheckbox0;
 	FAUSTFLOAT fHslider0;
 	int fSampleRate;
@@ -130,6 +131,7 @@ class ChannelStrip : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fVslider0 = FAUSTFLOAT(0.0f);
+		fVslider1 = FAUSTFLOAT(0.0f);
 		fCheckbox0 = FAUSTFLOAT(0.0f);
 		fHslider0 = FAUSTFLOAT(2.0f);
 		fHslider1 = FAUSTFLOAT(15.0f);
@@ -229,13 +231,16 @@ class ChannelStrip : public dsp {
 		ui_interface->declare(&fVslider0, "0", "");
 		ui_interface->declare(&fVslider0, "unit", "dB");
 		ui_interface->addVerticalSlider("Group Gain", &fVslider0, 0.0f, -96.0f, 10.0f, 0.100000001f);
+		ui_interface->declare(&fVslider1, "0", "");
+		ui_interface->declare(&fVslider1, "unit", "dB");
+		ui_interface->addVerticalSlider("Individual Gain", &fVslider1, 0.0f, -96.0f, 10.0f, 0.100000001f);
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* input0 = inputs[0];
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = std::pow(10.0f, (0.0500000007f * float(fVslider0)));
+		float fSlow0 = (std::pow(10.0f, (0.0500000007f * float(fVslider0))) * std::pow(10.0f, (0.0500000007f * float(fVslider1))));
 		int iSlow1 = int(float(fCheckbox0));
 		float fSlow2 = std::pow(10.0f, (0.0500000007f * float(fHslider0)));
 		float fSlow3 = std::max<float>(fConst0, (0.00100000005f * float(fHslider1)));

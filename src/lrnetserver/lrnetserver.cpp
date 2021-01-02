@@ -424,20 +424,29 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
-            pushChatMessage(&args, tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                pushChatMessage(&args, tSess);
         }
 
         //Future refactor: use an association list of updatable parameters
         if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
-           handleNameUpdate(&args, tSess);
+           if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleNameUpdate(&args, tSess);
         }
 
         if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
-           handleSectionUpdate(&args, tSess);
+           if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleSectionUpdate(&args, tSess);
         }
 
         if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
-           mRoster->startJackTrip(tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                 mRoster->startJackTrip(tSess);
+        }
+
+        if (std::strcmp(msg->AddressPattern(), "/control/member") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleAdjustParams(&args);
         }
     }
 
@@ -544,13 +553,19 @@ void LRNetServer::sendRoster(QSslSocket * socket){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/push/roster" );
     for(Member * m:mRoster->getMembers()){
-        oscOutStream << m->getName().toStdString().c_str();
-        oscOutStream << m->getSection().toStdString().c_str();
-        oscOutStream << (int64_t)m->getSerialID();
+        loadMemberFrame(m);
 }
           //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
           oscOutStream << osc::EndMessage;
     qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::loadMemberFrame(Member * m){
+    oscOutStream << m->getName().toStdString().c_str();
+    oscOutStream << m->getSection().toStdString().c_str();
+    oscOutStream << (int64_t)m->getSerialID();
+    for (int i=0; i<Member::numControlValues; i++)
+        oscOutStream<< (m->getCurrentControls())[i];
 }
 
 void LRNetServer::stopCheck()
@@ -735,11 +750,7 @@ void LRNetServer::notifyChefsMemEvent(Member * m, RosterNS::MemberEventE event){
         oscOutStream << osc::BeginMessage( "/push/roster/updatemember" );
         break;
     }
-        oscOutStream << m->getName().toStdString().c_str();
-        oscOutStream << m->getSection().toStdString().c_str();
-        oscOutStream << (int64_t)m->getSerialID();
-
-          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+        loadMemberFrame(m);
           oscOutStream << osc::EndMessage;
     broadcastToChefs();
 
@@ -796,4 +807,32 @@ void LRNetServer::sendJackTripReady(session_id_t s_id){
     << true;
     oscOutStream << osc::EndMessage;
     activeSessions[s_id].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
+    bool err;
+    if (!args->Eos()){
+        int64_t serial;
+        err = false;
+        try{
+            *args >> serial;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+            qDebug() << "Wrong type of argument: need member serial id";
+        }
+        if (err) return;
+        while (!args->Eos()){
+            int paramNum;
+            float paramVal;
+            try{
+                *args >> paramNum; *args >> paramVal;
+            }catch(osc::WrongArgumentTypeException & e){
+                //Not a string.
+                qDebug() << "Wrong type of arguments for adjusting parameters. Needed int and float";
+            }catch(osc::MissingArgumentException & e){
+                qDebug() << "Wrong number of arguments for adjusting parameters. Needed int and float";
+            }
+            mRoster->setControl(serial, paramNum, paramVal);
+        }
+    }
 }

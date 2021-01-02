@@ -131,6 +131,8 @@ private slots:
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
+    void loadMemberFrame(Member * m);
 
 
 signals:

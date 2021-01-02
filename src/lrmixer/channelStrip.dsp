@@ -71,5 +71,6 @@ with {
 };
 
 group_gain = *(vslider("[0] Group Gain [unit:dB]",0, -96, 10, 0.1) : ba.db2linear);
+indiv_gain = *(vslider("[0] Individual Gain [unit:dB]",0, -96, 10, 0.1) : ba.db2linear);
 
-process = _ : compressor_demo : group_gain :_;
+process = _ : compressor_demo : group_gain : indiv_gain : _;

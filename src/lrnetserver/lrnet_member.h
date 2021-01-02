@@ -28,10 +28,23 @@ class Roster;
 class Member: public QObject{
     Q_OBJECT
 public:
+    typedef enum {
+        COMP_BYPASS = 0,
+        COMP_RATIO,
+        COMP_THRESHOLD,
+        COMP_ATTACK,
+        COMP_RELEASE,
+        COMP_MAKEUP,
+        GROUP_GAIN,
+        INDIV_GAIN
+    }CSControlsE;
+    typedef enum {
+        COMP_BYPASSE = 0
+    }CSReadsE;
     typedef quint64 serial_t;
-    jack_port_t * fromPorts[2] = {NULL, NULL};
-    jack_port_t * toPorts[2] = {NULL, NULL};
-    jack_port_t * broadcastPorts[2] = {NULL, NULL};
+
+    void setControl(int out, float val);
+    const float * getCurrentControls();
 
 private:
     session_id_t s_id;
@@ -43,13 +56,19 @@ private:
     Roster * mRoster;
     JackTripWorker * assocThread = NULL;
     int mPort;
+    jack_port_t * fromPorts[2] = {NULL, NULL};
+    jack_port_t * toPorts[2] = {NULL, NULL};
+    jack_port_t * broadcastPorts[2] = {NULL, NULL};
 
     ChannelStrip * cs ;
     ControlUI * ui;
     jackaudio * audio;
 
-public:
+    float currentControlValues[8] = {0.,2.,-24.,15.,40.,2.,0,0};
 
+
+public:
+    static int constexpr numControlValues = 8;
     explicit Member(QObject *parent = nullptr);
     explicit Member(QString & netid, session_id_t s_id, int port, Roster * roster,  QObject *parent = nullptr);
     ~Member();

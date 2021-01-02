@@ -180,3 +180,8 @@ void Roster::stopAllThreads()
     }
     mThreadPool.waitForDone();
 }
+
+void Roster::setControl(Member::serial_t id, int out, float val){
+   Member * m =  members[id];
+   if (m) m->setControl(out, val);
+}

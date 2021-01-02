@@ -82,3 +82,14 @@ void Member::setSection(QString & nsection){
     if(mRoster->sections.isEmpty() || mRoster->sections.contains(nsection))
         section = nsection;
 }
+
+void Member::setControl(int out, float val){
+    if (out < numControlValues){
+        currentControlValues[out] = val;
+        ui->decodeControl(currentControlValues, numControlValues);
+    }
+}
+
+const float * Member::getCurrentControls(){
+    return currentControlValues;
+}
