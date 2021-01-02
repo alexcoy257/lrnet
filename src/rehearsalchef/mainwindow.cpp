@@ -239,6 +239,7 @@ QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat,
 QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
 QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
 QObject::connect(((ChefForm *)centralWidget()), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
+QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
 m_netClient->subChef();
 }
 

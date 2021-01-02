@@ -237,7 +237,7 @@ void LRNetServer::receivedNewConnection()
 {
     QSslSocket *clientSocket = static_cast<QSslSocket *>(mTcpServer.nextPendingConnection());
 
-    Buffer * cBuf = new Buffer();
+    OSCStreamingBuffer * cBuf = new OSCStreamingBuffer();
     if (cBuf){
         activeConnections.insert(clientSocket, {new QMutex(), 0, false, cBuf});
         connect(clientSocket, &QAbstractSocket::readyRead, this, &LRNetServer::receivedClientInfo);
@@ -278,16 +278,25 @@ void LRNetServer::receivedClientInfo()
 
     //If a connection has filled up our buffer with contents that don't
     //make a valid message, give up on that connection.
-    Buffer * cBuf = activeConnections[clientConnection].buffer;
+    OSCStreamingBuffer * cBuf = activeConnections[clientConnection].buffer;
     if (cBuf->remaining() == 0){
         clientConnection->close();
     }
 
     int bytesRead = clientConnection->read(cBuf->head(), cBuf->remaining());
     activeConnections[clientConnection].buffer->update(bytesRead);
+
+    if (!cBuf->haveFullMessage())
+        return;
+    do{
+    QScopedPointer<QByteArray> arr(cBuf->getMessage());
+    if (!arr) return;
+
+    qDebug() <<"Full message: " <<*arr;
+
     osc::ReceivedPacket * inPack = NULL;
     try{
-    inPack = new osc::ReceivedPacket(cBuf->base(), cBuf->filled());
+        inPack = new osc::ReceivedPacket(arr->data(), arr->length());
     }
     catch(osc::MalformedPacketException e){
         qDebug() << "Malformed Packet";
@@ -324,7 +333,7 @@ void LRNetServer::receivedClientInfo()
     delete inMsg;
     delete inPack;
     QThread::msleep(100);
-
+    }while(cBuf->haveFullMessage());
 
 }
 
@@ -472,6 +481,18 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handleAdjustParams(&args);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
+           handleSectionUpdate(&args, tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
+           mRoster->startJackTrip(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
+            handleAuthCodeEnabled(&args, tSess);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
             if (role & (SUPERCHEF | CHEF))
                 handleAuthCodeEnabled(&args, tSess);
@@ -559,21 +580,24 @@ void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
     }*/
 
     oscOutStream << osc::EndMessage;
-    qDebug() <<"Sending Session ID bytes = " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket(socket);
+    qDebug() <<"Sending Session ID bytes = ";// <<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::sendAuthFail(QSslSocket * socket){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/auth/failed" )
             << 0 << osc::EndMessage;
-    qDebug() <<"Sending Auth Failed " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket(socket);
+    qDebug() <<"Sending Auth Failed " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::sendPong(QSslSocket * socket){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/pong" )
             << 0 << osc::EndMessage;
-    qDebug() <<"Sending Pong " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket(socket);
+    qDebug() <<"Sending Pong " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::sendRoster(QSslSocket * socket){
@@ -585,7 +609,8 @@ void LRNetServer::sendRoster(QSslSocket * socket){
 }
           //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
           oscOutStream << osc::EndMessage;
-    qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket(socket);
+    qDebug() <<"Sending Roster " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::loadMemberFrame(Member * m){
@@ -769,21 +794,22 @@ void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * arg
             enabled = mAuthCodeEnabled;
         }
 
-        if (mAuthCodeEnabled != enabled){
-            mAuthCodeEnabled = enabled;
+        if (activeChefs.contains(tSess)){
+            if (mAuthCodeEnabled != enabled){
+                mAuthCodeEnabled = enabled;
 
-            qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
+                qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
 
-            oscOutStream.Clear();
-            oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
-                         << mAuthCodeEnabled
-                         << osc::EndMessage;
+                oscOutStream.Clear();
+                oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
+                             << mAuthCodeEnabled
+                             << osc::EndMessage;
 
-            broadcastToChefs();
+                broadcastToChefs();
+            }
         }
     }
 }
-
 
 
 void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
@@ -843,7 +869,8 @@ void LRNetServer::sendMemberUdpPort(Member * m, RosterNS::MemberEventE event){
         oscOutStream << osc::BeginMessage( "/config/udpport" )
         << m->getPort();
         oscOutStream << osc::EndMessage;
-        activeSessions[m->getSessionID()].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
+        writeStreamToSocket(activeSessions[m->getSessionID()].lastSeenConnection);
+        //activeSessions[m->getSessionID()].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
     }
 }
 
@@ -868,16 +895,17 @@ void LRNetServer::pushChatMessage(osc::ReceivedMessageArgumentStream * args, ses
 
 void LRNetServer::broadcastToAll() {
     for (QSslSocket * socket : activeConnections.keys()) {
-        socket->write(oscOutStream.Data(), oscOutStream.Size());
+        writeStreamToSocket(socket);
+        //socket->write(oscOutStream.Data(), oscOutStream.Size());
     }
 }
 
 void LRNetServer::broadcastToChefs(){
     for (session_id_t t:activeChefs.keys()){
         QSslSocket * conn = activeSessions[t].lastSeenConnection;
-        if (conn){
-            qDebug() <<"Sending Update " <<conn->write(oscOutStream.Data(), oscOutStream.Size());
-        }
+
+         writeStreamToSocket(conn);
+            //conn->write(oscOutStream.Data(), oscOutStream.Size());
 
     }
 }
@@ -887,7 +915,8 @@ void LRNetServer::sendJackTripReady(session_id_t s_id){
     oscOutStream << osc::BeginMessage( "/member/jacktripready" )
     << true;
     oscOutStream << osc::EndMessage;
-    activeSessions[s_id].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket(activeSessions[s_id].lastSeenConnection);
+    //activeSessions[s_id].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
@@ -931,4 +960,12 @@ QString LRNetServer::getRandomString(int length){
        randomString.append(nextChar);
    }
    return randomString;
+}
+
+void LRNetServer::writeStreamToSocket(QSslSocket * socket){
+    if(!socket)
+       return;
+    size_t s = oscOutStream.Size();
+    socket->write((const char *)&s, sizeof(size_t));
+    socket->write(oscOutStream.Data(), s);
 }

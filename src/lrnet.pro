@@ -1,6 +1,8 @@
 include(lrnet.pri)
 TEMPLATE=subdirs
 SUBDIRS = lrnetclient rehearsalchef
+#common common_tests
+#common_tests.file = common/common_tests.pro
 
 !win32{
 SUBDIRS += lrnetserver lrnetserver_tests lrdb_client lrdb_client_app
