@@ -288,7 +288,7 @@ void LRNetServer::receivedClientInfo()
 
     if (!cBuf->haveFullMessage())
         return;
-
+    do{
     QScopedPointer<QByteArray> arr(cBuf->getMessage());
     if (!arr) return;
 
@@ -333,7 +333,7 @@ void LRNetServer::receivedClientInfo()
     delete inMsg;
     delete inPack;
     QThread::msleep(100);
-
+    }while(cBuf->haveFullMessage());
 
 }
 
