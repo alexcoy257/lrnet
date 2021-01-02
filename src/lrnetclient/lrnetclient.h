@@ -98,7 +98,7 @@ private:
         void responseReceived();
         void connected();
         void timeout();
-        void newMember(const QString& name, const QString& group, int id);
+        void newMember(const QString& name, const QString& group, const QVector<float> controls, int id);
         void updateMember(const QString& name, const QString& group, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);
@@ -123,7 +123,11 @@ private:
         void sendAuthCode(const QString &chatMsg);
 
         void subSuperchef();
+
+
         void subChef();
+        void sendControlUpdate(int64_t id, QVector<float> & controls);
+
         void subMember();
         void startJackTrip();
 

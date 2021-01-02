@@ -306,14 +306,21 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     const char * memName;
     const char * memSect;
     int64_t id;
+    QVector<float> currControls(8);
+
     try{
     args >> memName;
     args >> memSect;
     args >> id;
+
+
     std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
     switch (type){
     case MEMBER_ADD:
-    emit newMember(QString(memName), QString(memSect), id);
+        for (int i=0; i<8; i++){
+            args >> (currControls.data())[i];
+        }
+    emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id);
         break;
     case MEMBER_UPDATE:
     emit updateMember(QString(memName), QString(memSect), id);
@@ -422,5 +429,16 @@ void LRNetClient::sendAuthCode(const QString &authCode){
     << osc::Blob(&session, sizeof(session))
     << authCode.toStdString().data()
         << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+void LRNetClient::sendControlUpdate(int64_t id, QVector<float> & controls){
+    qDebug() << "Sending control update for "<<id << controls;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/control/member" )
+    << osc::Blob(&session, sizeof(session));
+    oscOutStream << id;
+    for (int i=0; i<8; i++)
+        oscOutStream << i << controls[i];
+    oscOutStream << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }

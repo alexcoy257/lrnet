@@ -3,12 +3,13 @@
 
 ChefForm::ChefForm(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ChefForm),
-    m_chatForm(new ChatForm(this))
+    ui(new Ui::ChefForm)
+
 {
     ui->setupUi(this);
+    m_chatForm = ui->m_chatForm;
     ui->m_channelStripArea->addStretch();
-    ui->chatArea->addWidget(m_chatForm);
+    //ui->chatArea->addWidget(m_chatForm);
 
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
 }
@@ -16,24 +17,35 @@ ChefForm::ChefForm(QWidget *parent) :
 ChefForm::~ChefForm()
 {
     delete ui;
-    delete m_chatForm;
+    //delete m_chatForm;
 }
 
-void ChefForm::addChannelStrip(const QString& mName, const QString& sName, int id){
+void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id){
 
     if (! m_clients.contains(id)){
         LRMClient * cStruct = (LRMClient *)malloc(sizeof(LRMClient));
-        cStruct->cs = new ChannelStrip(this, mName);
+        cStruct->cs = new ChannelStrip(cStruct, this, mName);
 
-        cStruct->comp = new Compressor(this);
+        cStruct->comp = new Compressor(cStruct, this);
         cStruct->comp->hide();
-        qDebug() <<"Widgets present: " << ui->m_channelStripArea->count() <<"\n";
+        cStruct->id = id;
+        qDebug() <<"Controls: " <<controls;
+        cStruct->cs->newControls(controls);
+        qDebug() <<"Widgets present: " << ui->m_channelStripArea->count();
         ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
         //ui->m_channelStripArea->addWidget(cStruct->cs, 0, Qt::AlignLeft);
         //cStruct->cs->show();
         QObject::connect(cStruct->cs, &ChannelStrip::setActive, this, [=](){highlightInsert(cStruct->comp);}, Qt::QueuedConnection);
+        QObject::connect(cStruct->comp, &Compressor::valueChanged, this, &ChefForm::newValueHandler);
+        QObject::connect(cStruct->cs, &ChannelStrip::valueChanged, this, &ChefForm::newValueHandler);
         m_clients[id] = cStruct;
     }
+}
+
+void ChefForm::newValueHandler(LRMClient * cStruct, int type, float value){
+    cStruct->cs->setControl((int)type, value);
+    QVector<float> ftmp = cStruct->cs->getCurrentControls();
+    emit sendControlUpdate(cStruct->id, ftmp);
 }
 
 void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id){
@@ -59,7 +71,7 @@ void ChefForm::highlightInsert(Compressor * cp){
         ui->m_actCompArea->removeWidget(m_actComp);
     }
 
-
+    qDebug()<<"Highlight a compressor";
     ui->m_actCompArea->addWidget(cp);
     m_actComp = cp;
     m_actComp->show();
