@@ -111,20 +111,27 @@ public:
     
     void setIOStatTimeout(int timeout) { mIOStatTimeout = timeout; }
     void setIOStatStream(QSharedPointer<std::ofstream> statStream) { mIOStatStream = statStream; }
+
+    void setPortCBAreas(audioPortHandle_t * fromArea,
+                        audioPortHandle_t * toArea,
+                        audioPortHandle_t * broadcastArea,
+                        size_t size){
+        qDebug() << "Set port callback structs {from addr:" << fromArea <<"}";
+        mFromSpace = fromArea;
+        mToSpace = toArea;
+        mBroadcastSpace = broadcastArea;
+        mPortSpaceSize = size;
+    }
     
 
 signals:
-    void jackPortsReady(QVarLengthArray<audioPortHandle_t> from,
-                        QVarLengthArray<audioPortHandle_t> to,
-                        QVarLengthArray<audioPortHandle_t> broadcast);
+    void jackPortsReady();
 private slots:
     void slotTest()
     { std::cout << "--- JackTripWorker TEST SLOT ---" << std::endl; }
-    void signalJackReady(QVarLengthArray<audioPortHandle_t> from,
-                         QVarLengthArray<audioPortHandle_t> to,
-                         QVarLengthArray<audioPortHandle_t> broadcast){
+    void signalJackReady(){
         qDebug() <<"Jack ports ready!";
-        emit jackPortsReady(from, to, broadcast);}
+        emit jackPortsReady();}
 
 
 signals:
@@ -163,6 +170,11 @@ private:
     double mSimulatedJitterRate;
     double mSimulatedDelayRel;
     bool mUseRtUdpPriority;
+
+    audioPortHandle_t * mFromSpace = NULL;
+    audioPortHandle_t * mToSpace = NULL;
+    audioPortHandle_t * mBroadcastSpace = NULL;
+    size_t mPortSpaceSize = 0;
     
     int mIOStatTimeout;
     QSharedPointer<std::ofstream> mIOStatStream;

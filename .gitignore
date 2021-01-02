@@ -5,6 +5,7 @@ build*
 generate_auth.sh
 *.pro.user
 lib
+include
 settings.json
 
 # Prerequisites

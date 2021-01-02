@@ -45,13 +45,6 @@
 #include <QObject>
 #include <QDebug>
 
-
-
-#include <faust/dsp/dsp.h>
-#include <faust/gui/meta.h>
-#include <faust/gui/QTUI.h>
-#include <faust/audio/jack-dsp.h>
-
 #include "channelStrip.h"
 
 

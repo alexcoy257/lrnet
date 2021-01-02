@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <jack/jack.h>
 
+//Q_DECLARE_OPAQUE_POINTER(audioPortHandle_t);
+
 Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
   , m_server(server)
   , m_jackStatus(NULL)
@@ -10,10 +12,13 @@ Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
   //, mPortPool()
 {
 
+    //qRegisterMetaType<audioPortHandle_t>("audioPortHandle_t");
+    //qRegisterMetaType<QVarLengthArray<audioPortHandle_t>>();//"QVarLengthArray<audioPortHandle_t>");
 
     qDebug() << "mThreadPool default maxThreadCount =" << mThreadPool.maxThreadCount();
     mThreadPool.setMaxThreadCount(mThreadPool.maxThreadCount() * 16);
     qDebug() << "mThreadPool maxThreadCount set to" << mThreadPool.maxThreadCount();
+
 
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
@@ -29,6 +34,7 @@ bool Roster::initJackClient(){
         qDebug() << "Cannot activate jack client\n";
         return 2;
     }
+    qDebug() << "Activated hub patcher client";
     return 0;
 }
 
@@ -47,50 +53,28 @@ void Roster::addMember(QString &netid, session_id_t s_id){
     if (membersBySessionID.contains(s_id))
         return;
 
-    Member * newMem = new Member(netid, s_id, this);
+    Member * newMem = new Member(netid, s_id, mPortPool.getPort(), this);
 
     members[newMem->getSerialID()]=newMem;
     membersBySessionID[s_id]=newMem;
 
 
 
-    JackTripWorker * w = new JackTripWorker(newMem->getSerialID(), this, 10, JackTrip::ZEROS, "JackTrip");
-    newMem->setThread(w);
-    w->setBufferStrategy(1);
-    newMem->setPort(mPortPool.getPort());
+
     //newMem->setPort(61002);
     qDebug() <<"Assigned UDP Port:" << newMem->getPort();
 
-    {
-        QMutexLocker lock(&mMutex);
-
-#ifdef ROSTER_TEST_NO_SERVER
-#warning "Testing roster independently of the server."
-#endif
-#ifndef ROSTER_TEST_NO_SERVER
-        w->setJackTrip(m_server->getActiveSessions()[s_id].lastSeenConnection->peerAddress().toString(),
-                                        newMem->getPort(),
-                                        newMem->getPort(),
-                                        1,
-                                        false
-                                        ); /// \todo temp default to 1 channel
-#endif
-}
-
-    QObject::connect(w, &JackTripWorker::jackPortsReady, this, [=](QVarLengthArray<jack_port_t *> from,
-                     QVarLengthArray<jack_port_t *> to,
-                     QVarLengthArray<jack_port_t *> broadcast
-                     ){
-        jack_connect(m_jackClient, jack_port_name(from[0]), jack_port_name(to[0]));
-        jack_connect(m_jackClient, jack_port_name(from[0]), jack_port_name(to[1]));
-
-    });
+    qDebug() <<"Member's port is now " << newMem->getPort();
 
 
 
      qDebug() <<"New member " <<newMem->getNetID();
     emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
 }
+
+QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
+        return m_server->getActiveSessions();
+    }
 
 void Roster::startJackTrip(session_id_t s_id){
     JackTripWorker * w = membersBySessionID[s_id]->getThread();
