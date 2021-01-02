@@ -133,6 +133,7 @@ private slots:
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
 
 
@@ -192,6 +193,7 @@ private:
     //QHash<QString, uint16_t> mActiveAddressPortPair;
     
     bool mRequireAuth;
+    bool mAuthCodeEnabled;
     QString mCertFile;
     QString mKeyFile;
     QString mCredsFile;

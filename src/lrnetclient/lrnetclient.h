@@ -121,6 +121,7 @@ private:
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);
+        void updateAuthCodeEnabled(bool enabled);
 
         void subSuperchef();
         void subChef();
@@ -151,7 +152,8 @@ private:
         void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
         void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
-        void handleAuthCode(osc::ReceivedMessageArgumentStream & args);
+        void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);
+        void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & args);
         
     };
 

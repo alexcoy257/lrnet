@@ -236,7 +236,11 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     }
 
     else if (std::strcmp(ap, "/push/authcodeupdated") == 0){
-        handleAuthCode(args);
+        handleAuthCodeUpdated(args);
+    }
+
+    else if (std::strcmp(ap, "/push/authcodeenabled") == 0){
+        handleAuthCodeEnabled(args);
     }
 }
 
@@ -401,7 +405,7 @@ void LRNetClient::handleNewChat(osc::ReceivedMessageArgumentStream & args){
     }
 }
 
-void LRNetClient::handleAuthCode(osc::ReceivedMessageArgumentStream & args){
+void LRNetClient::handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args){
     const char * authCode;
     try{
         args >> authCode;
@@ -415,6 +419,23 @@ void LRNetClient::handleAuthCode(osc::ReceivedMessageArgumentStream & args){
     }
 }
 
+void LRNetClient::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & args){
+    bool enabled;
+    try{
+        args >> enabled;
+
+        if (enabled){
+            std::cout << "Authorization code enabled on server" << std::endl;
+        } else{
+            std::cout << "Authorization code disabled on server" << std::endl;
+        }
+
+    } catch(osc::WrongArgumentTypeException & e){
+        // Not a boolean.
+    }
+}
+
+
 void LRNetClient::sendAuthCode(const QString &authCode){
     qDebug() << "Sending authorization code: " << authCode;
     oscOutStream.Clear();
@@ -422,5 +443,14 @@ void LRNetClient::sendAuthCode(const QString &authCode){
     << osc::Blob(&session, sizeof(session))
     << authCode.toStdString().data()
         << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::updateAuthCodeEnabled(bool enabled){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/setcodeenabled" )
+    << osc::Blob(&session, sizeof(session))
+    << enabled
+    << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }

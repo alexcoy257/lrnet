@@ -29,6 +29,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mServerUdpPort(server_udp_port),//final udp base port number
     mRequireAuth(false),
     mStopped(false),
+    mAuthCodeEnabled(false),
     mAuthCode(QString(getRandomString(12)))
 
     #ifdef WAIR // wair
@@ -365,36 +366,39 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
     }
     if (std::strcmp(msg->AddressPattern(), "/auth/newbycode") == 0){
 
-        osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
+        if (mAuthCodeEnabled){
+            osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
 
-        const char * authCode;
-        if (!args.Eos()){
-            try{
-            args >> authCode;
-            }catch(osc::WrongArgumentTypeException & e){
-                //Not a string.
-                authCode = NULL;
-            }
+            const char * authCode;
+            if (!args.Eos()){
+                try{
+                args >> authCode;
+                }catch(osc::WrongArgumentTypeException & e){
+                    //Not a string.
+                    authCode = NULL;
+                }
 
-            if (authCode){
-                qDebug() << "Got auth code " <<authCode;
-                QString qsAuthCode = QString::fromStdString(authCode);
-                qDebug() << "mAuthCode " << mAuthCode << " ... Got " << qsAuthCode;
-                if (mAuthCode.compare(qsAuthCode) == 0){
-                    auth_type_t at = {authorizer.genSessionKey(), MEMBER};
-                    sendAuthResponse(socket, at);
-                    qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                    sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
-                    char nonetid[8] = "nonetid";
-                    memcpy(tt.netid, nonetid, 7);
-                    tt.netid[8] = 0;
-                    activeSessions.insert(at.session_id, tt);
-                } else {
-                    sendAuthFail(socket);
+                if (authCode){
+                    qDebug() << "Got auth code " <<authCode;
+                    QString qsAuthCode = QString::fromStdString(authCode);
+                    qDebug() << "mAuthCode " << mAuthCode << " ... Got " << qsAuthCode;
+                    if (mAuthCode.compare(qsAuthCode) == 0){
+                        auth_type_t at = {authorizer.genSessionKey(), MEMBER};
+                        sendAuthResponse(socket, at);
+                        qDebug() <<"Authenticated: Gave session id " <<at.session_id;
+                        sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+                        char nonetid[8] = "nonetid";
+                        memcpy(tt.netid, nonetid, 7);
+                        tt.netid[8] = 0;
+                        activeSessions.insert(at.session_id, tt);
+                    } else {
+                        sendAuthFail(socket);
+                       }
                 }
             }
+        } else {
+            sendAuthFail(socket);
         }
-
     }
     else
     {
@@ -403,11 +407,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         AuthTypeE role = activeSessions[tSess].role;
         if(tSess == 0)
             return;
-        if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
             if (role & (SUPERCHEF | CHEF))
                 sendRoster(socket);
         }
-        if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
             //All sessions should have active connections. If not, pinging updates the connection.
             //tSess is in activeSessions at this point.
             if (activeConnections.contains(socket)){
@@ -419,13 +423,13 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 activeSessions[tSess].lastSeenConnection = socket;
             }
         }
-        if (std::strcmp(msg->AddressPattern(), "/sub/member") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/sub/member") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 qDebug() <<"Subscribed as member";
             handleNewMember(&args, tSess);
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
             if (role & (SUPERCHEF | CHEF)){
                 qDebug() <<"Subscribed as chef";
                 handleNewChef(&args, tSess);
@@ -433,30 +437,34 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             }
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/sub/superchef") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/sub/superchef") == 0){
             if (role & (SUPERCHEF))
                 qDebug() <<"Subscribed as superchef";
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
             pushChatMessage(&args, tSess);
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/send/authcode") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/send/authcode") == 0){
             handleAuthCodeUpdate(&args, tSess);
         }
 
         //Future refactor: use an association list of updatable parameters
-        if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
            handleNameUpdate(&args, tSess);
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
            handleSectionUpdate(&args, tSess);
         }
 
-        if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
            mRoster->startJackTrip(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
+            handleAuthCodeEnabled(&args, tSess);
         }
     }
 
@@ -734,6 +742,34 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
         }
         }
 }
+
+void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    if (!args->Eos()){
+        bool enabled;
+        try{
+            *args >> enabled;
+        }catch(osc::WrongArgumentTypeException & e){
+            // Not a boolean value.
+            enabled = mAuthCodeEnabled;
+        }
+
+        if (activeChefs.contains(tSess)){
+            if (mAuthCodeEnabled != enabled){
+                mAuthCodeEnabled = enabled;
+
+                qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
+
+                oscOutStream.Clear();
+                oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
+                             << mAuthCodeEnabled
+                             << osc::EndMessage;
+
+                broadcastToChefs();
+            }
+        }
+    }
+}
+
 
 void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){

@@ -32,13 +32,16 @@ public slots:
     void addChannelStrip(const QString& mName, const QString& sName, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void deleteChannelStrip(int id);
+    void updateAuthCodeEnabled();
 
 signals:
     void authCodeUpdated(const QString & nname);
+    void authCodeEnabledUpdated(bool enabled);
 
 private:
     Ui::ChefForm *ui;
     void updateAuthCode();
+
 };
 
 #endif // CHEFFORM_H

@@ -17,14 +17,21 @@
    <item row="2" column="0" colspan="2">
     <layout class="QHBoxLayout" name="m_channelStripArea"/>
    </item>
-   <item row="1" column="1">
-    <layout class="QVBoxLayout" name="chatArea"/>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
-   </item>
    <item row="0" column="0" colspan="2">
     <layout class="QHBoxLayout" name="m_authArea">
+     <item>
+      <widget class="QCheckBox" name="codeEnabledBox">
+       <property name="toolTip">
+        <string>If checked, users can connect to the server using the current authorization code</string>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
+       <property name="text">
+        <string>Enabled</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QLabel" name="authLabel">
        <property name="toolTip">
@@ -43,6 +50,12 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   </item>
+   <item row="1" column="1">
+    <layout class="QVBoxLayout" name="chatArea"/>
    </item>
   </layout>
  </widget>

@@ -11,6 +11,7 @@ ChefForm::ChefForm(QWidget *parent) :
     ui->chatArea->addWidget(m_chatForm);
 
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
+    QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
 }
 
 ChefForm::~ChefForm()
@@ -68,4 +69,9 @@ void ChefForm::highlightInsert(Compressor * cp){
 void ChefForm::updateAuthCode(){
     ui->authCodeEdit->clearFocus();
     emit authCodeUpdated(ui->authCodeEdit->text());
+}
+
+void ChefForm::updateAuthCodeEnabled(){
+    ui->codeEnabledBox->clearFocus();
+    emit authCodeEnabledUpdated(ui->codeEnabledBox->isChecked());
 }
