@@ -481,6 +481,18 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handleAdjustParams(&args);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
+           handleSectionUpdate(&args, tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
+           mRoster->startJackTrip(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
+            handleAuthCodeEnabled(&args, tSess);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
             if (role & (SUPERCHEF | CHEF))
                 handleAuthCodeEnabled(&args, tSess);
@@ -782,21 +794,22 @@ void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * arg
             enabled = mAuthCodeEnabled;
         }
 
-        if (mAuthCodeEnabled != enabled){
-            mAuthCodeEnabled = enabled;
+        if (activeChefs.contains(tSess)){
+            if (mAuthCodeEnabled != enabled){
+                mAuthCodeEnabled = enabled;
 
-            qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
+                qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
 
-            oscOutStream.Clear();
-            oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
-                         << mAuthCodeEnabled
-                         << osc::EndMessage;
+                oscOutStream.Clear();
+                oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
+                             << mAuthCodeEnabled
+                             << osc::EndMessage;
 
-            broadcastToChefs();
+                broadcastToChefs();
+            }
         }
     }
 }
-
 
 
 void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){

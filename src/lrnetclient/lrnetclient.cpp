@@ -503,3 +503,12 @@ void LRNetClient::writeStreamToSocket(){
     socket->write((const char *)&s, sizeof(size_t));
     socket->write(oscOutStream.Data(), s);
 }
+
+void LRNetClient::updateAuthCodeEnabled(bool enabled){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/setcodeenabled" )
+    << osc::Blob(&session, sizeof(session))
+    << enabled
+    << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}

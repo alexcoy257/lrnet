@@ -35,18 +35,16 @@ public slots:
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void deleteChannelStrip(int id);
-    void updateAuthCodeEnabled();
 
 signals:
     void sendControlUpdate(int id, QVector<float> & controls);
-
-signals:
     void authCodeUpdated(const QString & nname);
     void authCodeEnabledUpdated(bool enabled);
 
 private:
     Ui::ChefForm *ui;
     void updateAuthCode();
+    void updateAuthCodeEnabled();
 
 private slots:
     void newValueHandler(LRMClient * myClient, int type, float value);
