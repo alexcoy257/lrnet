@@ -30,6 +30,7 @@
 #include "lrnet_member.h"
 #include "../JackServerTest/jackinterface.h"
 #include "lrnetserver_types.h"
+#include <QRandomGenerator>
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -128,11 +129,14 @@ private slots:
     void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
     void notifyChefsMemLeft(Member::serial_t id);
     void broadcastToChefs();
+    void broadcastToAll();
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
     void loadMemberFrame(Member * m);
+    void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
 
 
 signals:
@@ -171,16 +175,11 @@ private:
 
     }
 
-    /** \brief Prepares the chat message then calls pushAll
-     *  \param args contains message
-     *  \param tSess contains session ID
-     */
-    void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
 
-    /** \brief Sends whatever is in the osc outbound stream to all active connections
-     */
-    void broadcastToAll();
-    
+
+
+    QRandomGenerator rGen = QRandomGenerator::securelySeeded();
+    QString getRandomString(int length);
 
     //QUdpSocket mUdpHubSocket; ///< The UDP socket
     //QHostAddress mPeerAddress; ///< The Peer Address
@@ -199,6 +198,7 @@ private:
     QString mCertFile;
     QString mKeyFile;
     QString mCredsFile;
+    QString mAuthCode;
 
     /// Boolean stop the execution of the thread
     volatile bool mStopped;

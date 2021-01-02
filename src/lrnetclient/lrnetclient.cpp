@@ -232,13 +232,11 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     }
 
     else if (std::strcmp(ap, "/push/chat") == 0){
-        osc::ReceivedMessageArgumentStream args = inMsg->ArgumentStream();
-        const char * chatName;
-        const char * chatMsg;
-        args >> chatName; args >> chatMsg;
-        qDebug() << "Name <" <<chatName <<">: " << chatMsg;
+        handleNewChat(args);
+    }
 
-        emit chatReceived(QString(chatName), QString(chatMsg));
+    else if (std::strcmp(ap, "/push/authcodeupdated") == 0){
+        handleAuthCode(args);
     }
 }
 
@@ -368,13 +366,61 @@ void LRNetClient::startJackTrip(){
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
-void LRNetClient::sendChat(const QString &chatMsg)
-{
+void LRNetClient::sendChat(const QString &chatMsg){
     qDebug() << "Sending chat: " << chatMsg;
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/send/chat" )
     << osc::Blob(&session, sizeof(session))
     << chatMsg.toStdString().data()
+        << osc::EndMessage;
+    socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::handleNewChat(osc::ReceivedMessageArgumentStream & args){
+    const char * chatName;
+    const char * chatMsg;
+    try{
+        args >> chatName;
+    }catch(osc::WrongArgumentTypeException & e){
+        // Not a string.
+        chatName = NULL;
+    }
+
+    if (chatName){
+        try{
+        args >> chatMsg;
+        } catch(osc::WrongArgumentTypeException & e){
+            // Not a string.
+            chatMsg = NULL;
+        }
+
+        if (chatMsg){
+            qDebug() << "Name <" <<chatName <<">: " << chatMsg;
+            emit chatReceived(QString(chatName), QString(chatMsg));
+        }
+    }
+}
+
+void LRNetClient::handleAuthCode(osc::ReceivedMessageArgumentStream & args){
+    const char * authCode;
+    try{
+        args >> authCode;
+    } catch(osc::WrongArgumentTypeException & e){
+        // Not a string.
+        authCode = NULL;
+    }
+
+    if (authCode){
+        std::cout << "Authorization code changed to " << authCode  << std::endl;
+    }
+}
+
+void LRNetClient::sendAuthCode(const QString &authCode){
+    qDebug() << "Sending authorization code: " << authCode;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/send/authcode" )
+    << osc::Blob(&session, sizeof(session))
+    << authCode.toStdString().data()
         << osc::EndMessage;
     socket->write(oscOutStream.Data(), oscOutStream.Size());
 }

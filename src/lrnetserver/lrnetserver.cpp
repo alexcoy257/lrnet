@@ -6,7 +6,7 @@
 #include <QtNetwork/QSslSocket>
 #include <QtNetwork/QSslCipher>
 #include <cstdio>
-
+#include <QRandomGenerator>
 
 /**
  * \file SslServer.cpp
@@ -28,7 +28,9 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     mServerPort(server_port),
     mServerUdpPort(server_udp_port),//final udp base port number
     mRequireAuth(false),
-    mStopped(false)
+    mStopped(false),
+    mAuthCode(QString(getRandomString(12)))
+
     #ifdef WAIR // wair
     mWAIR(false),
     #endif // endwhere
@@ -43,10 +45,6 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     , mRoster(new Roster(this, nullptr))
 
 {
-
-
-
-
 
         mStimeoutTimer.setInterval(300000); //5 minutes for a session
         mStimeoutTimer.callOnTimeout([=](){
@@ -128,10 +126,12 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
            qDebug() <<"Couldn't connect hub patcher, quitting";
            QCoreApplication::quit();
        }
+
     }else{
         qDebug() << "jackServer.start() returned nonzero";
     }
 
+    qDebug() << "Authorization code initialized to " << mAuthCode;
 
 }
 
@@ -364,21 +364,36 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
     }
     if (std::strcmp(msg->AddressPattern(), "/auth/newbycode") == 0){
-        qDebug() <<"Auth by code short circuit. Sending member auth.";
+
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
-        auth_type_t at = {authorizer.genSessionKey(), MEMBER};
-        sendAuthResponse(socket, at);
-        qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-        sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
-        char nonetid[8] = "nonetid";
-        memcpy(tt.netid, nonetid, 7);
-        tt.netid[8] = 0;
-        activeSessions.insert(at.session_id, tt);
 
+        const char * authCode;
+        if (!args.Eos()){
+            try{
+            args >> authCode;
+            }catch(osc::WrongArgumentTypeException & e){
+                //Not a string.
+                authCode = NULL;
+            }
 
-       //sendAuthFail(socket);
-
-
+            if (authCode){
+                qDebug() << "Got auth code " <<authCode;
+                QString qsAuthCode = QString::fromStdString(authCode);
+                qDebug() << "mAuthCode " << mAuthCode << " ... Got " << qsAuthCode;
+                if (mAuthCode.compare(qsAuthCode) == 0){
+                    auth_type_t at = {authorizer.genSessionKey(), MEMBER};
+                    sendAuthResponse(socket, at);
+                    qDebug() <<"Authenticated: Gave session id " <<at.session_id;
+                    sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+                    char nonetid[8] = "nonetid";
+                    memcpy(tt.netid, nonetid, 7);
+                    tt.netid[8] = 0;
+                    activeSessions.insert(at.session_id, tt);
+                } else {
+                    sendAuthFail(socket);
+                }
+            }
+        }
 
     }
     else
@@ -426,6 +441,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 pushChatMessage(&args, tSess);
+        }
+
+        if (std::strcmp(msg->AddressPattern(), "/send/authcode") == 0){
+            handleAuthCodeUpdate(&args, tSess);
         }
 
         //Future refactor: use an association list of updatable parameters
@@ -731,6 +750,33 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
         }
 }
 
+void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    if (!args->Eos()){
+        const char * authCode;
+        try{
+            *args >> authCode;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+            authCode = NULL;
+        }
+
+        if (authCode){
+            if (activeChefs.contains(tSess)){
+                QString qsCode = QString::fromStdString(authCode);
+                mAuthCode = qsCode;
+
+                qDebug() << "Auth code updated to" << qsCode;
+                oscOutStream.Clear();
+                oscOutStream << osc::BeginMessage( "/push/authcodeupdated" )
+                             << qsCode.toStdString().data()
+                             << osc::EndMessage;
+
+                broadcastToChefs();
+            }
+        }
+    }
+}
+
 void LRNetServer::notifyChefsMemLeft(Member::serial_t id){
     qDebug() <<"Generate mem left message";
     oscOutStream.Clear();
@@ -795,7 +841,7 @@ void LRNetServer::broadcastToChefs(){
     for (session_id_t t:activeChefs.keys()){
         QSslSocket * conn = activeSessions[t].lastSeenConnection;
         if (conn){
-            qDebug() <<"Sending Member Update " <<conn->write(oscOutStream.Data(), oscOutStream.Size());
+            qDebug() <<"Sending Update " <<conn->write(oscOutStream.Data(), oscOutStream.Size());
         }
 
     }
@@ -835,4 +881,19 @@ void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
             mRoster->setControl(serial, paramNum, paramVal);
         }
     }
+
+}
+
+QString LRNetServer::getRandomString(int length){
+   const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
+   QString randomString;
+
+   for(int i=0; i<length; ++i)
+   {
+       quint32 index = rGen.generate() % quint32(possibleCharacters.length());
+       QChar nextChar = possibleCharacters.at(index);
+       randomString.append(nextChar);
+   }
+   return randomString;
 }
