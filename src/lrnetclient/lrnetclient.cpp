@@ -95,7 +95,8 @@ void LRNetClient::sendKeyAuthPacket(auth_packet_t & pck){
 
     osc::Blob b(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&pck)), sizeof(auth_packet_t));
     oscOutStream << b << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::sendCodeAuthPacket(){
