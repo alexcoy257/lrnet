@@ -103,11 +103,15 @@ void LRNetClient::sendCodeAuthPacket(){
     oscOutStream << osc::BeginMessage( "/auth/newbycode" );
     std::string code = tempCode.toStdString();
     oscOutStream << code.data() << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
+
+///Todo: Refactor to merge old and new names.
 void LRNetClient::sendPacket(){
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::requestRoster(){
@@ -115,7 +119,8 @@ void LRNetClient::requestRoster(){
     oscOutStream << osc::BeginMessage( "/get/roster" ) 
             << osc::Blob(&session, sizeof(session))
             << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::readResponse()
@@ -124,9 +129,16 @@ void LRNetClient::readResponse()
     int bytesRead = socket->read(buffer.head(), buffer.remaining());
     buffer.update(bytesRead);
 
+    if (!buffer.haveFullMessage())
+        return;
+
     osc::ReceivedPacket * inPack = NULL;
+    QScopedPointer<QByteArray> msg(buffer.getMessage());
+
+    if (!msg) return;
+
     try{
-    inPack = new osc::ReceivedPacket(buffer.base(), buffer.filled());
+    inPack = new osc::ReceivedPacket(msg->data(), msg->length());
     }
     catch(const osc::MalformedPacketException & e){
         qDebug() << "Malformed Packet";
@@ -249,7 +261,8 @@ void LRNetClient::sendPing(){
     oscOutStream << osc::BeginMessage( "/ping" )
             << osc::Blob(&session, sizeof(session))
             << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::setRSAKey(RSA * key){
@@ -261,7 +274,8 @@ void LRNetClient::sendSmallMessage(QString & handle){
     oscOutStream << osc::BeginMessage( handle.toStdString().data() )
     << osc::Blob(&session, sizeof(session))
             << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::subSuperchef(){
@@ -294,7 +308,8 @@ void LRNetClient::updateName(const QString & nname){
     << osc::Blob(&session, sizeof(session))
     << nname.toStdString().data()
             << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::updateSection(const QString & nsection){
@@ -303,7 +318,8 @@ void LRNetClient::updateSection(const QString & nsection){
     << osc::Blob(&session, sizeof(session))
     << nsection.toStdString().data()
             << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type){
@@ -374,7 +390,8 @@ void LRNetClient::startJackTrip(){
     oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
     << osc::Blob(&session, sizeof(session))
     << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::sendChat(const QString &chatMsg){
@@ -384,7 +401,8 @@ void LRNetClient::sendChat(const QString &chatMsg){
     << osc::Blob(&session, sizeof(session))
     << chatMsg.toStdString().data()
         << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::handleNewChat(osc::ReceivedMessageArgumentStream & args){
@@ -450,7 +468,8 @@ void LRNetClient::sendAuthCode(const QString &authCode){
     << osc::Blob(&session, sizeof(session))
     << authCode.toStdString().data()
         << osc::EndMessage;
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
 void LRNetClient::updateAuthCodeEnabled(bool enabled){
@@ -472,6 +491,14 @@ void LRNetClient::sendControlUpdate(int64_t id, QVector<float> & controls){
     for (int i=0; i<8; i++)
         oscOutStream << i << controls[i];
     oscOutStream << osc::EndMessage;
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
 
-    socket->write(oscOutStream.Data(), oscOutStream.Size());
+void LRNetClient::writeStreamToSocket(){
+    if(!socket)
+       return;
+    size_t s = oscOutStream.Size();
+    socket->write((const char *)&s, sizeof(size_t));
+    socket->write(oscOutStream.Data(), s);
 }

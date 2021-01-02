@@ -15,6 +15,7 @@
 #include <osc/OscReceivedElements.h>
 #endif
 #include "../lrnetserver/auth_types.h"
+#include "../common/oscstreambuffer.h"
 
 #ifdef LIBLRNET_LIBRARY
 #warning "LIBLRNET_LIBRARY defined"
@@ -53,6 +54,7 @@ private:
         AuthMethodE authMethod = KEY;
         char netid[30] = "";
 
+        /*
         class Buffer{
             char _base[INPUT_BUFFER_SIZE];
             char * _head = _base;
@@ -79,9 +81,9 @@ private:
             size_t filled(){
                 return INPUT_BUFFER_SIZE - _remaining;
             }
-        };
+        };*/
 
-        Buffer buffer;
+        OSCStreamingBuffer buffer;
 
         enum MemberInfoTypeE{
             MEMBER_ADD,
@@ -135,6 +137,7 @@ private:
     private slots:
         void startHandshake();
         void readResponse();
+        void writeStreamToSocket();
         //void startTimer();
     
     private:

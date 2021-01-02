@@ -31,6 +31,7 @@
 #include "../JackServerTest/jackinterface.h"
 #include "lrnetserver_types.h"
 #include <QRandomGenerator>
+#include "../common/oscstreambuffer.h"
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -53,7 +54,7 @@ class LRNetServer : public QObject
     Q_OBJECT;
 
 
-
+/*
     class Buffer: public QObject{
         char _base[INPUT_BUFFER_SIZE];
         char * _head = _base;
@@ -80,7 +81,7 @@ class LRNetServer : public QObject
         size_t filled(){
             return INPUT_BUFFER_SIZE - _remaining;
         }
-    };
+    };*/
 
     /**
       * This type handles data associated with a particular
@@ -92,7 +93,7 @@ class LRNetServer : public QObject
         QMutex * mutex;
         session_id_t assocSession;
         bool ChasCheckedIn;
-        Buffer * buffer;
+        OSCStreamingBuffer * buffer;
     }connectionPair;
 
 public:
@@ -138,6 +139,7 @@ private slots:
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
+    void writeStreamToSocket(QSslSocket * socket);
 
 
 signals:
