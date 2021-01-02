@@ -238,6 +238,7 @@ QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)centralWi
 QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
 QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+QObject::connect(((ChefForm *)centralWidget()), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
 m_netClient->subChef();
 }
 
@@ -278,6 +279,7 @@ void MainWindow::startJackTrip(){
 }
 
 void MainWindow::startJackTripThread(){
+    //QThread::msleep(500);
     m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
 }
 

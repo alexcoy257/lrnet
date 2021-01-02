@@ -30,6 +30,7 @@
 #include "lrnet_member.h"
 #include "../JackServerTest/jackinterface.h"
 #include "lrnetserver_types.h"
+#include <QRandomGenerator>
 
 #define OUTPUT_BUFFER_SIZE 1024
 #define INPUT_BUFFER_SIZE 1024
@@ -132,6 +133,8 @@ private slots:
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
+    void loadMemberFrame(Member * m);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
@@ -176,7 +179,7 @@ private:
 
 
 
-    
+    QRandomGenerator rGen = QRandomGenerator::securelySeeded();
     QString getRandomString(int length);
 
     //QUdpSocket mUdpHubSocket; ///< The UDP socket

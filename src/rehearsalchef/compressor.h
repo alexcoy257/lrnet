@@ -7,13 +7,26 @@ namespace Ui {
 class Compressor;
 }
 
+struct LRMClient;
+
 class Compressor : public QWidget
 {
     Q_OBJECT
 
+    LRMClient * mCStruct;
 public:
-    explicit Compressor(QWidget *parent = nullptr);
+    typedef enum {
+        RATIO = 1,
+        THRESHOLD,
+        ATTACK,
+        RELEASE,
+        MAKEUP
+    } CValuesE;
+    explicit Compressor(LRMClient * cStruct, QWidget *parent = nullptr);
     ~Compressor();
+
+signals:
+    void valueChanged(LRMClient * myClient, CValuesE type, float value);
 
 private:
     Ui::Compressor *ui;

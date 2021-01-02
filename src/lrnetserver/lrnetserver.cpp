@@ -443,7 +443,8 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
-            pushChatMessage(&args, tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                pushChatMessage(&args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/send/authcode") == 0){
@@ -452,19 +453,28 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         //Future refactor: use an association list of updatable parameters
         else if (std::strcmp(msg->AddressPattern(), "/update/name") == 0){
-           handleNameUpdate(&args, tSess);
+           if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleNameUpdate(&args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
-           handleSectionUpdate(&args, tSess);
+           if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleSectionUpdate(&args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
-           mRoster->startJackTrip(tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                 mRoster->startJackTrip(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/control/member") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleAdjustParams(&args);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
-            handleAuthCodeEnabled(&args, tSess);
+            if (role & (SUPERCHEF | CHEF))
+                handleAuthCodeEnabled(&args, tSess);
         }
     }
 
@@ -571,13 +581,19 @@ void LRNetServer::sendRoster(QSslSocket * socket){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/push/roster" );
     for(Member * m:mRoster->getMembers()){
-        oscOutStream << m->getName().toStdString().c_str();
-        oscOutStream << m->getSection().toStdString().c_str();
-        oscOutStream << (int64_t)m->getSerialID();
+        loadMemberFrame(m);
 }
           //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
           oscOutStream << osc::EndMessage;
     qDebug() <<"Sending Roster " <<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::loadMemberFrame(Member * m){
+    oscOutStream << m->getName().toStdString().c_str();
+    oscOutStream << m->getSection().toStdString().c_str();
+    oscOutStream << (int64_t)m->getSerialID();
+    for (int i=0; i<Member::numControlValues; i++)
+        oscOutStream<< (m->getCurrentControls())[i];
 }
 
 void LRNetServer::stopCheck()
@@ -753,22 +769,21 @@ void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * arg
             enabled = mAuthCodeEnabled;
         }
 
-        if (activeChefs.contains(tSess)){
-            if (mAuthCodeEnabled != enabled){
-                mAuthCodeEnabled = enabled;
+        if (mAuthCodeEnabled != enabled){
+            mAuthCodeEnabled = enabled;
 
-                qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
+            qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
 
-                oscOutStream.Clear();
-                oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
-                             << mAuthCodeEnabled
-                             << osc::EndMessage;
+            oscOutStream.Clear();
+            oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
+                         << mAuthCodeEnabled
+                         << osc::EndMessage;
 
-                broadcastToChefs();
-            }
+            broadcastToChefs();
         }
     }
 }
+
 
 
 void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
@@ -782,18 +797,17 @@ void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args
         }
 
         if (authCode){
-            if (activeChefs.contains(tSess)){
-                QString qsCode = QString::fromStdString(authCode);
-                mAuthCode = qsCode;
 
-                qDebug() << "Auth code updated to" << qsCode;
-                oscOutStream.Clear();
-                oscOutStream << osc::BeginMessage( "/push/authcodeupdated" )
-                             << qsCode.toStdString().data()
-                             << osc::EndMessage;
+            QString qsCode = QString::fromStdString(authCode);
+            mAuthCode = qsCode;
 
-                broadcastToChefs();
-            }
+            qDebug() << "Auth code updated to" << qsCode;
+            oscOutStream.Clear();
+            oscOutStream << osc::BeginMessage( "/push/authcodeupdated" )
+                         << qsCode.toStdString().data()
+                         << osc::EndMessage;
+
+            broadcastToChefs();
         }
     }
 }
@@ -817,11 +831,7 @@ void LRNetServer::notifyChefsMemEvent(Member * m, RosterNS::MemberEventE event){
         oscOutStream << osc::BeginMessage( "/push/roster/updatemember" );
         break;
     }
-        oscOutStream << m->getName().toStdString().c_str();
-        oscOutStream << m->getSection().toStdString().c_str();
-        oscOutStream << (int64_t)m->getSerialID();
-
-          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+        loadMemberFrame(m);
           oscOutStream << osc::EndMessage;
     broadcastToChefs();
 
@@ -880,15 +890,43 @@ void LRNetServer::sendJackTripReady(session_id_t s_id){
     activeSessions[s_id].lastSeenConnection->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
-// Function modified from here: https://stackoverflow.com/questions/18862963/qt-c-random-string-generation/18866593
+void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
+    bool err;
+    if (!args->Eos()){
+        int64_t serial;
+        err = false;
+        try{
+            *args >> serial;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a string.
+            qDebug() << "Wrong type of argument: need member serial id";
+        }
+        if (err) return;
+        while (!args->Eos()){
+            int paramNum;
+            float paramVal;
+            try{
+                *args >> paramNum; *args >> paramVal;
+            }catch(osc::WrongArgumentTypeException & e){
+                //Not a string.
+                qDebug() << "Wrong type of arguments for adjusting parameters. Needed int and float";
+            }catch(osc::MissingArgumentException & e){
+                qDebug() << "Wrong number of arguments for adjusting parameters. Needed int and float";
+            }
+            mRoster->setControl(serial, paramNum, paramVal);
+        }
+    }
+
+}
+
 QString LRNetServer::getRandomString(int length){
    const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
 
    QString randomString;
-   QRandomGenerator *generator = QRandomGenerator::system();
+
    for(int i=0; i<length; ++i)
    {
-       quint32 index = generator->generate() % quint32(possibleCharacters.length());
+       quint32 index = rGen.generate() % quint32(possibleCharacters.length());
        QChar nextChar = possibleCharacters.at(index);
        randomString.append(nextChar);
    }
