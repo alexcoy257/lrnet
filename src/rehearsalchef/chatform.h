@@ -16,7 +16,7 @@ class ChatForm : public QWidget
 
 public:
     explicit ChatForm(QWidget *parent = nullptr);
-    ~ChatForm();
+    virtual ~ChatForm();
 
 public slots:
     void appendMessage(const QString &from, const QString &msg);
