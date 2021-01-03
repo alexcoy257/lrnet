@@ -6,7 +6,10 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_chefForm(NULL)
+    , m_stackedWidget(new QStackedWidget(this))
     , m_connectForm(new ConnectForm(this))
+    , m_launcherForm(NULL)
+    , m_roleForm(NULL)
     , m_settings(REHEARSALCHEF_DOMAIN, REHEARSALCHEF_TITLE)
     , m_netClient(new LRNetClient())
     , m_keepAliveTimer(this)
@@ -17,7 +20,19 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setCentralWidget(m_connectForm);
+    m_stackedWidget->addWidget(m_connectForm);
+
+    setCentralWidget(m_stackedWidget);
+
+    // Actions menu
+    QMenu *actionsMenu = menuBar()->addMenu(tr("&Actions"));
+
+    m_disconnectAction = new QAction("&Disconnect", this);
+    m_disconnectAction->setShortcut(QKeySequence(tr("Ctrl+D")));
+    m_disconnectAction->setEnabled(false);
+    actionsMenu->addAction(m_disconnectAction);
+    QObject::connect(m_disconnectAction, &QAction::triggered, m_netClient, &LRNetClient::disconnectFromHost);
+
 
 
     QObject::connect(m_connectForm, &ConnectForm::tryConnect, this, &MainWindow::tryConnect);
@@ -40,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
         m_connectForm->m_submitButton->setText("Login");
         QObject::connect(m_connectForm, &ConnectForm::tryConnect, m_netClient, &LRNetClient::tryToAuthenticate);
     });
+    QObject::connect(m_netClient, &LRNetClient::disconnected, this, &MainWindow::disconnected);
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
     QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
     QObject::connect(m_connectForm, &ConnectForm::netidUpdated, this, [&](const QString & nnetid){m_netid = nnetid; m_netClient->setNetid(nnetid);});
@@ -181,6 +197,20 @@ void MainWindow::tryConnect(const QString & host, int port){
     statusBar()->showMessage(base.arg(host).arg(port));
 }
 
+void MainWindow::disconnected(){
+    m_stackedWidget->setCurrentWidget(m_connectForm);
+    delete m_launcherForm;
+    m_launcherForm = NULL;
+    delete m_roleForm;
+    m_roleForm = NULL;
+
+    m_disconnectAction->setEnabled(false);
+
+    QObject::disconnect(m_connectForm, &ConnectForm::tryConnect, m_netClient, &LRNetClient::tryToAuthenticate);
+    m_connectForm->m_submitButton->setText("Connect");
+    QObject::connect(m_connectForm, &ConnectForm::tryConnect, this, &MainWindow::tryConnect);
+}
+
 void MainWindow::loadSetup(){
     m_settings.beginGroup("/Auth");
     m_hostname = m_settings.value("Host","localhost").toString();
@@ -217,10 +247,13 @@ void MainWindow::saveSetup(){
 
 void MainWindow::handleAuth(AuthTypeE type){
     if (type != NONE){
-        setCentralWidget(new Launcher(type, this));
-        connect((Launcher *)centralWidget(), &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
-        connect((Launcher *)centralWidget(), &Launcher::choseChef, this, &MainWindow::launchChef);
-        connect((Launcher *)centralWidget(), &Launcher::choseMember, this, &MainWindow::launchMember);
+        m_launcherForm = new Launcher(type, this);
+        m_stackedWidget->addWidget(m_launcherForm);
+        m_stackedWidget->setCurrentWidget(m_launcherForm);
+        connect(m_launcherForm, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
+        connect(m_launcherForm, &Launcher::choseChef, this, &MainWindow::launchChef);
+        connect(m_launcherForm, &Launcher::choseMember, this, &MainWindow::launchMember);
+        m_disconnectAction->setEnabled(true);
     }
 }
 
@@ -230,36 +263,40 @@ m_netClient->subSuperchef();
 }
 
 void MainWindow::launchChef(){
-setCentralWidget(new ChefForm(this));
-QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)centralWidget(), &ChefForm::addChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)centralWidget(), &ChefForm::updateChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)centralWidget(), &ChefForm::deleteChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
-QObject::connect(((ChefForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
-QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
-QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
-QObject::connect(((ChefForm *)centralWidget()), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
-QObject::connect(((ChefForm *)centralWidget()), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+m_roleForm = new ChefForm(this);
+m_stackedWidget->addWidget(m_roleForm);
+m_stackedWidget->setCurrentWidget(m_roleForm);
+QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)m_roleForm, &ChefForm::addChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)m_roleForm, &ChefForm::updateChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
+QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+QObject::connect(((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
+QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
+QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
 m_netClient->subChef();
 }
 
 void MainWindow::launchMember(){
-setCentralWidget(new MemberForm(this));
-((MemberForm *)centralWidget())->setName(m_name);
-((MemberForm *)centralWidget())->setSection(m_section);
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::nameUpdated, this, [=](const QString nname){
+m_roleForm = new MemberForm(this);
+m_stackedWidget->addWidget(m_roleForm);
+m_stackedWidget->setCurrentWidget(m_roleForm);
+((MemberForm *)m_roleForm)->setName(m_name);
+((MemberForm *)m_roleForm)->setSection(m_section);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::nameUpdated, this, [=](const QString nname){
     m_name = nname;
     m_netClient->updateName(nname);
 });
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::sectionUpdated, this, [=](const QString nsection){
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::sectionUpdated, this, [=](const QString nsection){
     m_section = nsection;
     m_netClient->updateSection(nsection);
 });
-QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)centralWidget())->m_chatForm, &ChatForm::appendMessage);
-QObject::connect(((MemberForm *)centralWidget())->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 m_netClient->subMember();
 
-QObject::connect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
 QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
 
@@ -272,7 +309,7 @@ void MainWindow::setUdpPort(int port){
 
 
 void MainWindow::startJackTrip(){
-    QObject::disconnect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     qDebug() << "Want to start JackTrip";
     m_netClient->startJackTrip();
     QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
@@ -286,5 +323,5 @@ void MainWindow::startJackTripThread(){
 
 
 void MainWindow::releaseThread(int n){
-    QObject::connect((MemberForm *)centralWidget(), &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 }

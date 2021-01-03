@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QStackedWidget>
 #include <QWidget>
 #include <QObject>
 #include <QPushButton>
@@ -53,10 +54,15 @@ private:
     ChannelStrip * m_channelStrip;
     Compressor * m_comp;
 
+    QStackedWidget * m_stackedWidget;
+    ConnectForm * m_connectForm;
+    Launcher * m_launcherForm;
+    QWidget * m_roleForm;
+
     ChefForm * m_chefForm;
 
 
-    ConnectForm * m_connectForm;
+
     QSettings m_settings;
     LRNetClient * m_netClient;
     QTimer m_keepAliveTimer;
@@ -72,6 +78,8 @@ private:
     RCJTWorker * m_jacktrip;
     QThreadPool m_jacktripthreadpool;
 
+    QAction *m_disconnectAction;
+
     void loadSetup();
     void keyInit();
     void saveSetup();
@@ -82,6 +90,7 @@ signals:
 
 private slots:
     void tryConnect(const QString & host, int port);
+    void disconnected();
     void handleAuth(AuthTypeE type);
     void launchSuperChef();
     void launchChef();
@@ -89,7 +98,6 @@ private slots:
     void setUdpPort(int port);
     void startJackTrip();
     void startJackTripThread();
-
 
 };
 #endif // MAINWINDOW_H

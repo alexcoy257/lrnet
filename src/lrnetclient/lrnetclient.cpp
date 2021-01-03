@@ -18,13 +18,16 @@ authKey(k)
     connect(socket, &QSslSocket::connected, this,
             [=](){
         disconnect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
-        m_timeoutTimer.stop();
-        connect(socket, &QSslSocket::disconnected, this, [=](){
-            qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
-            m_timeoutTimer.stop();
-        });
+        m_timeoutTimer.stop();        
         startHandshake();
     });
+    connect(socket, &QSslSocket::disconnected, this, [=](){
+        qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
+        m_timeoutTimer.stop();
+        connect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
+        emit disconnected();
+    });
+
     connect(socket, SIGNAL(readyRead()), SLOT(readResponse()));
     //connect(socket, SIGNAL(disconnected()), qApp, SLOT(quit()));
 
@@ -39,6 +42,11 @@ void LRNetClient::tryConnect(const QString &host, int port){
     qDebug() <<"Connecting to "<<host <<"on " <<port;
     socket->connectToHost(host, port);
     m_timeoutTimer.start();
+}
+
+void LRNetClient::disconnectFromHost(){
+    qDebug() << "Disconnecting from host";
+    socket->disconnectFromHost();
 }
 
 LRNetClient::~LRNetClient(){
