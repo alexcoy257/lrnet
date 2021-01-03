@@ -221,6 +221,7 @@ void MainWindow::handleAuth(AuthTypeE type){
         connect((Launcher *)centralWidget(), &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
         connect((Launcher *)centralWidget(), &Launcher::choseChef, this, &MainWindow::launchChef);
         connect((Launcher *)centralWidget(), &Launcher::choseMember, this, &MainWindow::launchMember);
+        connect((Launcher *)centralWidget(), &Launcher::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
     }
 }
 
@@ -266,7 +267,7 @@ QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUd
 }
 
 void MainWindow::setUdpPort(int port){
-    m_jacktrip->setJackTrip(m_hostname, port, port, 2, true);
+    m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, true);
 }
 
 
