@@ -26,7 +26,7 @@ public:
     }
 
     bool haveFullMessage(){
-        return (_head - _base)+1 >= (unsigned)mSize;
+        return (_head - _base)+sizeof(size_t) >= (unsigned)mSize;
     }
     QByteArray * getMessage(){
         QByteArray * toRet = NULL;
@@ -34,7 +34,7 @@ public:
             toRet = new QByteArray(_base + sizeof(size_t), messageSize());
         }
 
-        std::memmove(_base, _base + mSize, filled()-mSize);
+        std::memmove(_base, _base + mSize+sizeof(size_t), filled()-mSize-sizeof(size_t));
         _remaining += mSize;
         _head = _base;
         mSize = *((size_t*)_base);

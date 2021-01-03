@@ -284,7 +284,7 @@ void LRNetServer::receivedClientInfo()
     }
 
     int bytesRead = clientConnection->read(cBuf->head(), cBuf->remaining());
-    activeConnections[clientConnection].buffer->update(bytesRead);
+    cBuf->update(bytesRead);
 
     if (!cBuf->haveFullMessage())
         return;
@@ -292,7 +292,7 @@ void LRNetServer::receivedClientInfo()
     QScopedPointer<QByteArray> arr(cBuf->getMessage());
     if (!arr) return;
 
-    qDebug() <<"Full message: " <<*arr;
+    //qDebug() <<"Full message: " <<*arr;
 
     osc::ReceivedPacket * inPack = NULL;
     try{
@@ -419,6 +419,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         else if (std::strcmp(msg->AddressPattern(), "/get/roster") == 0){
             if (role & (SUPERCHEF | CHEF))
                 sendRoster(socket);
+        }
+        else if (std::strcmp(msg->AddressPattern(), "/auth/storekey/send") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleStoreKey(args, tSess);
         }
         else if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
             //All sessions should have active connections. If not, pinging updates the connection.
@@ -968,4 +972,26 @@ void LRNetServer::writeStreamToSocket(QSslSocket * socket){
     size_t s = oscOutStream.Size();
     socket->write((const char *)&s, sizeof(size_t));
     socket->write(oscOutStream.Data(), s);
+}
+
+void LRNetServer::handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t s_id){
+    osc::Blob b;
+    osc::Blob c;
+    bool err=false;
+    try{
+        args >> b >> c;
+    }catch(osc::WrongArgumentTypeException & e){
+        //Not a blob.
+        qDebug() << "Wrong type of arguments for adjusting parameters. Needed two blobs";
+        err = true;
+    }catch(osc::MissingArgumentException & e){
+        qDebug() << "Wrong number of arguments for adjusting parameters. Needed two blobs";
+        err =true;
+    }
+    if(err || b.size!=451) return;
+    if (c.size == sizeof(auth_packet_t)){
+        qDebug() <<"Must verify sent key";
+        AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(c.data)));
+        authorizer.addKey((const char *)b.data,pkt);
+    }
 }

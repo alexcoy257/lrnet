@@ -45,7 +45,7 @@ session_id_t Auth::genSessionKey(){
 
 auth_type_t Auth::checkCredentials (AuthPacket & pck)
 {
-#ifdef AUTH_TEST_SHORTCUT
+#if false //def AUTH_TEST_SHORTCUT
     if (std::strcmp(pck.netid, "superchef") == 0)
         return {1, SUPERCHEF};
     if (std::strcmp(pck.netid, "chef") == 0)
@@ -114,4 +114,45 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
 
     qDebug() <<"Challenge failed";
     return {0, NONE};
+}
+
+bool Auth::addKey(const char * key, AuthPacket & pck){
+    qDebug() <<QByteArray(key, 451);
+    BIO * t_pub = BIO_new(BIO_s_mem());
+    RSA * pubkey = NULL;
+     bool err = false;
+    int nw = BIO_write(t_pub, key, 451);
+    if (nw < 1){
+        qDebug() << "BIO write failed somehow.";
+        err = true;
+
+    }
+    if(!err){
+        qDebug() << "bio_read rsa key";
+        if(!PEM_read_bio_RSA_PUBKEY(t_pub, &pubkey, NULL, NULL)){
+            err = true;
+            qDebug() << "PEM read failed somehow";
+        }
+        if (!err){
+        int verified = RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, pubkey);
+        if(verified){
+            addKeyToDb(key, pck);
+        }else{
+            qDebug() <<"Not RSA Verified";
+            err = true;
+        }
+
+        RSA_free(pubkey);
+    }}
+
+    BIO_free(t_pub);
+
+    return err;
+}
+
+void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
+    qDebug() <<"Verified key, adding to db if not present";
+    QByteArray bakey(key, 451);
+    QString netid = QString::fromLocal8Bit(pkt.netid, pkt.netid_length);
+    readdb.addKeyToNetid(bakey, netid);
 }

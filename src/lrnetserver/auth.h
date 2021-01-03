@@ -23,6 +23,7 @@ class Auth : public QObject{
   Q_OBJECT;
   
   LRdbClient readdb;
+  void addKeyToDb(const char * key, AuthPacket & pkt);
 
   public:
   
@@ -30,6 +31,7 @@ class Auth : public QObject{
   ~Auth();
 
   auth_type_t checkCredentials (AuthPacket &pkt);
+  bool addKey (const char * key, AuthPacket &pkt);
 
 
   signals:

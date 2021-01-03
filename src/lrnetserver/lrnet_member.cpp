@@ -68,6 +68,7 @@ Member::~Member(){
         munlock(cs, sizeof(ChannelStrip));
     }
     audio->stop();
+    assocThread->stopThread();
     delete ui;
     delete audio;
     delete cs;
