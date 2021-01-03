@@ -125,6 +125,7 @@ private:
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);
+        void sendPublicKey();
         void updateAuthCodeEnabled(bool enabled);
 
         void subSuperchef();

@@ -14,6 +14,7 @@ class Launcher : public QWidget
     QPushButton * m_superChefButton;
     QPushButton * m_chefButton;
     QPushButton * m_memberButton;
+    QPushButton * m_sendKeyButton;
 public:
     explicit Launcher(AuthTypeE level = NONE, QWidget *parent = nullptr);
 
@@ -22,6 +23,7 @@ signals:
     void choseSuperChef();
     void choseChef();
     void choseMember();
+    void sendPublicKey();
 
 };
 

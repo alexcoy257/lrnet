@@ -57,6 +57,8 @@
 
 using std::cout; using std::endl;
 
+
+
 //*******************************************************************************
 RCJTWorker::RCJTWorker(MainWindow* udphublistener, int BufferQueueLength, JackTrip::underrunModeT UnderRunMode, QString clientName) :
     mUdpHubListener(udphublistener),
@@ -73,6 +75,7 @@ RCJTWorker::RCJTWorker(MainWindow* udphublistener, int BufferQueueLength, JackTr
     mWAIR(false)
   #endif // endwhere
 {
+    gVerboseFlag = true;
     setAutoDelete(false); // stick around after calling run()
     //mNetks = new NetKS;
     //mNetks->play();

@@ -253,7 +253,9 @@ void MainWindow::handleAuth(AuthTypeE type){
         connect(m_launcherForm, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
         connect(m_launcherForm, &Launcher::choseChef, this, &MainWindow::launchChef);
         connect(m_launcherForm, &Launcher::choseMember, this, &MainWindow::launchMember);
+        connect(m_launcherForm, &Launcher::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
         m_disconnectAction->setEnabled(true);
+        
     }
 }
 
@@ -303,7 +305,7 @@ QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUd
 }
 
 void MainWindow::setUdpPort(int port){
-    m_jacktrip->setJackTrip(m_hostname, port, port, 2, true);
+    m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, true);
 }
 
 
