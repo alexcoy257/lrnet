@@ -99,6 +99,7 @@ private:
     signals:
         void responseReceived();
         void connected();
+        void disconnected();
         void timeout();
         void newMember(const QString& name, const QString& group, const QVector<float> controls, int id);
         void updateMember(const QString& name, const QString& group, int id);
@@ -111,6 +112,7 @@ private:
     
     public slots:
         void tryConnect(const QString &host, int port);
+        void disconnectFromHost();
         void requestRoster();
         void setNetid(const QString & nnetid);
         void setRSAKey (RSA * key);
@@ -123,6 +125,7 @@ private:
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);
+        void sendPublicKey();
         void updateAuthCodeEnabled(bool enabled);
 
         void subSuperchef();

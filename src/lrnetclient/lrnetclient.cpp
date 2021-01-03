@@ -18,13 +18,16 @@ authKey(k)
     connect(socket, &QSslSocket::connected, this,
             [=](){
         disconnect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
-        m_timeoutTimer.stop();
-        connect(socket, &QSslSocket::disconnected, this, [=](){
-            qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
-            m_timeoutTimer.stop();
-        });
+        m_timeoutTimer.stop();        
         startHandshake();
     });
+    connect(socket, &QSslSocket::disconnected, this, [=](){
+        qDebug() <<__FILE__ <<__LINE__ <<"Disconnected";
+        m_timeoutTimer.stop();
+        connect(&m_timeoutTimer, &QTimer::timeout, this, &LRNetClient::connectionTimedOut);
+        emit disconnected();
+    });
+
     connect(socket, SIGNAL(readyRead()), SLOT(readResponse()));
     //connect(socket, SIGNAL(disconnected()), qApp, SLOT(quit()));
 
@@ -39,6 +42,11 @@ void LRNetClient::tryConnect(const QString &host, int port){
     qDebug() <<"Connecting to "<<host <<"on " <<port;
     socket->connectToHost(host, port);
     m_timeoutTimer.start();
+}
+
+void LRNetClient::disconnectFromHost(){
+    qDebug() << "Disconnecting from host";
+    socket->disconnectFromHost();
 }
 
 LRNetClient::~LRNetClient(){
@@ -502,4 +510,44 @@ void LRNetClient::writeStreamToSocket(){
     size_t s = oscOutStream.Size();
     socket->write((const char *)&s, sizeof(size_t));
     socket->write(oscOutStream.Data(), s);
+}
+
+void LRNetClient::sendPublicKey(){
+
+    if(authKey){
+        char t_arr[452];
+        size_t len;
+        BIO * pubkey_out = BIO_new(BIO_s_mem());
+        PEM_write_bio_RSA_PUBKEY(pubkey_out, authKey);
+        len = BIO_pending(pubkey_out);
+
+        AuthPacket pck(netid);
+        unsigned int retlen;
+        RAND_bytes(pck.challenge, 214);
+        RSA_sign(NID_sha256, pck.challenge, 214, pck.sig, &retlen, authKey);
+        if(RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, authKey)){
+            qDebug() <<"Verified at send";
+        }else{
+            qDebug() <<"Failed to verify at send";
+        }
+        auth_packet_t dpck;
+        pck.pack(dpck);
+
+
+        if (len == 451){
+            BIO_read(pubkey_out, t_arr, len);
+            t_arr[451] = 0;
+            qDebug() << "Sending public key";
+            qDebug() << QString(t_arr);
+            oscOutStream.Clear();
+            oscOutStream << osc::BeginMessage( "/auth/storekey/send" )
+            << osc::Blob(&session, sizeof(session))
+            << osc::Blob(&t_arr, 451)
+            << osc::Blob(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&dpck)), sizeof(auth_packet_t));
+            oscOutStream << osc::EndMessage;
+            writeStreamToSocket();
+
+        }
+    }
+
 }

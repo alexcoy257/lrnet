@@ -27,7 +27,7 @@ class ChefForm : public QWidget
     QHash<int, LRMClient *> m_clients;
 public:
     explicit ChefForm(QWidget *parent = nullptr);
-    ~ChefForm();
+    virtual ~ChefForm();
 
 
 public slots:

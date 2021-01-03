@@ -54,6 +54,7 @@
 class MainWindow; // forward declaration
 
 
+
 /** \brief Prototype of the worker class that will be cloned through sending threads to the
  * Thread Pool
  *
@@ -67,6 +68,7 @@ class MainWindow; // forward declaration
 // inside a QThread
 class RCJTWorker : public QObject, public QRunnable
 {
+
     Q_OBJECT; // QRunnable is not a QObject, so I have to inherit from QObject as well
 
 public:

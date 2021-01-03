@@ -5,11 +5,13 @@ Launcher::Launcher(AuthTypeE level, QWidget *parent) : QWidget(parent)
   ,m_superChefButton(new QPushButton("Super Chef", this))
   ,m_chefButton(new QPushButton("Chef", this))
   ,m_memberButton(new QPushButton("Member", this))
+  ,m_sendKeyButton(new QPushButton("Send Public Key", this))
 {
     setLayout(m_layout);
     m_layout->addWidget(m_superChefButton);
     m_layout->addWidget(m_chefButton);
     m_layout->addWidget(m_memberButton);
+    m_layout->addWidget(m_sendKeyButton);
 
     switch(level){
     case NONE:
@@ -25,4 +27,5 @@ Launcher::Launcher(AuthTypeE level, QWidget *parent) : QWidget(parent)
     connect(m_superChefButton, &QAbstractButton::released, this, [=](){emit choseSuperChef();});
     connect(m_chefButton, &QAbstractButton::released, this, [=](){emit choseChef();});
     connect(m_memberButton, &QAbstractButton::released, this, [=](){emit choseMember();});
+    connect(m_sendKeyButton, &QAbstractButton::released, this, [=](){emit sendPublicKey();});
 }

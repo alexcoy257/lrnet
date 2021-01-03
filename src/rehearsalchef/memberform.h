@@ -17,7 +17,7 @@ class MemberForm : public QWidget
 
 public:
     explicit MemberForm(QWidget *parent = nullptr);
-    ~MemberForm();
+    virtual ~MemberForm();
 
     ChatForm * m_chatForm;
 
