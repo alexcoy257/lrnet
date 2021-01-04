@@ -23,7 +23,11 @@ Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
 }
-
+/**
+ * Try to make the Roster's JACK client. Return 0 if successful, 1
+ * if the JACK client creation failed, and 2 if the JACK
+ * client activation failed.
+ */
 bool Roster::initJackClient(){
     m_jackClient = jack_client_open("lrhubpatcher", JackNoStartServer, m_jackStatus);
     if (!m_jackClient){
@@ -69,6 +73,9 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 
 
      qDebug() <<"New member " <<newMem->getNetID();
+
+    QObject::connect(newMem, &Member::readyToFan,
+        this, &Roster::fanNewMember);
     emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
 }
 
@@ -192,4 +199,24 @@ void Roster::stopJackTrip(session_id_t s_id){
         return;
     m->getThread()->stopThread();
     m->resetThread();
+}
+
+void Roster::fanNewMember(Member * member){
+    qDebug() <<"Fanning new member";
+    for (Member * m:members){
+        if(m != member){
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(0)),
+                jack_port_name(member->getAudioInputPort(0)));
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(0)),
+                jack_port_name(member->getAudioInputPort(1)));
+            jack_connect(m_jackClient,
+                jack_port_name(member->getAudioOutputPort(0)),
+                jack_port_name(m->getAudioInputPort(0)));
+            jack_connect(m_jackClient,
+                jack_port_name(member->getAudioOutputPort(0)),
+                jack_port_name(m->getAudioInputPort(1)));
+        }
+    }
 }

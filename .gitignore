@@ -1,5 +1,7 @@
 # build dir
 build*
+#build script local changes
+src/build
 .qmake.stash
 .vscode
 generate_auth.sh
