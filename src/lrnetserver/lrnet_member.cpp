@@ -6,11 +6,12 @@
 
 Member::serial_t Member::currentSerial=0;
 
-Member::Member(QString & netid, session_id_t s_id, int port, Roster * roster,  QObject * parent): QObject(parent)
+Member::Member(QString & netid, session_id_t s_id, Roster * roster,  QObject * parent): QObject(parent)
   ,s_id(s_id)
   ,serial(currentSerial++)
   ,netid(netid)
-  ,mPort(port)
+  ,mRoster(roster)
+  ,mPort(roster?roster->getPort():0)
   ,cs(new ChannelStrip())
   ,ui(new ControlUI())
   ,audio(new jackaudio(false))
@@ -33,8 +34,8 @@ Member::Member(QString & netid, session_id_t s_id, int port, Roster * roster,  Q
 #endif
 #ifndef ROSTER_TEST_NO_SERVER
         assocThread->setJackTrip(roster->getActiveSessions()[s_id].lastSeenConnection->peerAddress().toString(),
-                                        port,
-                                        port,
+                                        mPort,
+                                        mPort,
                                         1,
                                         false
                                         ); /// \todo temp default to 1 channel
@@ -74,6 +75,7 @@ Member::~Member(){
     delete cs;
 }
 
+
 void Member::setName(QString & nname){
     qDebug() <<"Set name " <<nname;
     name = nname;
@@ -93,4 +95,39 @@ void Member::setControl(int out, float val){
 
 const float * Member::getCurrentControls(){
     return currentControlValues;
+}
+
+void Member::resetThread(){
+    if (!assocThread)
+        return;
+
+    assocThread = new JackTripWorker(serial, mRoster, 10, JackTrip::ZEROS, "JackTrip");
+    assocThread->setBufferStrategy(1);
+    assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
+    //{
+    //    QMutexLocker lock(&mRoster->mMutex);
+
+#ifdef ROSTER_TEST_NO_SERVER
+#warning "Testing roster independently of the server."
+#endif
+#ifndef ROSTER_TEST_NO_SERVER
+        assocThread->setJackTrip(mRoster->getActiveSessions()[s_id].lastSeenConnection->peerAddress().toString(),
+                                        mPort,
+                                        mPort,
+                                        1,
+                                        false
+                                        ); /// \todo temp default to 1 channel
+#endif
+//}
+
+    QObject::connect(assocThread, &JackTripWorker::jackPortsReady, this, [=](){
+        qDebug() << "Got jackPortsReady";
+        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[0]));
+        jack_connect(mRoster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(audio->getInputPort(0)));
+        jack_connect(mRoster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[0]));
+        jack_connect(mRoster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[1]));
+        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[1]));
+
+    }, Qt::QueuedConnection);
+
 }
