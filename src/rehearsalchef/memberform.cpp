@@ -17,12 +17,24 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, [=](){ui->startJackTripButton->setEnabled(true);});
     QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, [=](){ui->startJackTripButton->setDisabled(true);});
 
-    QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, [=](){emit startJackTrip();});
+    QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
 }
 
 void MemberForm::updateName(){
     ui->nameChoice->clearFocus();
     emit nameUpdated(ui->nameChoice->text());
+}
+
+void MemberForm::fstartJacktrip(){
+    emit startJackTrip();
+    QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
+    QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
+}
+
+void MemberForm::fstopJacktrip(){
+    emit stopJackTrip();
+    QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
+    QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
 }
 
 MemberForm::~MemberForm()

@@ -100,7 +100,9 @@ private slots:
     void changeRole();
     void setUdpPort(int port);
     void startJackTrip();
+    void stopJackTrip();
     void startJackTripThread();
+    void stopJackTripThread();
 
 };
 #endif // MAINWINDOW_H

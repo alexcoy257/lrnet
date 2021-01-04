@@ -338,6 +338,7 @@ void MainWindow::setUdpPort(int port){
 
 void MainWindow::startJackTrip(){
     QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     qDebug() << "Want to start JackTrip";
     m_netClient->startJackTrip();
     QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
@@ -346,7 +347,21 @@ void MainWindow::startJackTrip(){
 
 void MainWindow::startJackTripThread(){
     //QThread::msleep(500);
+    QObject::disconnect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
+
     m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
+}
+
+void MainWindow::stopJackTrip(){
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+    qDebug() << "Want to stop JackTrip";
+    m_netClient->stopJackTrip();
+    stopJackTripThread();
+}
+
+void MainWindow::stopJackTripThread(){
+    //QThread::msleep(500);
+    m_jacktrip->stopThread();
 }
 
 

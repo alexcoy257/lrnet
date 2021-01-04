@@ -35,6 +35,7 @@ authKey(k)
 
 
 void LRNetClient::connectionTimedOut(){
+    socket->abort();
     emit timeout();
 }
 
@@ -402,6 +403,15 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
 void LRNetClient::startJackTrip(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
+    << osc::Blob(&session, sizeof(session))
+    << osc::EndMessage;
+    writeStreamToSocket();
+    //socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::stopJackTrip(){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/stopjacktrip" )
     << osc::Blob(&session, sizeof(session))
     << osc::EndMessage;
     writeStreamToSocket();

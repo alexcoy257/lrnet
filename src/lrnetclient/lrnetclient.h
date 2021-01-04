@@ -136,6 +136,7 @@ private:
 
         void subMember();
         void startJackTrip();
+        void stopJackTrip();
 
         void unsubscribe();
 
