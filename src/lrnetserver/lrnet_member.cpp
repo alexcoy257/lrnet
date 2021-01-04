@@ -42,15 +42,8 @@ Member::Member(QString & netid, session_id_t s_id, Roster * roster,  QObject * p
 #endif
 }
 
-    QObject::connect(assocThread, &JackTripWorker::jackPortsReady, this, [=](){
-        qDebug() << "Got jackPortsReady";
-        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[0]));
-        jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(audio->getInputPort(0)));
-        jack_connect(roster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[0]));
-        jack_connect(roster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[1]));
-        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[1]));
-
-    }, Qt::QueuedConnection);
+    QObject::connect(assocThread, &JackTripWorker::jackPortsReady, this,
+        &Member::connectChannelStrip, Qt::QueuedConnection);
 
 }
 
@@ -120,14 +113,42 @@ void Member::resetThread(){
 #endif
 //}
 
-    QObject::connect(assocThread, &JackTripWorker::jackPortsReady, this, [=](){
-        qDebug() << "Got jackPortsReady";
-        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[0]));
-        jack_connect(mRoster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(audio->getInputPort(0)));
-        jack_connect(mRoster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[0]));
-        jack_connect(mRoster->m_jackClient, jack_port_name(audio->getOutputPort(0)), jack_port_name(toPorts[1]));
-        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[1]));
-
-    }, Qt::QueuedConnection);
+    QObject::connect(assocThread, &JackTripWorker::jackPortsReady, this,
+    &Member::connectChannelStrip, Qt::QueuedConnection);
 
 }
+
+/**
+ *  Returns the port that goes to the network.
+ */
+audioPortHandle_t Member::getAudioInputPort(int n){
+    n = n<0?0:n>1?1:n;
+    return toPorts[n];
+}
+
+/**
+ *  Disregards n and returns the port that comes from the channel strip.
+ */
+audioPortHandle_t Member::getAudioOutputPort(int n){
+    if(audio)
+        return audio->getOutputPort(0);
+    return NULL;
+}
+
+void Member::connectChannelStrip(){
+        //qDebug() << "Got jackPortsReady";
+        qDebug() << "Emit readyToFan";
+        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[0]));
+        jack_connect(mRoster->m_jackClient,
+            jack_port_name(fromPorts[0]),
+            jack_port_name(audio->getInputPort(0)));
+        jack_connect(mRoster->m_jackClient,
+            jack_port_name(audio->getOutputPort(0)),
+            jack_port_name(toPorts[0]));
+        jack_connect(mRoster->m_jackClient,
+            jack_port_name(audio->getOutputPort(0)),
+            jack_port_name(toPorts[1]));
+        //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[1]));
+        
+        emit readyToFan(this);
+    }

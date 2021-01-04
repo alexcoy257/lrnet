@@ -64,6 +64,7 @@ class Roster : public QObject
                             };
 
     void removeMember(Member * m);
+    void fanNewMember(Member * m);
 
 
 public:

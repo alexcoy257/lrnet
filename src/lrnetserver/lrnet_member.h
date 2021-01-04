@@ -65,6 +65,7 @@ private:
     jackaudio * audio;
 
     float currentControlValues[8] = {0.,2.,-24.,15.,40.,2.,0,0};
+    void connectChannelStrip();
 
 
 public:
@@ -83,9 +84,12 @@ public:
     void setThread(JackTripWorker * thread){assocThread=thread;}
     void setPort(int port){mPort = port;}
     int getPort(){return mPort;}
+    audioPortHandle_t getAudioInputPort(int n);
+    audioPortHandle_t getAudioOutputPort(int n);
     JackTripWorker * getThread(){return assocThread;}
     void resetThread();
 
 signals:
+    void readyToFan(Member * m);
 };
 #endif // LRNET_MEMBER_H

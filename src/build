@@ -1,5 +1,5 @@
 pushd ../build
-qmake -spec linux-g++ ../src/lrnet.pro
+/usr/local/Qt/5.15.1/bin/qmake -spec linux-g++ ../src/lrnet.pro
 #make clean
 make -j4
 popd 
