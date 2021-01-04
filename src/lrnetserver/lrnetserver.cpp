@@ -359,7 +359,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             if( at.authType != NONE){
                 sendAuthResponse(socket, at);
                 qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+                sessionTriple tt = {at.session_id, socket, true, at.authType, NONE, ""};
                 size_t nl = qMin(pkt.netid_length, (uint8_t)30);
                 memcpy(tt.netid, pkt.netid, nl);
                 tt.netid[nl] = 0;
@@ -395,7 +395,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                         auth_type_t at = {authorizer.genSessionKey(), MEMBER};
                         sendAuthResponse(socket, at);
                         qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                        sessionTriple tt = {at.session_id, socket, true, at.authType, ""};
+                        sessionTriple tt = {at.session_id, socket, true, at.authType, NONE, ""};
                         char nonetid[8] = "nonetid";
                         memcpy(tt.netid, nonetid, 7);
                         tt.netid[8] = 0;
@@ -437,13 +437,16 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             }
         }
         else if (std::strcmp(msg->AddressPattern(), "/sub/member") == 0){
-            if (role & (SUPERCHEF | CHEF | MEMBER))
+            if (role & (SUPERCHEF | CHEF | MEMBER)){
+                activeSessions[tSess].subcribedRole = MEMBER;
                 qDebug() <<"Subscribed as member";
-            handleNewMember(&args, tSess);
+                handleNewMember(&args, tSess);
+            }
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/sub/chef") == 0){
             if (role & (SUPERCHEF | CHEF)){
+                activeSessions[tSess].subcribedRole = CHEF;
                 qDebug() <<"Subscribed as chef";
                 handleNewChef(&args, tSess);
                 //sendRoster(socket);
@@ -451,8 +454,16 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/sub/superchef") == 0){
-            if (role & (SUPERCHEF))
+            if (role & (SUPERCHEF)){
+                activeSessions[tSess].subcribedRole = SUPERCHEF;
                 qDebug() <<"Subscribed as superchef";
+            }
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/sub/unsubscribe") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER)){
+                handleUnsubscribe(tSess);
+            }
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
@@ -491,10 +502,6 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
            mRoster->startJackTrip(tSess);
-        }
-
-        else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
-            handleAuthCodeEnabled(&args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
@@ -752,6 +759,7 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
 void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     activeChefs.insert(tSess, tSess);
     sendRoster(activeSessions[tSess].lastSeenConnection);
+    qDebug() << "Number of chefs: " << activeChefs.count();
 }
 
 void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
@@ -768,6 +776,21 @@ void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, se
         QString qsName = QString::fromStdString(name);
              mRoster->setNameBySessionID(qsName, tSess);}
         }
+}
+
+void LRNetServer::handleUnsubscribe(session_id_t tSess){
+
+    switch (activeSessions[tSess].subcribedRole){
+        case NONE:
+        case SUPERCHEF:
+        case CHEF:
+            activeChefs.remove(tSess);
+            qDebug() << "Number of chefs: " << activeChefs.count();
+        case MEMBER:
+            mRoster->removeMemberBySessionID(tSess);
+            activeSessions[tSess].subcribedRole = NONE;
+    }
+    activeSessions[tSess].subcribedRole = NONE;
 }
 
 void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){

@@ -302,6 +302,11 @@ void LRNetClient::subMember(){
     sendSmallMessage(handle);
 }
 
+void LRNetClient::unsubscribe(){
+    QString handle = "/sub/unsubscribe";
+    sendSmallMessage(handle);
+}
+
 void LRNetClient::setNetid(const QString & nnetid){
     QByteArray temp = nnetid.toLocal8Bit();
     size_t len = qMin(29, nnetid.length());

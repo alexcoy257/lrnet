@@ -62,7 +62,7 @@ private:
     ChefForm * m_chefForm;
 
 
-
+    AuthTypeE m_authType;
     QSettings m_settings;
     LRNetClient * m_netClient;
     QTimer m_keepAliveTimer;
@@ -79,6 +79,7 @@ private:
     QThreadPool m_jacktripthreadpool;
 
     QAction *m_disconnectAction;
+    QAction *m_changeRoleAction;
 
     void loadSetup();
     void keyInit();
@@ -92,9 +93,11 @@ private slots:
     void tryConnect(const QString & host, int port);
     void disconnected();
     void handleAuth(AuthTypeE type);
+    void launchLauncher();
     void launchSuperChef();
     void launchChef();
     void launchMember();
+    void changeRole();
     void setUdpPort(int port);
     void startJackTrip();
     void startJackTripThread();

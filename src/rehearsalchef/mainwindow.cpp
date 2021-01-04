@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_connectForm(new ConnectForm(this))
     , m_launcherForm(NULL)
     , m_roleForm(NULL)
+    , m_authType(NONE)
     , m_settings(REHEARSALCHEF_DOMAIN, REHEARSALCHEF_TITLE)
     , m_netClient(new LRNetClient())
     , m_keepAliveTimer(this)
@@ -32,6 +33,12 @@ MainWindow::MainWindow(QWidget *parent)
     m_disconnectAction->setEnabled(false);
     actionsMenu->addAction(m_disconnectAction);
     QObject::connect(m_disconnectAction, &QAction::triggered, m_netClient, &LRNetClient::disconnectFromHost);
+
+    m_changeRoleAction = new QAction("&Change role", this);
+    m_changeRoleAction->setShortcut(QKeySequence(tr("Ctrl+R")));
+    m_changeRoleAction->setEnabled(false);
+    actionsMenu->addAction(m_changeRoleAction);
+    QObject::connect(m_changeRoleAction, &QAction::triggered, this, &MainWindow::changeRole);
 
 
 
@@ -203,6 +210,7 @@ void MainWindow::disconnected(){
     m_launcherForm = NULL;
     delete m_roleForm;
     m_roleForm = NULL;
+    m_authType = NONE;
 
     m_disconnectAction->setEnabled(false);
 
@@ -246,8 +254,23 @@ void MainWindow::saveSetup(){
 }
 
 void MainWindow::handleAuth(AuthTypeE type){
-    if (type != NONE){
-        m_launcherForm = new Launcher(type, this);
+    m_authType = type;
+
+    launchLauncher();
+}
+
+void MainWindow::changeRole(){
+    m_stackedWidget->setCurrentWidget(m_launcherForm);
+    delete m_roleForm;
+    m_roleForm = NULL;
+    m_netClient->unsubscribe();
+    m_changeRoleAction->setEnabled(false);
+}
+
+void MainWindow::launchLauncher(){
+
+    if (m_authType != NONE){
+        m_launcherForm = new Launcher(m_authType, this);
         m_stackedWidget->addWidget(m_launcherForm);
         m_stackedWidget->setCurrentWidget(m_launcherForm);
         connect(m_launcherForm, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
@@ -255,13 +278,13 @@ void MainWindow::handleAuth(AuthTypeE type){
         connect(m_launcherForm, &Launcher::choseMember, this, &MainWindow::launchMember);
         connect(m_launcherForm, &Launcher::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
         m_disconnectAction->setEnabled(true);
-        
     }
 }
 
 void MainWindow::launchSuperChef(){
 qDebug()<<"Chose superchef";
 m_netClient->subSuperchef();
+m_changeRoleAction->setEnabled(true);
 }
 
 void MainWindow::launchChef(){
@@ -278,6 +301,7 @@ QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_
 QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
 QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
 m_netClient->subChef();
+m_changeRoleAction->setEnabled(true);
 }
 
 void MainWindow::launchMember(){
@@ -301,6 +325,8 @@ m_netClient->subMember();
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
 QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
+
+m_changeRoleAction->setEnabled(true);
 
 }
 

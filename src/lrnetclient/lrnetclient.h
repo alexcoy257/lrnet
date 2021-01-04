@@ -137,6 +137,8 @@ private:
         void subMember();
         void startJackTrip();
 
+        void unsubscribe();
+
     private slots:
         void startHandshake();
         void readResponse();
