@@ -126,6 +126,7 @@ private slots:
     void sendPong(QSslSocket * socket);
     void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleUnsubscribe(session_id_t);
     void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);
     void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
     void notifyChefsMemLeft(Member::serial_t id);

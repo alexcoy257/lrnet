@@ -13,6 +13,7 @@ typedef struct {
     QSslSocket * lastSeenConnection;
     bool ShasCheckedIn;
     AuthTypeE role;
+    AuthTypeE subcribedRole;
     char netid[31];
 }sessionTriple;
 }
