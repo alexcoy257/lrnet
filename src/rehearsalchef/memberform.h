@@ -28,12 +28,15 @@ signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
     void startJackTrip();
+    void stopJackTrip();
 
 private:
     Ui::MemberForm *ui;
     //JackParameterForm * m_jackForm;
 
     void updateName();
+    void fstartJacktrip();
+    void fstopJacktrip();
 
 
 };

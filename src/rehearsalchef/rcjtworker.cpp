@@ -224,6 +224,7 @@ void RCJTWorker::run()
         //ClientAddress.toString().toLatin1().constData();
         //jacktrip.setPeerAddress(ClientAddress.toString().toLatin1().constData());
         jacktrip.setPeerAddress(mClientAddress);
+        if (gVerboseFlag) cout <<"Binding to " <<mServerPort <<"Peer " <<mClientPort;
         jacktrip.setBindPorts(mServerPort);
         jacktrip.setPeerPorts(mClientPort);
         jacktrip.setBufferStrategy(mBufferStrategy);
