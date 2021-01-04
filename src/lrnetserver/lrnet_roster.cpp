@@ -53,7 +53,7 @@ void Roster::addMember(QString &netid, session_id_t s_id){
     if (membersBySessionID.contains(s_id))
         return;
 
-    Member * newMem = new Member(netid, s_id, mPortPool.getPort(), this);
+    Member * newMem = new Member(netid, s_id, this);
 
     members[newMem->getSerialID()]=newMem;
     membersBySessionID[s_id]=newMem;
@@ -124,7 +124,6 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
 
 void Roster::removeMember(Member * m){
     Member::serial_t id = m->getSerialID();
-    mPortPool.returnPort(m->getPort());
     delete m;
     emit memberRemoved(id);
 }
@@ -161,8 +160,9 @@ int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
     if (members[id]){
-    members[id]->setThread(NULL);
-    mPortPool.returnPort(members[id]->getPort());
+    //members[id]->setThread(NULL);
+    members[id]->resetThread();
+    //mPortPool.returnPort(members[id]->getPort());
     mTotalRunningThreads--;
     }
 
@@ -184,4 +184,12 @@ void Roster::stopAllThreads()
 void Roster::setControl(Member::serial_t id, int out, float val){
    Member * m =  members[id];
    if (m) m->setControl(out, val);
+}
+
+void Roster::stopJackTrip(session_id_t s_id){
+    Member * m = membersBySessionID[s_id];
+    if (!m)
+        return;
+    m->getThread()->stopThread();
+    m->resetThread();
 }

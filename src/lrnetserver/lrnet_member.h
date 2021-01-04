@@ -70,7 +70,7 @@ private:
 public:
     static int constexpr numControlValues = 8;
     explicit Member(QObject *parent = nullptr);
-    explicit Member(QString & netid, session_id_t s_id, int port, Roster * roster,  QObject *parent = nullptr);
+    explicit Member(QString & netid, session_id_t s_id, Roster * roster,  QObject *parent = nullptr);
     ~Member();
 
     session_id_t getSessionID(){return s_id;}
@@ -84,6 +84,7 @@ public:
     void setPort(int port){mPort = port;}
     int getPort(){return mPort;}
     JackTripWorker * getThread(){return assocThread;}
+    void resetThread();
 
 signals:
 };

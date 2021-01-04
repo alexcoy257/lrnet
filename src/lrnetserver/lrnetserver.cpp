@@ -491,6 +491,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                  mRoster->startJackTrip(tSess);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/member/stopjacktrip") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                 mRoster->stopJackTrip(tSess);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/control/member") == 0){
             if (role & (SUPERCHEF | CHEF))
                 handleAdjustParams(&args);
