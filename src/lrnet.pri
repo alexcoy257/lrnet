@@ -1,4 +1,8 @@
-DLLDESTDIR=$$PWD/lib
+CONFIG(debug, debug|release){
+DLLDESTDIR=$$PWD/lib/debug
+}else{
+DLLDESTDIR=$$PWD/lib/release
+}
 LIBINCDIR=$$PWD/include
 
 INCLUDEPATH += $$LIBINCDIR

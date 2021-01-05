@@ -9,6 +9,7 @@ generate_auth.sh
 lib
 include
 settings.json
+.DS_Store
 
 # Prerequisites
 *.d

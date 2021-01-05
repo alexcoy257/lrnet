@@ -6,6 +6,14 @@ CONFIG += qt
 
 QT += sql network widgets
 
+!isEmpty(lrnetdeps){
+message(using lrnetdeps in $$lrnetdeps)
+INCLUDEPATH += $$lrnetdeps/include
+LIBS += -L$$lrnetdeps/lib
+}else{
+message(lrnetdeps not set!)
+}
+
 
 #LIBS += -lssl -lcrypto
 LIBS += -L$$DLLDESTDIR -llrdb_client -lssl -lcrypto -llrnetjackserver -ljack -ljackserver -ljacktrip
