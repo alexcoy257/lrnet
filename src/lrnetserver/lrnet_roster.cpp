@@ -114,11 +114,37 @@ void Roster::removeMemberBySerialID(Member::serial_t id){
     }
 }
 
+/**
+ * @brief Roster::removeMember
+ * @param id
+ * Remove a member logged in with Session ID s_id.
+ */
+
 void Roster::removeMemberBySessionID(session_id_t s_id){
     qDebug() <<"Remove a member by session id";
     Member * m = membersBySessionID.take(s_id);
     if(m){
+        {
+            QHashIterator<Member::serial_t, Member *> iterator(members);
+        
+        while (iterator.hasNext()) {
+        iterator.next();
+        qDebug() <<"Member " <<iterator.value();
+         }
+        }
     members.take(m->getSerialID());
+
+    
+    {
+            QHashIterator<Member::serial_t, Member *> iterator(members);
+        
+        while (iterator.hasNext()) {
+        iterator.next();
+        qDebug() <<"Member " <<iterator.value();
+         }
+        }
+    qDebug() <<members.size() <<" member(s) remain...";
+
     removeMember(m);
     }
 }
@@ -166,7 +192,7 @@ void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
 int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
-    if (members[id]){
+    if (members.contains(id)){
     //members[id]->setThread(NULL);
     members[id]->resetThread();
     //mPortPool.returnPort(members[id]->getPort());
@@ -177,13 +203,16 @@ int Roster::releaseThread(Member::serial_t id)
 }
 
 void Roster::stopAllThreads()
-{
+{   
     QHashIterator<Member::serial_t, Member *> iterator(members);
+    qDebug() <<members.size() <<"members to stop.";
     while (iterator.hasNext()) {
+        iterator.next();
+        qDebug() <<iterator.value();
+        
         if (iterator.value()->getThread() != nullptr) {
             iterator.value()->getThread()->stopThread();
         }
-        iterator.next();
     }
     mThreadPool.waitForDone();
 }
