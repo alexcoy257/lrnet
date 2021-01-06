@@ -2,7 +2,7 @@ include(../lrnet.pri)
 
 
 CONFIG += c++11 console
-CONFIG += qt
+CONFIG += qt link_prl
 
 QT += sql network widgets
 

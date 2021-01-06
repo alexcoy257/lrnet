@@ -64,6 +64,7 @@ Member::~Member(){
     }
     audio->stop();
     assocThread->stopThread();
+    mRoster->returnPort(mPort);
     delete ui;
     delete audio;
     delete cs;
