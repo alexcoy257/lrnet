@@ -55,6 +55,7 @@ Member::Member(QObject * parent): QObject(parent)
   ,cs(NULL)
   ,ui(NULL)
     {
+        qDebug()<<"Member null constructor called";
 }
 
 Member::~Member(){
@@ -63,6 +64,7 @@ Member::~Member(){
     }
     audio->stop();
     assocThread->stopThread();
+    mRoster->returnPort(mPort);
     delete ui;
     delete audio;
     delete cs;

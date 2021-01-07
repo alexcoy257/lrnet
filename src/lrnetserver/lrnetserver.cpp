@@ -232,7 +232,13 @@ void LRNetServer::start()
     connect(&mStopCheckTimer, &QTimer::timeout, this, &LRNetServer::stopCheck);
     mStopCheckTimer.start();
 }
-    
+
+
+ /**
+  * When the server receives a new connection, allocate a new streaming
+  * buffer for it and set up cleanup on disconnect.
+  *
+  */   
 void LRNetServer::receivedNewConnection()
 {
     QSslSocket *clientSocket = static_cast<QSslSocket *>(mTcpServer.nextPendingConnection());
@@ -630,11 +636,16 @@ void LRNetServer::sendRoster(QSslSocket * socket){
 }
 
 void LRNetServer::loadMemberFrame(Member * m){
+    if (m){
     oscOutStream << m->getName().toStdString().c_str();
     oscOutStream << m->getSection().toStdString().c_str();
     oscOutStream << (int64_t)m->getSerialID();
     for (int i=0; i<Member::numControlValues; i++)
         oscOutStream<< (m->getCurrentControls())[i];
+    }
+    else{
+        std::cerr << "loadMemberFrame called with null member!";
+        }
 }
 
 void LRNetServer::stopCheck()

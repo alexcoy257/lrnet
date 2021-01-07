@@ -2,9 +2,17 @@ include(../lrnet.pri)
 
 
 CONFIG += c++11 console
-CONFIG += qt
+CONFIG += qt link_prl
 
 QT += sql network widgets
+
+!isEmpty(lrnetdeps){
+message(using lrnetdeps in $$lrnetdeps)
+INCLUDEPATH += $$lrnetdeps/include
+LIBS += -L$$lrnetdeps/lib
+}else{
+message(lrnetdeps not set!)
+}
 
 
 #LIBS += -lssl -lcrypto

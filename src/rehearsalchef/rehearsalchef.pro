@@ -4,11 +4,25 @@ QT       += core gui testlib network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+!isEmpty(lrnetdeps){
+message(using lrnetdeps in $$lrnetdeps)
+INCLUDEPATH += $$lrnetdeps/include
+LIBS += -L$$lrnetdeps/lib
+}else{
+message(lrnetdeps not set!)
+}
+
+CONFIG += c++11 link_prl
 
 DESTDIR=./bin
 
 LIBS += -llrnetclient -llrnetjackserver -ljacktrip
+
+macx{
+QMAKE_INFO_PLIST = $$PWD/Info.plist
+OTHER_FILES += MyAppInfo.plist
+LIBS += -framework CoreAudio -framework CoreFoundation
+}
 
 win32{
 CONFIG += static
@@ -87,3 +101,7 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+#DISTFILES += \
+#    Info.plist \
+#    rehearsalchef.entitlements

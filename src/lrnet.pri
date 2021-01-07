@@ -1,5 +1,17 @@
-DLLDESTDIR=$$PWD/lib
+CONFIG(debug, debug|release){
+DLLDESTDIR=$$PWD/lib/debug
+}else{
+DLLDESTDIR=$$PWD/lib/release
+}
 LIBINCDIR=$$PWD/include
+
+!isEmpty(lrnetdeps){
+message(using lrnetdeps in $$lrnetdeps)
+INCLUDEPATH += $$lrnetdeps/include
+LIBS += -L$$lrnetdeps/lib
+}else{
+message(lrnetdeps not set!)
+}
 
 INCLUDEPATH += $$LIBINCDIR
 LIBS += -L$$DLLDESTDIR
