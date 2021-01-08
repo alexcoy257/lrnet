@@ -15,6 +15,9 @@ LIBS += -lssl -lcrypto
 
 TARGET = lrnetclient
 
+INSTALLS += target
+target.path = $$PREFIX/lib/
+
 HEADERS += lrnetclient.h \
           ../lrnetserver/auth_types.h
 SOURCES += lrnetclient.cpp \

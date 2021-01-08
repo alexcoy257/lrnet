@@ -17,6 +17,14 @@ INCLUDEPATH += $$LIBINCDIR
 LIBS += -L$$DLLDESTDIR
 HEADERS += $$PWD/liblrnet_globals.h
 
+# isEmpty(PREFIX) will allow path to be changed during the command line
+# call to qmake, e.g. qmake PREFIX=/usr
+isEmpty(PREFIX) {
+ PREFIX = /usr/local
+}
+
+message(Installing to $$PREFIX)
+
 
 #message($$DLLDESTDIR)
 macx{

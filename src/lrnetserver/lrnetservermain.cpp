@@ -4,8 +4,8 @@
 #include <signal.h>
 
 int gVerboseFlag = 0;
-QString mCertFile = "";
-QString mKeyFile = "";
+QString mCertFile = "/etc/lrnet/lrnet.crt";
+QString mKeyFile = "/etc/lrnet/lrnet.key";
 
 enum LongOptIDS {
   OPT_AUTHCERT = 1001,
@@ -21,9 +21,10 @@ void parseInput(int argc, char** argv)
     // Always use decimal point for floating point numbers
     setlocale( LC_NUMERIC, "C" );
     // If no command arguments are given, print instructions
+    /*
     if(argc == 1) {
         std::exit(0);
-    }
+    }*/
 
     // Usage example at:
     // http://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html#Getopt-Long-Option-Example
@@ -128,6 +129,7 @@ int main(int argc, char** argv){
             setupUnixSignalHandler(LRNetServer::sigIntHandler);
 #endif
       server->setCertFile(mCertFile);
+      printf("Using certfile %s \n", mCertFile.toStdString().data());
       server->setKeyFile(mKeyFile);
       server->start();
       return app.exec();
