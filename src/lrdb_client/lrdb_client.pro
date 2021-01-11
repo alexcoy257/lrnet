@@ -6,3 +6,6 @@ DESTDIR=$$DLLDESTDIR
 
 TEMPLATE = lib
 
+INSTALLS += target
+target.path = $$PREFIX/lib/
+

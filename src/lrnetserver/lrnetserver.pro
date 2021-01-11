@@ -14,6 +14,8 @@ LIBS += -L$$lrnetdeps/lib
 message(lrnetdeps not set!)
 }
 
+INSTALLS += target
+target.path = $$PREFIX/bin/
 
 #LIBS += -lssl -lcrypto
 LIBS += -L$$DLLDESTDIR -llrdb_client -lssl -lcrypto -llrnetjackserver -ljack -ljackserver -ljacktrip
