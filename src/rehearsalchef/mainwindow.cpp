@@ -66,6 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
     QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
     QObject::connect(m_connectForm, &ConnectForm::netidUpdated, this, [&](const QString & nnetid){m_netid = nnetid; m_netClient->setNetid(nnetid);});
+    QObject::connect(m_netClient, &LRNetClient::gotEncryptionKey, this, &MainWindow::setEncryptionKey);
 
 
 
@@ -322,6 +323,10 @@ QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)m_roleF
 QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 m_netClient->subMember();
 
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::changeRedundancy, this, &MainWindow::setRedundancy);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
+
+
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
 QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
@@ -353,6 +358,7 @@ void MainWindow::startJackTripThread(){
 }
 
 void MainWindow::stopJackTrip(){
+    QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     qDebug() << "Want to stop JackTrip";
     m_netClient->stopJackTrip();
@@ -367,4 +373,23 @@ void MainWindow::stopJackTripThread(){
 
 void MainWindow::releaseThread(int n){
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+}
+
+void MainWindow::setRedundancy(int n){
+    m_netClient->setRedundancy(n);
+    ui->statusbar->showMessage(QString("Set redundancy to %1").arg(n), 1000);
+    m_jacktrip->setRedundancy(n);
+}
+
+void MainWindow::setEncryption(bool e){
+    qDebug() <<"Todo: enable encryption";
+    m_netClient->setEncryption(e);
+}
+
+void MainWindow::setEncryptionKey(char * key){
+    qDebug() <<"Consuming encryption key" << QByteArray(key, 32);
+    m_jacktrip->setEncryptionKey(key);
+
+    startJackTripThread();
+    //delete[] key;
 }
