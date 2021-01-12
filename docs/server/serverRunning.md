@@ -57,7 +57,7 @@ If your environment is set up well, simply use
 
 ```lrnetserver```
 
-to start the server. It'll handle the rest.
+in that Screen environment to start the server. It'll handle the rest.
 If it crashes, it is safe to re-issue the command. Detach
 from the screen session using Ctrl-a d. (Ctrl-a, then press
 d to detach). To resume, use ```screen -r``` or in the case
