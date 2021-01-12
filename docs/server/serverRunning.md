@@ -49,6 +49,8 @@ installed Qt 5.15 to /usr/local, needed gcc9 to build it, and
 needed openSSL built with gcc9 to enable the TLS control
 channel and encrypted audio.
 
+## Starting and stopping the LRNet Server
+
 We also recommend using GNU Screen to save server output
 temporarily and to allow you to log out of the server without
 LRNetServer halting. Create a new Screen session with
@@ -63,3 +65,9 @@ from the screen session using Ctrl-a d. (Ctrl-a, then press
 d to detach). To resume, use ```screen -r``` or in the case
 of multiple existing sessions,
 ```screen -r PIDOrNameYouChose```.
+
+To stop the ```lrnetserver``` instance that you started, simply issue
+Ctrl-c within the Screen session. The server will print some final closing
+messages and then exit to the command prompt. If ```lrnetserver```
+had crashed before, it is still safe to issue Ctrl-c within the Screen
+session.
