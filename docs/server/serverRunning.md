@@ -49,6 +49,10 @@ installed Qt 5.15 to /usr/local, needed gcc9 to build it, and
 needed openSSL built with gcc9 to enable the TLS control
 channel and encrypted audio.
 
+To use your new ```.bashrc```, you may log out and log back
+in. You may also use ```source ~/.bashrc``` to use your new
+```.bashrc```.
+
 ## Starting and stopping the LRNet Server
 
 We also recommend using GNU Screen to save server output
