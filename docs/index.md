@@ -57,7 +57,7 @@ hardware. We will try to make a starter Docker image that is
 easily deployable to servers made in the last decade; we aren't
 interested at all in hosting public servers ourselves.
 
-Here is a very basic [guide](server/serverRunning) for sysadmins to introduce
+Here is a very basic [guide](server/serverRunning.md) for sysadmins to introduce
 server-starters to enough Linux to run LRNetServer successfully.
 
 ## LRNetVideo
