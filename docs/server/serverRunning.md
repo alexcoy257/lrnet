@@ -68,7 +68,11 @@ If it crashes, it is safe to re-issue the command. Detach
 from the screen session using Ctrl-a d. (Ctrl-a, then press
 d to detach). To resume, use ```screen -r``` or in the case
 of multiple existing sessions,
-```screen -r PIDOrNameYouChose```.
+
+```screen -r PIDOrNameYouChose```
+
+. Screen sessions remain across logins, so it never hurts to try
+to resume your previous Screen for the LRNet Server.
 
 To stop the ```lrnetserver``` instance that you started, simply issue
 Ctrl-c within the Screen session. The server will print some final closing
