@@ -4,7 +4,7 @@
 #include <QWidget>
 
 #include "chatform.h"
-#include "../JackServerTest/jackparameterform.h"
+#include <jackparameterform.h>
 
 namespace Ui {
 class MemberForm;
