@@ -161,7 +161,8 @@ void RCJTWorker::run()
                           mNumNetRevChans, FORCEBUFFERQ);
         JackTrip * mJackTrip = &jacktrip;
 #else // endwhere
-        JackTrip jacktrip(JackTrip::CLIENT, JackTrip::UDP, mNumChans, mBufferQueueLength);
+        JackTrip jacktrip(JackTrip::CLIENT, JackTrip::UDP, mNumChans, mBufferQueueLength, mRedundancy);
+        mJackTrip = &jacktrip;
 #endif // not wair
 
 #ifdef WAIR // WAIR
@@ -189,6 +190,13 @@ void RCJTWorker::run()
         JamTest jacktrip(JackTrip::SERVERPINGSERVER); // ########### JamTest #################
         //JackTrip jacktrip(JackTrip::SERVERPINGSERVER, JackTrip::UDP, mNumChans, 2);
 #endif
+        if (mPrimedKey){
+            jacktrip.setConnectionMode(JackTrip::ENCRYPTEDAUDIO);
+            qDebug() <<"Set key" <<QByteArray(mPrimedKey, 32);
+            //set encryption mode
+            jacktrip.primeKey((unsigned char *) mPrimedKey);
+            delete[] mPrimedKey;
+        }
 
         gVerboseFlag=true;
         jacktrip.setConnectDefaultAudioPorts(m_connectDefaultAudioPorts);
@@ -280,6 +288,7 @@ void RCJTWorker::run()
     {
         QMutexLocker locker(&mMutex);
         mUdpHubListener->releaseThread(mID);
+        mJackTrip = NULL;
     }
 
     cout << "JackTrip ID = " << mID << " released from the THREAD POOL" << endl;
@@ -364,4 +373,20 @@ void RCJTWorker::stopThread()
 {
     QMutexLocker locker(&mMutex);
     emit signalRemoveThread();
+}
+
+void RCJTWorker::setEncryptionKey(char *key){
+    bool spawn = isSpawning();
+    if (!mJackTrip){
+        qDebug() <<"Priming encryption key";
+        primeEncryptionKey(key);
+    }
+    else{
+        if (!spawn)
+        mJackTrip->setCurrentKey((unsigned char *) key, true);
+    }
+}
+
+void RCJTWorker::primeEncryptionKey(char *key){
+    mPrimedKey = key;
 }

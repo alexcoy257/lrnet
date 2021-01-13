@@ -141,13 +141,14 @@ void LRNetClient::readResponse()
 
     if (!buffer.haveFullMessage())
         return;
-
+    do{
     osc::ReceivedPacket * inPack = NULL;
     QScopedPointer<QByteArray> msg(buffer.getMessage());
 
     if (!msg) return;
 
     try{
+
     inPack = new osc::ReceivedPacket(msg->data(), msg->length());
     }
     catch(const osc::MalformedPacketException & e){
@@ -176,7 +177,7 @@ void LRNetClient::readResponse()
         try{
             inMsg = new osc::ReceivedMessage(*inPack);
             handleMessage(inMsg);
-            buffer.reset();
+            //buffer.reset();
         }
         catch(const osc::MalformedMessageException & e){
             qDebug() <<"Malformed Message " <<e.what();
@@ -185,6 +186,7 @@ void LRNetClient::readResponse()
     delete inBundle;
     delete inMsg;
     delete inPack;
+    }while (buffer.haveFullMessage());
 }
 
 void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
@@ -249,7 +251,12 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
           handleNewUdpPort(args);
     }
 
+    else if (std::strcmp(ap, "/member/newencryptionkey") == 0){
+          handleNewEncryptionKey(args);
+    }
+
     else if (std::strcmp(ap, "/member/jacktripready") == 0){
+        if(!mEncryptionEnabled)
           emit serverJTReady();
     }
 
@@ -404,6 +411,7 @@ void LRNetClient::startJackTrip(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
     << osc::Blob(&session, sizeof(session))
+    << mEncryptionEnabled
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
@@ -565,4 +573,41 @@ void LRNetClient::sendPublicKey(){
         }
     }
 
+}
+
+void LRNetClient::setRedundancy(int newRed){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/setredundancy" )
+    << osc::Blob(&session, sizeof(session))
+    << newRed;
+    oscOutStream << osc::EndMessage;
+    writeStreamToSocket();
+}
+
+void LRNetClient::handleNewEncryptionKey(osc::ReceivedMessageArgumentStream & args){
+    osc::Blob b;
+    bool err = false;
+    try{
+        args >> b;
+
+    } catch(osc::WrongArgumentTypeException & e){
+        // Not a blob
+        qDebug() <<"Key argument wrong type";
+        err = true;
+    }
+    catch(osc::MissingArgumentException & e){
+            // Missing blob
+        qDebug() <<"Missing key argument for encryption";
+        err = true;
+        }
+    if (!err && b.size == 32){
+        char * key = new char[32];
+        if (!key){
+            qDebug() << "Could not allocate key pointer";
+            return;
+        }
+
+        memcpy(key, b.data, 32);
+        emit gotEncryptionKey(key);
+    }
 }

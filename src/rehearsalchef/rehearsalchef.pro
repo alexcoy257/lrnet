@@ -26,7 +26,7 @@ LIBS += -framework CoreAudio -framework CoreFoundation
 
 win32{
 CONFIG += static
-DEFINES += STATIC_LRLIBJACKSERVER #STATIC_LIBJACKTRIP
+DEFINES += #STATIC_LRLIBJACKSERVER #STATIC_LIBJACKTRIP
 INCLUDEPATH += C:\Users\alexc\Documents\lrnet_deps\include
 CONFIG(debug, debug|release){
 LIBS += -LC:\Users\alexc\Documents\lrnet_deps\debug\lib

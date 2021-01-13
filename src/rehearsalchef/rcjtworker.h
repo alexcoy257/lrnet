@@ -70,6 +70,8 @@ class RCJTWorker : public QObject, public QRunnable
 {
 
     Q_OBJECT; // QRunnable is not a QObject, so I have to inherit from QObject as well
+    char * mPrimedKey=NULL;
+    JackTrip * mJackTrip;
 
 public:
     /// \brief The class constructor
@@ -113,9 +115,13 @@ public:
     void setIOStatTimeout(int timeout) { mIOStatTimeout = timeout; }
     void setIOStatStream(QSharedPointer<std::ofstream> statStream) { mIOStatStream = statStream; }
 
+    void setRedundancy(int newRed){mRedundancy = newRed;}
+    void setEncryptionKey(char * key);
+
 private slots:
     void slotTest()
     { std::cout << "--- RCJTWorker TEST SLOT ---" << std::endl; }
+    void primeEncryptionKey(char * key);
 
 
 signals:
@@ -146,6 +152,7 @@ private:
     uint64_t mID; ///< ID thread number
     int mNumChans; ///< Number of Channels
 
+    int mRedundancy = 1;
     int mBufferStrategy;
     int mBroadcastQueue;
     double mSimulatedLossRate;

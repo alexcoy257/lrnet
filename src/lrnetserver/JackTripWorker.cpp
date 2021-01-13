@@ -158,7 +158,11 @@ void JackTripWorker::run()
                           mNumNetRevChans, FORCEBUFFERQ);
         JackTrip * mJackTrip = &jacktrip;
 #else // endwhere
-        JackTrip jacktrip(JackTrip::SERVERPINGSERVER, JackTrip::UDP, mNumChans, mBufferQueueLength);
+        JackTrip jacktrip(JackTrip::SERVERPINGSERVER,
+            JackTrip::UDP,
+            mNumChans,
+            mBufferQueueLength,
+            mRedundancy);
 #endif // not wair
 
 #ifdef WAIR // WAIR
@@ -186,6 +190,19 @@ void JackTripWorker::run()
         JamTest jacktrip(JackTrip::SERVERPINGSERVER); // ########### JamTest #################
         //JackTrip jacktrip(JackTrip::SERVERPINGSERVER, JackTrip::UDP, mNumChans, 2);
 #endif
+        mJackTrip = &jacktrip;
+        if (mEncryption){
+            qDebug() << "Setting encryption mode";
+            jacktrip.setConnectionMode(JackTrip::ENCRYPTEDAUDIO);
+            if (mPrimedKey){
+                QByteArray key = QByteArray((const char *)mPrimedKey, 32);
+                qDebug() <<"Generated key" <<key;
+                jacktrip.primeKey(mPrimedKey);
+                //jacktrip.setCurrentKey(mPrimedKey, false);
+                delete[] mPrimedKey;
+                //emit canFreePrimedKey();
+            }
+        }
 
         gVerboseFlag=true;
         jacktrip.setConnectDefaultAudioPorts(m_connectDefaultAudioPorts);
@@ -263,6 +280,7 @@ void JackTripWorker::run()
         
         { QMutexLocker locker(&mMutex); mSpawning = true; }
 
+        mJackTrip = NULL;
         // wait for jacktrip to be done before exiting the Worker Thread
         //jacktrip.wait();
 
@@ -364,4 +382,26 @@ void JackTripWorker::stopThread()
 {
     QMutexLocker locker(&mMutex);
     emit signalRemoveThread();
+}
+
+void JackTripWorker::setEncryptionKey(unsigned char * key){
+    // todo: does this cause a program fault with interleaving?
+    bool spawn = isSpawning(); //Capture spawning atomically once
+    if (spawn && !mJackTrip){
+        qDebug() <<"Primed a key";
+        primeEncryptionKey(key);
+    }
+    else if (!spawn && !mJackTrip){
+    } else
+    {
+        qDebug() <<"Set a key";
+        mJackTrip->setCurrentKey(key, false);
+    }
+    
+}
+
+void JackTripWorker::primeEncryptionKey(unsigned char * key){
+    mPrimedKey = new unsigned char[32];
+    if(mPrimedKey)
+        memcpy(mPrimedKey, key, 32);
 }

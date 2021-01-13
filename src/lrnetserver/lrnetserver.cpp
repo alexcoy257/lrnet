@@ -103,6 +103,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     QObject::connect(mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::sendMemberUdpPort);
     QObject::connect(mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
     QObject::connect(mRoster, &Roster::jackTripStarted, this, &LRNetServer::sendJackTripReady);
+    QObject::connect(mRoster, &Roster::sendKeyToClient, this, &LRNetServer::sendKeyToClient);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
@@ -494,8 +495,15 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
-                 mRoster->startJackTrip(tSess);
+                handleStartJackTrip(args, tSess);
+                 
         }
+
+        else if (std::strcmp(msg->AddressPattern(), "/member/setredundancy") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleUpdateRedundancy(args, tSess);
+        }
+
 
         else if (std::strcmp(msg->AddressPattern(), "/member/stopjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
@@ -954,6 +962,7 @@ void LRNetServer::broadcastToChefs(){
 }
 
 void LRNetServer::sendJackTripReady(session_id_t s_id){
+    qDebug() << "Sending JackTrip Ready";
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/member/jacktripready" )
     << true;
@@ -1013,7 +1022,10 @@ void LRNetServer::writeStreamToSocket(QSslSocket * socket){
     socket->write(oscOutStream.Data(), s);
 }
 
-void LRNetServer::handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t s_id){
+void LRNetServer::handleStoreKey(
+    osc::ReceivedMessageArgumentStream & args,
+    session_id_t s_id)
+    {
     osc::Blob b;
     osc::Blob c;
     bool err=false;
@@ -1033,4 +1045,47 @@ void LRNetServer::handleStoreKey(osc::ReceivedMessageArgumentStream & args, sess
         AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(c.data)));
         authorizer.addKey((const char *)b.data,pkt);
     }
+}
+
+void LRNetServer::handleUpdateRedundancy(
+    osc::ReceivedMessageArgumentStream & args,
+    session_id_t s_id)
+{   
+    int n = 1;
+    bool err=false;
+    try{
+        args >> n;
+    }catch(osc::WrongArgumentTypeException & e){
+        //Not a blob.
+        qDebug() << "Wrong type of arguments for redundancy update. Need an int";
+        err = true;
+    }catch(osc::MissingArgumentException & e){
+        qDebug() << "Wrong number of arguments for redundancy update. Need an int";
+        err =true;
+    }
+    if(!err)
+    mRoster->setRedundancyBySessionID(n, s_id);
+}
+
+void LRNetServer::handleStartJackTrip(
+    osc::ReceivedMessageArgumentStream & args,
+    session_id_t s_id)
+{   bool encrypt=false;
+    try{
+        args >> encrypt;
+    }catch(osc::WrongArgumentTypeException & e){}
+    catch(osc::MissingArgumentException & e){}
+    mRoster->startJackTrip(s_id, encrypt);
+}
+
+void LRNetServer::sendKeyToClient(unsigned char * key, session_id_t s_id){
+    qDebug() <<"Send key to client";
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/newencryptionkey" );
+    if(key)
+        oscOutStream << osc::Blob(key, 32);
+
+    oscOutStream << osc::EndMessage;
+    writeStreamToSocket(activeSessions[s_id].lastSeenConnection);
+    delete[] key;
 }

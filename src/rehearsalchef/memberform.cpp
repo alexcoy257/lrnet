@@ -13,10 +13,12 @@ MemberForm::MemberForm(QWidget *parent) :
     //ui->mainGridLayout->addWidget();
     QObject::connect(ui->nameChoice, &QLineEdit::editingFinished, this, &MemberForm::updateName);
     QObject::connect(ui->sectionChoice, &QComboBox::currentTextChanged, this, [=](){emit sectionUpdated(ui->sectionChoice->currentText());});
+    QObject::connect(ui->redundancyChoice, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](int nv){emit changeRedundancy(nv);});
+    //QObject::connect(ui->redundancyChoice, &QSpinBox::textChanged, this, [=](QString s){emit changeRedundancy(s.toInt());});
 
     QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, [=](){ui->startJackTripButton->setEnabled(true);});
     QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, [=](){ui->startJackTripButton->setDisabled(true);});
-
+    QObject::connect(ui->encryptEnabledBox, &QCheckBox::stateChanged, this, [=](int e){emit setEncryption(e);});
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
 }
 
@@ -27,12 +29,16 @@ void MemberForm::updateName(){
 
 void MemberForm::fstartJacktrip(){
     emit startJackTrip();
+    ui->startJackTripButton->setText("Stop JackTrip");
+    ui->redundancyChoice->setDisabled(true);
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
 }
 
 void MemberForm::fstopJacktrip(){
     emit stopJackTrip();
+    ui->startJackTripButton->setText("Start JackTrip");
+    ui->redundancyChoice->setEnabled(true);
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
 }

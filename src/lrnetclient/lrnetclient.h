@@ -89,6 +89,7 @@ private:
             MEMBER_ADD,
             MEMBER_UPDATE
         };
+        bool mEncryptionEnabled = false;
     
     public:
         LRNetClient(RSA * k = NULL);
@@ -109,6 +110,7 @@ private:
         void gotUdpPort(int port);
         void serverJTReady();
         void chatReceived(const QString& name, const QString& chatMsg);
+        void gotEncryptionKey(char * key);
     
     public slots:
         void tryConnect(const QString &host, int port);
@@ -135,6 +137,8 @@ private:
         void sendControlUpdate(int64_t id, QVector<float> & controls);
 
         void subMember();
+        void setRedundancy(int n);
+        void setEncryption(bool e) {mEncryptionEnabled = e;}
         void startJackTrip();
         void stopJackTrip();
 
@@ -167,6 +171,7 @@ private:
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & args);
+        void handleNewEncryptionKey(osc::ReceivedMessageArgumentStream & args);
         
     };
 

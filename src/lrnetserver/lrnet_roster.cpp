@@ -2,6 +2,7 @@
 #include "lrnetserver.h"
 #include <QDebug>
 #include <jack/jack.h>
+#include <openssl/rand.h>
 
 //Q_DECLARE_OPAQUE_POINTER(audioPortHandle_t);
 
@@ -83,11 +84,30 @@ QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
         return m_server->getActiveSessions();
     }
 
-void Roster::startJackTrip(session_id_t s_id){
+void Roster::startJackTrip(session_id_t s_id, bool encrypt){
     JackTripWorker * w = membersBySessionID[s_id]->getThread();
+    
     if (!w){
         qDebug() <<"JackTripWorker not set";
         return;
+    }
+
+    if (encrypt){
+        qDebug() << "todo: enable encryption stuff here";
+        
+        unsigned char * initKey = new unsigned char[32];
+        
+        if (initKey){/*
+            QObject::connect(w, &JackTripWorker::canFreePrimedKey, this, [=](){
+            qDebug() <<"Freeing init key";
+            free(initKey);
+            });*/
+            RAND_bytes(initKey, 32);
+            //w->primeEncryptionKey(initKey);
+            w->setEncryptionKey(initKey);
+            w->enableEncryption();
+            emit sendKeyToClient(initKey, s_id);
+        }
     }
     mThreadPool.start(w, QThread::TimeCriticalPriority);
     // wait until one is complete before another spawns
@@ -248,4 +268,13 @@ void Roster::fanNewMember(Member * member){
                 jack_port_name(m->getAudioInputPort(1)));
         }
     }
+}
+
+void Roster::setRedundancyBySessionID(int newRed, session_id_t s_id){
+    Member * m = membersBySessionID[s_id];
+    if (!m)
+        return;
+    JackTripWorker * t = m->getThread();
+    if (t)
+        t->setRedundancy(newRed);
 }

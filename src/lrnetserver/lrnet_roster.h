@@ -85,7 +85,8 @@ public:
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
     void stopAllThreads();
 
-    void startJackTrip(session_id_t s_id);
+    void setRedundancyBySessionID(int newRed, session_id_t s_id);
+    void startJackTrip(session_id_t s_id, bool encrypt=false);
     void stopJackTrip(session_id_t s_id);
     void setControl(Member::serial_t id, int out, float val);
     void returnPort(int port){mPortPool.returnPort(port);}
@@ -103,6 +104,7 @@ signals:
     void sigMemberUpdate(Member * member, RosterNS::MemberEventE);
     void memberRemoved(Member::serial_t id);
     void jackTripStarted(session_id_t s_id);
+    void sendKeyToClient(unsigned char * key, session_id_t s_id);
 
 
 };
