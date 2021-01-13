@@ -103,6 +103,9 @@ private slots:
     void stopJackTrip();
     void startJackTripThread();
     void stopJackTripThread();
+    void setRedundancy(int n);
+    void setEncryption(bool e);
+    void setEncryptionKey(char * key);
 
 };
 #endif // MAINWINDOW_H
