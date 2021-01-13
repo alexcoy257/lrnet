@@ -69,6 +69,9 @@ class Roster; // forward declaration
 class JackTripWorker : public QObject, public QRunnable
 {
     Q_OBJECT; // QRunnable is not a QObject, so I have to inherit from QObject as well
+    bool mEncryption = false;
+    unsigned char * mPrimedKey = NULL;
+    JackTrip * mJackTrip = NULL;
 
 public:
     /// \brief The class constructor
@@ -122,10 +125,23 @@ public:
         mBroadcastSpace = broadcastArea;
         mPortSpaceSize = size;
     }
+
+    void setRedundancy(int newRed){mRedundancy = newRed;}
+    void enableEncryption(bool e = true){mEncryption = e;}
+    void disableEncryption(bool e = true){mEncryption = !e;}
+
+    /**
+     * Provide a 256-bit key that will be the first key that JackTrip uses.
+     * This method acquires ownership of the key, and the keywill receive
+     * a free() call to it.
+     */
+    void primeEncryptionKey(unsigned char * key);
+    void setEncryptionKey(unsigned char * key);
     
 
 signals:
     void jackPortsReady();
+    void canFreePrimedKey();
 private slots:
     void slotTest()
     { std::cout << "--- JackTripWorker TEST SLOT ---" << std::endl; }
@@ -164,6 +180,7 @@ private:
     uint64_t mID; ///< ID thread number
     int mNumChans; ///< Number of Channels
 
+    int mRedundancy = 1;
     int mBufferStrategy;
     int mBroadcastQueue;
     double mSimulatedLossRate;

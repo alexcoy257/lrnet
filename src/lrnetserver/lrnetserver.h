@@ -126,6 +126,9 @@ private slots:
     void sendPong(QSslSocket * socket);
     void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleUpdateRedundancy(osc::ReceivedMessageArgumentStream & args, session_id_t session);
+    void handleStartJackTrip(osc::ReceivedMessageArgumentStream & args, session_id_t s_id);
+    void sendKeyToClient(unsigned char * key, session_id_t s_id);
     void handleUnsubscribe(session_id_t);
     void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);
     void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
@@ -142,6 +145,7 @@ private slots:
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void writeStreamToSocket(QSslSocket * socket);
     void handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t session);
+
 
 
 signals:
