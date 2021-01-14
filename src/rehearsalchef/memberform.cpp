@@ -52,9 +52,32 @@ MemberForm::~MemberForm()
 
 void MemberForm::setName(const QString & nname){
     ui->nameChoice->setText(nname);
+    updateName();
 }
 
 void MemberForm::setSection(const QString & nsection){
     ui->sectionChoice->setCurrentIndex(0);
     ui->sectionChoice->setCurrentText(nsection);
+    emit sectionUpdated(ui->sectionChoice->currentText());
+}
+
+void MemberForm::loadSetup(QSettings &settings){
+    settings.beginGroup("/Member");
+    setName(settings.value("Name","").toString());
+    setSection(settings.value("Section","").toString());
+    settings.endGroup();
+
+    ui->jackServer->loadSetup(settings);
+
+}
+
+void MemberForm::saveSetup(QSettings &settings){
+    settings.beginGroup("/Member");
+    settings.setValue("Name", ui->nameChoice->text());
+    settings.setValue("Section", ui->sectionChoice->currentText());
+    settings.endGroup();
+
+    ui->jackServer->saveSetup(settings);
+
+    settings.sync();
 }

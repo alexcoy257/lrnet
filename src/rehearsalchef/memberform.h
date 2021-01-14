@@ -2,6 +2,7 @@
 #define MEMBERFORM_H
 
 #include <QWidget>
+#include <QSettings>
 
 #include "chatform.h"
 #include <jackparameterform.h>
@@ -23,6 +24,9 @@ public:
 
     void setName(const QString & nname);
     void setSection(const QString & nsection);
+
+    void loadSetup(QSettings &settings);
+    void saveSetup(QSettings &settings);
 
 signals:
     void nameUpdated(const QString & nname);

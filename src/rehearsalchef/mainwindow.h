@@ -57,6 +57,7 @@ private:
     QStackedWidget * m_stackedWidget;
     ConnectForm * m_connectForm;
     Launcher * m_launcherForm;
+    AuthTypeE m_role;
     QWidget * m_roleForm;
 
     ChefForm * m_chefForm;

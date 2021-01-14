@@ -51,7 +51,7 @@ void LRNetClient::disconnectFromHost(){
 }
 
 LRNetClient::~LRNetClient(){
-    socket->disconnect();
+    disconnectFromHost();
 }
     
 
