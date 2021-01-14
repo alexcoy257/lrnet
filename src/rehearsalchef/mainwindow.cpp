@@ -100,6 +100,7 @@ MainWindow::~MainWindow()
 {
 //    m_jacktrip->stopThread();
     stopJackTrip();
+    delete m_roleForm;
     delete ui;
     delete m_netClient;
     //delete m_connectForm;
