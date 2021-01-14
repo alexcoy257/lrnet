@@ -28,6 +28,9 @@ public:
     void loadSetup(QSettings &settings);
     void saveSetup(QSettings &settings);
 
+    void enableJackForm();
+    void disableJackForm();
+
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);

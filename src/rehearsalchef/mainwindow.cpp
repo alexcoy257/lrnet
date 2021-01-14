@@ -345,6 +345,7 @@ void MainWindow::startJackTrip(){
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     qDebug() << "Want to start JackTrip";
     m_netClient->startJackTrip();
+    ((MemberForm *)m_roleForm)->disableJackForm();
     QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
 
 }
@@ -361,6 +362,7 @@ void MainWindow::stopJackTrip(){
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     qDebug() << "Want to stop JackTrip";
     m_netClient->stopJackTrip();
+    ((MemberForm *)m_roleForm)->enableJackForm();
     stopJackTripThread();
 }
 

@@ -81,3 +81,11 @@ void MemberForm::saveSetup(QSettings &settings){
 
     settings.sync();
 }
+
+void MemberForm::disableJackForm(){
+    ui->jackServer->setDisabled(true);
+}
+
+void MemberForm::enableJackForm(){
+    ui->jackServer->setEnabled(true);
+}
