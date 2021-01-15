@@ -178,6 +178,7 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
 void Roster::removeMember(Member * m){
     Member::serial_t id = m->getSerialID();
     delete m;
+    qDebug() <<"Deleted member successfully";
     emit memberRemoved(id);
 }
 
@@ -277,4 +278,17 @@ void Roster::setRedundancyBySessionID(int newRed, session_id_t s_id){
     JackTripWorker * t = m->getThread();
     if (t)
         t->setRedundancy(newRed);
+}
+
+void Roster::setNumChannelsBySessionID(int newCh, session_id_t s_id){
+    Member * m = membersBySessionID[s_id];
+    if (!m)
+        return;
+}
+
+void Roster::setLoopbackBySessionID(bool lb, session_id_t s_id){
+    Member * m = membersBySessionID[s_id];
+    if (!m)
+        return;
+    m->setLoopback(lb);
 }

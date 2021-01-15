@@ -91,6 +91,8 @@ public:
     void setControl(Member::serial_t id, int out, float val);
     void returnPort(int port){mPortPool.returnPort(port);}
     int getPort(){return mPortPool.getPort();}
+    void setNumChannelsBySessionID(int newCh, session_id_t s_id);
+    void setLoopbackBySessionID(bool lb, session_id_t s_id);
 
     QHash<session_id_t, sessionTriple> & getActiveSessions();
 
