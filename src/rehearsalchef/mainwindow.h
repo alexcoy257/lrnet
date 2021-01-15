@@ -107,6 +107,7 @@ private slots:
     void setRedundancy(int n);
     void setEncryption(bool e);
     void setEncryptionKey(char * key);
+    void setNumChannels(int n);
 
 };
 #endif // MAINWINDOW_H
