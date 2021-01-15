@@ -100,12 +100,13 @@ MainWindow::~MainWindow()
 {
 //    m_jacktrip->stopThread();
     stopJackTrip();
+    saveSetup();
     delete m_roleForm;
     delete ui;
     delete m_netClient;
     //delete m_connectForm;
     RSA_free(keyPair);
-    saveSetup();
+
 }
 
 void MainWindow::keyInit(){
@@ -312,6 +313,8 @@ m_netClient->subChef();
 m_changeRoleAction->setEnabled(true);
 }
 
+
+//---------------------------------------------------------------------------------------
 void MainWindow::launchMember(){
 m_roleForm = new MemberForm(this);
 m_role = MEMBER;
@@ -323,8 +326,9 @@ QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_
 m_netClient->subMember();
 
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::changeRedundancy, this, &MainWindow::setRedundancy);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::setNumChannels, this, &MainWindow::setNumChannels);
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
-
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
 
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
@@ -335,13 +339,17 @@ m_changeRoleAction->setEnabled(true);
 m_stackedWidget->setCurrentWidget(m_roleForm);
 }
 
+
+//---------------------------------------------------------------------------------------
 void MainWindow::setUdpPort(int port){
     m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, true);
 }
 
 
-
+//---------------------------------------------------------------------------------------
 void MainWindow::startJackTrip(){
+    if (m_role != MEMBER)
+        return;
     QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     qDebug() << "Want to start JackTrip";
@@ -359,6 +367,8 @@ void MainWindow::startJackTripThread(){
 }
 
 void MainWindow::stopJackTrip(){
+    if (m_role != MEMBER)
+        return;
     QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     qDebug() << "Want to stop JackTrip";
@@ -374,6 +384,8 @@ void MainWindow::stopJackTripThread(){
 
 
 void MainWindow::releaseThread(int n){
+    if (m_role != MEMBER)
+        return;
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 }
 
@@ -394,4 +406,9 @@ void MainWindow::setEncryptionKey(char * key){
 
     startJackTripThread();
     //delete[] key;
+}
+
+void MainWindow::setNumChannels(int n){
+
+    m_netClient->setNumChannels(n);
 }

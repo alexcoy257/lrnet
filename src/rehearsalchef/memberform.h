@@ -35,6 +35,8 @@ signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
     void setEncryption(bool e);
+    void setjtSelfLoopback(bool e);
+    void setNumChannels(int n);
 
     void startJackTrip();
     void stopJackTrip();

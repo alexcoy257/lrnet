@@ -14,12 +14,15 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->nameChoice, &QLineEdit::editingFinished, this, &MemberForm::updateName);
     QObject::connect(ui->sectionChoice, &QComboBox::currentTextChanged, this, [=](){emit sectionUpdated(ui->sectionChoice->currentText());});
     QObject::connect(ui->redundancyChoice, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](int nv){emit changeRedundancy(nv);});
+    QObject::connect(ui->sentChannelsChoice, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](int nv){emit setNumChannels(nv);});
     //QObject::connect(ui->redundancyChoice, &QSpinBox::textChanged, this, [=](QString s){emit changeRedundancy(s.toInt());});
 
     QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, [=](){ui->startJackTripButton->setEnabled(true);});
     QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, [=](){ui->startJackTripButton->setDisabled(true);});
     QObject::connect(ui->encryptEnabledBox, &QCheckBox::stateChanged, this, [=](int e){emit setEncryption(e);});
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
+    QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
+
 }
 
 void MemberForm::updateName(){
@@ -31,6 +34,7 @@ void MemberForm::fstartJacktrip(){
     emit startJackTrip();
     ui->startJackTripButton->setText("Stop JackTrip");
     ui->redundancyChoice->setDisabled(true);
+    ui->sentChannelsChoice->setDisabled(true);
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
 }
@@ -39,6 +43,7 @@ void MemberForm::fstopJacktrip(){
     emit stopJackTrip();
     ui->startJackTripButton->setText("Start JackTrip");
     ui->redundancyChoice->setEnabled(true);
+    ui->sentChannelsChoice->setEnabled(true);
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
 }
@@ -67,8 +72,9 @@ void MemberForm::loadSetup(QSettings &settings){
     setSection(settings.value("Section","").toString());
     settings.endGroup();
 
-    ui->jackServer->loadSetup(settings);
+    emit setNumChannels(1);
 
+    ui->jackServer->loadSetup(settings);
 }
 
 void MemberForm::saveSetup(QSettings &settings){
@@ -83,9 +89,11 @@ void MemberForm::saveSetup(QSettings &settings){
 }
 
 void MemberForm::disableJackForm(){
+    if (ui->jackServer)
     ui->jackServer->setDisabled(true);
 }
 
 void MemberForm::enableJackForm(){
+    if (ui->jackServer)
     ui->jackServer->setEnabled(true);
 }
