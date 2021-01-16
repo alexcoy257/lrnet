@@ -2,6 +2,7 @@
 #define MEMBERFORM_H
 
 #include <QWidget>
+#include <QSettings>
 
 #include "chatform.h"
 #include <jackparameterform.h>
@@ -24,10 +25,18 @@ public:
     void setName(const QString & nname);
     void setSection(const QString & nsection);
 
+    void loadSetup(QSettings &settings);
+    void saveSetup(QSettings &settings);
+
+    void enableJackForm();
+    void disableJackForm();
+
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
     void setEncryption(bool e);
+    void setjtSelfLoopback(bool e);
+    void setNumChannels(int n);
 
     void startJackTrip();
     void stopJackTrip();

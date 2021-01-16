@@ -27,6 +27,8 @@ class Roster;
 
 class Member: public QObject{
     Q_OBJECT
+    class csControlPair;
+
 public:
     typedef enum {
         COMP_BYPASS = 0,
@@ -60,6 +62,8 @@ private:
     jack_port_t * toPorts[2] = {NULL, NULL};
     jack_port_t * broadcastPorts[2] = {NULL, NULL};
 
+    int mNumChannels = 1;
+    std::vector<std::unique_ptr<csControlPair>> cses;
     ChannelStrip * cs ;
     ControlUI * ui;
     jackaudio * audio;
@@ -88,6 +92,7 @@ public:
     audioPortHandle_t getAudioOutputPort(int n);
     JackTripWorker * getThread(){return assocThread;}
     void resetThread();
+    void setLoopback(bool lb);
 
 signals:
     void readyToFan(Member * m);

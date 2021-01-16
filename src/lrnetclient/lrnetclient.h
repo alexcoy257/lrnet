@@ -138,7 +138,9 @@ private:
 
         void subMember();
         void setRedundancy(int n);
+        void setNumChannels(int n);
         void setEncryption(bool e) {mEncryptionEnabled = e;}
+        void setjtSelfLoopback(bool e);
         void startJackTrip();
         void stopJackTrip();
 

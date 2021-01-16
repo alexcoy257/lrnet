@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_stackedWidget(new QStackedWidget(this))
     , m_connectForm(new ConnectForm(this))
     , m_launcherForm(NULL)
+    , m_role(NONE)
     , m_roleForm(NULL)
     , m_authType(NONE)
     , m_settings(REHEARSALCHEF_DOMAIN, REHEARSALCHEF_TITLE)
@@ -97,12 +98,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    m_jacktrip->stopThread();
+//    m_jacktrip->stopThread();
+    stopJackTrip();
+    saveSetup();
     delete ui;
     delete m_netClient;
     //delete m_connectForm;
     RSA_free(keyPair);
-    saveSetup();
+
 }
 
 void MainWindow::keyInit(){
@@ -209,7 +212,11 @@ void MainWindow::disconnected(){
     m_stackedWidget->setCurrentWidget(m_connectForm);
     delete m_launcherForm;
     m_launcherForm = NULL;
+    if (m_role == MEMBER){
+        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    }
     delete m_roleForm;
+    m_role = NONE;
     m_roleForm = NULL;
     m_authType = NONE;
 
@@ -230,11 +237,6 @@ void MainWindow::loadSetup(){
     m_privateKey = m_settings.value("PrivateKey","").toByteArray();
     //qDebug() <<"Public key: " <<m_publicKey;
     m_settings.endGroup();
-
-     m_settings.beginGroup("/Names");
-     m_name = m_settings.value("name","").toString();
-     m_section = m_settings.value("section","").toString();
-     m_settings.endGroup();
 }
 
 void MainWindow::saveSetup(){
@@ -246,10 +248,9 @@ void MainWindow::saveSetup(){
     m_settings.setValue("PrivateKey",m_privateKey);
     m_settings.endGroup();
 
-    m_settings.beginGroup("/Names");
-    m_settings.setValue("name",m_name);
-    m_settings.setValue("section",m_section);
-    m_settings.endGroup();
+    if (m_role == MEMBER){
+        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    }
 
     m_settings.sync();
 }
@@ -262,7 +263,11 @@ void MainWindow::handleAuth(AuthTypeE type){
 
 void MainWindow::changeRole(){
     m_stackedWidget->setCurrentWidget(m_launcherForm);
+    if (m_role == MEMBER){
+        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    }
     delete m_roleForm;
+    m_role = NONE;
     m_roleForm = NULL;
     m_netClient->unsubscribe();
     m_changeRoleAction->setEnabled(false);
@@ -284,12 +289,14 @@ void MainWindow::launchLauncher(){
 
 void MainWindow::launchSuperChef(){
 qDebug()<<"Chose superchef";
+m_role = SUPERCHEF;
 m_netClient->subSuperchef();
 m_changeRoleAction->setEnabled(true);
 }
 
 void MainWindow::launchChef(){
 m_roleForm = new ChefForm(this);
+m_role = CHEF;
 m_stackedWidget->addWidget(m_roleForm);
 m_stackedWidget->setCurrentWidget(m_roleForm);
 QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)m_roleForm, &ChefForm::addChannelStrip);
@@ -305,47 +312,48 @@ m_netClient->subChef();
 m_changeRoleAction->setEnabled(true);
 }
 
+
+//---------------------------------------------------------------------------------------
 void MainWindow::launchMember(){
 m_roleForm = new MemberForm(this);
+m_role = MEMBER;
 m_stackedWidget->addWidget(m_roleForm);
-m_stackedWidget->setCurrentWidget(m_roleForm);
-((MemberForm *)m_roleForm)->setName(m_name);
-((MemberForm *)m_roleForm)->setSection(m_section);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::nameUpdated, this, [=](const QString nname){
-    m_name = nname;
-    m_netClient->updateName(nname);
-});
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::sectionUpdated, this, [=](const QString nsection){
-    m_section = nsection;
-    m_netClient->updateSection(nsection);
-});
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::nameUpdated, m_netClient, &LRNetClient::updateName);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::sectionUpdated, m_netClient, &LRNetClient::updateSection);
 QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
 QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
 m_netClient->subMember();
 
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::changeRedundancy, this, &MainWindow::setRedundancy);
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::setNumChannels, this, &MainWindow::setNumChannels);
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
-
+QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
 
 QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
 QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
 
+((MemberForm *)m_roleForm)->loadSetup(m_settings);
 m_changeRoleAction->setEnabled(true);
-
+m_stackedWidget->setCurrentWidget(m_roleForm);
 }
 
+
+//---------------------------------------------------------------------------------------
 void MainWindow::setUdpPort(int port){
     m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, true);
 }
 
 
-
+//---------------------------------------------------------------------------------------
 void MainWindow::startJackTrip(){
+    if (m_role != MEMBER)
+        return;
     QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     qDebug() << "Want to start JackTrip";
     m_netClient->startJackTrip();
+    ((MemberForm *)m_roleForm)->disableJackForm();
     QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
 
 }
@@ -358,10 +366,13 @@ void MainWindow::startJackTripThread(){
 }
 
 void MainWindow::stopJackTrip(){
+    if (m_role != MEMBER)
+        return;
     QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
     qDebug() << "Want to stop JackTrip";
     m_netClient->stopJackTrip();
+    ((MemberForm *)m_roleForm)->enableJackForm();
     stopJackTripThread();
 }
 
@@ -372,6 +383,8 @@ void MainWindow::stopJackTripThread(){
 
 
 void MainWindow::releaseThread(int n){
+    if (m_role != MEMBER)
+        return;
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 }
 
@@ -392,4 +405,9 @@ void MainWindow::setEncryptionKey(char * key){
 
     startJackTripThread();
     //delete[] key;
+}
+
+void MainWindow::setNumChannels(int n){
+
+    m_netClient->setNumChannels(n);
 }

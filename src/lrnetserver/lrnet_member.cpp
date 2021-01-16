@@ -3,27 +3,75 @@
 #include <jacktrip/JackTrip.h>
 #include <QDebug>
 #include <sys/mman.h>
+#include <memory>
 
 Member::serial_t Member::currentSerial=0;
 
-Member::Member(QString & netid, session_id_t s_id, Roster * roster,  QObject * parent): QObject(parent)
+class Member::csControlPair{
+        public:
+        ChannelStrip * cs = NULL;
+        ControlUI * ui = NULL;
+        jackaudio * audio = NULL;
+        csControlPair(ChannelStrip * ncs = NULL,
+        ControlUI * ncontrol = NULL,
+        jackaudio * naudio = NULL):
+        cs(ncs), ui(ncontrol), audio(naudio){
+            mlock(cs, sizeof(ChannelStrip));
+                qDebug() <<"Locked mem";
+
+            cs->buildUserInterface(ui);
+            qDebug() <<"Built UI";
+
+        }
+        ~csControlPair(){
+            qDebug() <<"CS Control Pair: Destructor!";
+            if (audio)
+                audio->stop();
+            if (cs){
+                 munlock(cs, sizeof(ChannelStrip));
+                delete cs;
+            }
+            if (ui)
+                delete ui;
+            if (audio)
+                delete audio;
+        }
+    };
+
+Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * parent): QObject(parent)
   ,s_id(s_id)
   ,serial(currentSerial++)
-  ,netid(netid)
+  ,netid(nnetid)
   ,mRoster(roster)
   ,mPort(roster?roster->getPort():0)
-  ,cs(new ChannelStrip())
-  ,ui(new ControlUI())
-  ,audio(new jackaudio(false))
+  ,cs(NULL)
+  ,ui(NULL)
+  ,audio(NULL)
     {
     qDebug() <<"Member constructor " <<netid;
-    mlock(cs, sizeof(ChannelStrip));
 
-    cs->buildUserInterface(ui);
-    audio->init(netid.toStdString().data(), cs);
-    audio->start();
+    //csControlPair excs = ;
+    cses.push_back(
+        std::unique_ptr<csControlPair>(
+            new csControlPair(new ChannelStrip(), new ControlUI(), new jackaudio(false))));
 
-    assocThread = new JackTripWorker(serial, roster, 10, JackTrip::ZEROS, "JackTrip");
+    qDebug() <<"Pushed back.";
+    qDebug() <<"At 0:" <<cses.at(0)->cs <<cses.at(0)->ui <<cses.at(0)->audio;
+
+    
+
+    cses.at(0)->audio->init(netid.append("-%1").arg("CS").toStdString().data(), cses.at(0)->cs);
+    cses.at(0)->audio->start();
+
+    //mlock(cs, sizeof(ChannelStrip));
+    //cs->buildUserInterface(ui);
+    
+    //audio->init(netid.toStdString().data(), cs);
+    //audio->start();
+
+    assocThread = new JackTripWorker(serial, roster, 10,
+        JackTrip::ZEROS,
+        netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
     {
@@ -59,15 +107,20 @@ Member::Member(QObject * parent): QObject(parent)
 }
 
 Member::~Member(){
+
+    qDebug() << "Member destructor beginning";
+    /*
     if(cs){
         munlock(cs, sizeof(ChannelStrip));
-    }
-    audio->stop();
+    }*/
+    //audio->stop();
     assocThread->stopThread();
     mRoster->returnPort(mPort);
-    delete ui;
-    delete audio;
-    delete cs;
+    //delete ui;
+    //delete audio;
+    //delete cs;
+
+    qDebug() << "Member destructor end";
 }
 
 
@@ -96,7 +149,8 @@ void Member::resetThread(){
     if (!assocThread)
         return;
 
-    assocThread = new JackTripWorker(serial, mRoster, 10, JackTrip::ZEROS, "JackTrip");
+    assocThread = new JackTripWorker(serial, mRoster, 10, JackTrip::ZEROS,
+        netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
     //{
@@ -132,8 +186,18 @@ audioPortHandle_t Member::getAudioInputPort(int n){
  *  Disregards n and returns the port that comes from the channel strip.
  */
 audioPortHandle_t Member::getAudioOutputPort(int n){
-    if(audio)
-        return audio->getOutputPort(0);
+    if (mNumChannels == 1){
+        if(cses.at(0)->audio){
+            return cses.at(0)->audio->getOutputPort(0);
+        }
+    }
+    else if (mNumChannels == 2){
+        if(cses.at(1)->audio){
+            return cses.at(1)->audio->getOutputPort(0);
+        }
+    }
+    //if(audio)
+    //    return audio->getOutputPort(0);
     return NULL;
 }
 
@@ -143,14 +207,52 @@ void Member::connectChannelStrip(){
         //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[0]));
         jack_connect(mRoster->m_jackClient,
             jack_port_name(fromPorts[0]),
-            jack_port_name(audio->getInputPort(0)));
+            jack_port_name(cses.at(0)->audio->getInputPort(0)));
+        if (mNumChannels == 2 && cses.at(1)->audio){
         jack_connect(mRoster->m_jackClient,
-            jack_port_name(audio->getOutputPort(0)),
-            jack_port_name(toPorts[0]));
-        jack_connect(mRoster->m_jackClient,
-            jack_port_name(audio->getOutputPort(0)),
-            jack_port_name(toPorts[1]));
+            jack_port_name(fromPorts[1]),
+            jack_port_name(cses.at(1)->audio->getInputPort(0)));
+        }
+
+        
         //jack_connect(roster->m_jackClient, jack_port_name(fromPorts[0]), jack_port_name(toPorts[1]));
         
         emit readyToFan(this);
     }
+
+void Member::setLoopback(bool lb){
+    if(lb){
+        jack_connect(mRoster->m_jackClient,
+            jack_port_name(cses.at(0)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[0]));
+        
+        if (mNumChannels == 1){
+        jack_connect(mRoster->m_jackClient,
+            jack_port_name(cses.at(0)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[1]));
+        }
+        else if (mNumChannels==2){
+            jack_connect(mRoster->m_jackClient,
+            jack_port_name(cses.at(1)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[1]));
+        }
+
+    }
+    else{
+        jack_disconnect(mRoster->m_jackClient,
+            jack_port_name(cses.at(0)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[0]));
+        
+        if (mNumChannels == 1){
+        jack_disconnect(mRoster->m_jackClient,
+            jack_port_name(cses.at(0)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[1]));
+        }
+
+        else if (mNumChannels==2){
+            jack_disconnect(mRoster->m_jackClient,
+            jack_port_name(cses.at(1)->audio->getOutputPort(0)),
+            jack_port_name(toPorts[1]));
+        }
+    }
+}

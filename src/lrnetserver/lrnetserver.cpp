@@ -328,7 +328,7 @@ void LRNetServer::receivedClientInfo()
         try{
             inMsg = new osc::ReceivedMessage(*inPack);
             handleMessage(clientConnection, inMsg);
-            cBuf->reset();
+            //cBuf->reset();
         }
         catch(const osc::MalformedMessageException & e){
             qDebug() <<"Malformed Message " <<e.what();
@@ -521,6 +521,14 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
            mRoster->startJackTrip(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/member/setselfloopback") == 0){
+           handleSelfLoopback(args, tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/member/setnumchannels") == 0){
+           handleSetNumChannels(args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
@@ -952,9 +960,10 @@ void LRNetServer::broadcastToAll() {
 }
 
 void LRNetServer::broadcastToChefs(){
+    //qDebug() <<"Will broadcast to chefs";
     for (session_id_t t:activeChefs.keys()){
+        //qDebug() <<"Chef " <<t;
         QSslSocket * conn = activeSessions[t].lastSeenConnection;
-
          writeStreamToSocket(conn);
             //conn->write(oscOutStream.Data(), oscOutStream.Size());
 
@@ -1089,3 +1098,29 @@ void LRNetServer::sendKeyToClient(unsigned char * key, session_id_t s_id){
     writeStreamToSocket(activeSessions[s_id].lastSeenConnection);
     delete[] key;
 }
+
+void LRNetServer::handleSetNumChannels(
+    osc::ReceivedMessageArgumentStream & args,
+    session_id_t session){
+        mRoster->setNumChannelsBySessionID(1, session);
+    }
+
+void LRNetServer::handleSelfLoopback(
+    osc::ReceivedMessageArgumentStream & args,
+    session_id_t session){
+
+    bool lb = false;
+    bool err=false;
+    try{
+        args >> lb;
+    }catch(osc::WrongArgumentTypeException & e){
+        //Not a blob.
+        qDebug() << "Wrong type of arguments for loopback. Need an bool";
+        err = true;
+    }catch(osc::MissingArgumentException & e){
+        qDebug() << "Wrong number of arguments for loopback. Need a bool";
+        err =true;
+    }
+    if(!err)
+        mRoster->setLoopbackBySessionID(lb, session);
+    }

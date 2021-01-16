@@ -51,7 +51,7 @@ void LRNetClient::disconnectFromHost(){
 }
 
 LRNetClient::~LRNetClient(){
-    socket->disconnect();
+    disconnectFromHost();
 }
     
 
@@ -610,4 +610,23 @@ void LRNetClient::handleNewEncryptionKey(osc::ReceivedMessageArgumentStream & ar
         memcpy(key, b.data, 32);
         emit gotEncryptionKey(key);
     }
+}
+
+
+void LRNetClient::setjtSelfLoopback(bool e){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/setselfloopback" )
+    << osc::Blob(&session, sizeof(session))
+    << e;
+    oscOutStream << osc::EndMessage;
+    writeStreamToSocket();
+}
+
+void LRNetClient::setNumChannels(int n){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/setnumchannels" )
+    << osc::Blob(&session, sizeof(session))
+    << n;
+    oscOutStream << osc::EndMessage;
+    writeStreamToSocket();
 }

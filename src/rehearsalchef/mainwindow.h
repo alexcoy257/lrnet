@@ -57,6 +57,7 @@ private:
     QStackedWidget * m_stackedWidget;
     ConnectForm * m_connectForm;
     Launcher * m_launcherForm;
+    AuthTypeE m_role;
     QWidget * m_roleForm;
 
     ChefForm * m_chefForm;
@@ -106,6 +107,7 @@ private slots:
     void setRedundancy(int n);
     void setEncryption(bool e);
     void setEncryptionKey(char * key);
+    void setNumChannels(int n);
 
 };
 #endif // MAINWINDOW_H
