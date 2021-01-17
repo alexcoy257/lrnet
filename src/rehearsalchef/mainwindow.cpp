@@ -101,8 +101,10 @@ MainWindow::~MainWindow()
 //    m_jacktrip->stopThread();
     stopJackTrip();
     saveSetup();
+
     delete ui;
     delete m_netClient;
+    delete m_roleForm;
     //delete m_connectForm;
     RSA_free(keyPair);
 
@@ -215,6 +217,7 @@ void MainWindow::disconnected(){
     if (m_role == MEMBER){
         ((MemberForm *)m_roleForm)->saveSetup(m_settings);
     }
+    if(m_roleForm)
     delete m_roleForm;
     m_role = NONE;
     m_roleForm = NULL;

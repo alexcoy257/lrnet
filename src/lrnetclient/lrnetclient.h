@@ -141,8 +141,8 @@ private:
         void setNumChannels(int n);
         void setEncryption(bool e) {mEncryptionEnabled = e;}
         void setjtSelfLoopback(bool e);
-        void startJackTrip();
-        void stopJackTrip();
+        void startJackTrip(AuthTypeE role = MEMBER);
+        void stopJackTrip(AuthTypeE role = MEMBER);
 
         void unsubscribe();
 
