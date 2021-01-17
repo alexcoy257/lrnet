@@ -3,6 +3,7 @@
 
 ChefForm::ChefForm(QWidget *parent) :
     QWidget(parent),
+    m_tbSetupForm(new TalkbackSettingsForm(NULL)),
     ui(new Ui::ChefForm)
 
 {
@@ -13,11 +14,13 @@ ChefForm::ChefForm(QWidget *parent) :
 
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
     QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
+    QObject::connect(ui->tbSetupButton, &QAbstractButton::released, m_tbSetupForm, &QWidget::show);
 }
 
 ChefForm::~ChefForm()
 {
     delete ui;
+    delete m_tbSetupForm;
     //delete m_chatForm;
 }
 

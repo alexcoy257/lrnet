@@ -17,8 +17,8 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->sentChannelsChoice, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](int nv){emit setNumChannels(nv);});
     //QObject::connect(ui->redundancyChoice, &QSpinBox::textChanged, this, [=](QString s){emit changeRedundancy(s.toInt());});
 
-    QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, [=](){ui->startJackTripButton->setEnabled(true);});
-    QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, [=](){ui->startJackTripButton->setDisabled(true);});
+    QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, &MemberForm::enableJackTripButton);
+    QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, &MemberForm::disableJackTripButton);
     QObject::connect(ui->encryptEnabledBox, &QCheckBox::stateChanged, this, [=](int e){emit setEncryption(e);});
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
@@ -28,6 +28,14 @@ MemberForm::MemberForm(QWidget *parent) :
 void MemberForm::updateName(){
     ui->nameChoice->clearFocus();
     emit nameUpdated(ui->nameChoice->text());
+}
+
+void MemberForm::enableJackTripButton(){
+    ui->startJackTripButton->setEnabled(true);
+}
+
+void MemberForm::disableJackTripButton(){
+    ui->startJackTripButton->setDisabled(true);
 }
 
 void MemberForm::fstartJacktrip(){
@@ -51,6 +59,8 @@ void MemberForm::fstopJacktrip(){
 MemberForm::~MemberForm()
 {
     QObject::disconnect(ui->nameChoice, &QLineEdit::editingFinished, this, &MemberForm::updateName);
+    QObject::disconnect(ui->jackServer, &JackParameterForm::jackStarted, this, &MemberForm::enableJackTripButton);
+    QObject::disconnect(ui->jackServer, &JackParameterForm::jackStopped, this, &MemberForm::disableJackTripButton);
     delete ui;
     delete m_chatForm;
 }

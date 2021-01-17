@@ -407,20 +407,40 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
     }
 }
 
-void LRNetClient::startJackTrip(){
+void LRNetClient::startJackTrip(AuthTypeE role){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
-    << osc::Blob(&session, sizeof(session))
+    switch(role){
+    case MEMBER:
+        oscOutStream << osc::BeginMessage( "/member/startjacktrip" );
+        break;
+    case CHEF:
+        oscOutStream << osc::BeginMessage( "/chef/startjacktrip" );
+        break;
+    default:
+        qDebug() << "Role doesn't have jacktrip!";
+        return;
+    }
+    oscOutStream << osc::Blob(&session, sizeof(session))
     << mEncryptionEnabled
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
-void LRNetClient::stopJackTrip(){
+void LRNetClient::stopJackTrip(AuthTypeE role){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/member/stopjacktrip" )
-    << osc::Blob(&session, sizeof(session))
+    switch(role){
+    case MEMBER:
+        oscOutStream << osc::BeginMessage( "/member/stopjacktrip" );
+        break;
+    case CHEF:
+        oscOutStream << osc::BeginMessage( "/chef/stopjacktrip" );
+        break;
+    default:
+        qDebug() << "Role doesn't have jacktrip!";
+        return;
+    }
+    oscOutStream << osc::Blob(&session, sizeof(session))
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
