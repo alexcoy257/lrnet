@@ -31,7 +31,7 @@
         <enum>Qt::RightToLeft</enum>
        </property>
        <property name="text">
-        <string>Enabled</string>
+        <string>Code Enabled</string>
        </property>
       </widget>
      </item>
@@ -52,11 +52,29 @@
        </property>
       </widget>
      </item>
+     <item>
+      <layout class="QVBoxLayout" name="tbArea">
+       <item>
+        <widget class="QPushButton" name="tbSetupButton">
+         <property name="text">
+          <string>TB Setup</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="talkButton">
+         <property name="text">
+          <string>TB</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
     </layout>
    </item>
    <item row="1" column="1">
     <widget class="ChatForm" name="m_chatForm" native="true"/>
-    </item>
+   </item>
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="m_actCompArea"/>
    </item>

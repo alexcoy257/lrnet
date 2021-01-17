@@ -7,6 +7,7 @@
 #include "channelstrip.h"
 #include "compressor.h"
 #include "chatform.h"
+#include "talkbacksettingsform.h"
 
 namespace Ui {
 class ChefForm;
@@ -25,6 +26,7 @@ class ChefForm : public QWidget
 
     Compressor * m_actComp = NULL;
     QHash<int, LRMClient *> m_clients;
+    TalkbackSettingsForm * m_tbSetupForm = NULL;
 public:
     explicit ChefForm(QWidget *parent = nullptr);
     virtual ~ChefForm();

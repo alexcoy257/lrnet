@@ -23,6 +23,7 @@ public:
         MAKEUP
     } CValuesE;
     explicit Compressor(LRMClient * cStruct, QWidget *parent = nullptr);
+    explicit Compressor(QWidget *parent = nullptr);
     ~Compressor();
 
 signals:
@@ -30,6 +31,7 @@ signals:
 
 private:
     Ui::Compressor *ui;
+    void setupSignals();
 };
 
 #endif // COMPRESSOR_H
