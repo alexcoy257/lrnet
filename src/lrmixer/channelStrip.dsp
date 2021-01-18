@@ -1,6 +1,6 @@
 declare name "compressor";
-declare version "0.0";
-declare author "Julius Smith";
+declare version "0.1";
+declare author "Julius Smith, ed. Alex Coy";
 declare license "MIT Style STK-4.2";
 declare description "Compressor demo application, adapted from the Faust Library's dm.compressor_demo in demos.lib";
 declare documentation "https://faustlibraries.grame.fr/libs/compressors/#cocompressor_mono";
@@ -72,5 +72,7 @@ with {
 
 group_gain = *(vslider("[0] Group Gain [unit:dB]",0, -96, 10, 0.1) : ba.db2linear);
 indiv_gain = *(vslider("[0] Individual Gain [unit:dB]",0, -96, 10, 0.1) : ba.db2linear);
+mute = *(checkbox("Mute the signal that goes to other players"));
 
-process = _ : compressor_demo : group_gain : indiv_gain : _;
+
+process = _ : compressor_demo <: _ , (group_gain : indiv_gain : mute : _);

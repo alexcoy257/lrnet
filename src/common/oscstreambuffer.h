@@ -6,7 +6,7 @@
 #include <QDebug>
 
 class OSCStreamingBuffer: public QObject{
-    constexpr static int inputSize = 1024;
+    constexpr static int inputSize = 2048;
 
     char _base[inputSize];
     char * _head = _base;

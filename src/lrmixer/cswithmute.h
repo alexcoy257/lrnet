@@ -234,14 +234,13 @@ class ChannelStrip : public dsp {
 		ui_interface->declare(&fHslider0, "unit", "dB");
 		ui_interface->addHorizontalSlider("MakeUpGain", &fHslider0, 2.0f, -96.0f, 96.0f, 0.100000001f);
 		ui_interface->closeBox();
+		ui_interface->addCheckButton("Mute the signal that goes to other players", &fCheckbox1);
 		ui_interface->declare(&fVslider0, "0", "");
 		ui_interface->declare(&fVslider0, "unit", "dB");
 		ui_interface->addVerticalSlider("Group Gain", &fVslider0, 0.0f, -96.0f, 10.0f, 0.100000001f);
 		ui_interface->declare(&fVslider1, "0", "");
 		ui_interface->declare(&fVslider1, "unit", "dB");
 		ui_interface->addVerticalSlider("Individual Gain", &fVslider1, 0.0f, -96.0f, 10.0f, 0.100000001f);
-		 //Have to modify this for backwards compatibility with controls.
-		ui_interface->addCheckButton("Mute the signal that goes to other players", &fCheckbox1);
 		ui_interface->closeBox();
 	}
 	

@@ -127,7 +127,7 @@ private slots:
     void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleUpdateRedundancy(osc::ReceivedMessageArgumentStream & args, session_id_t session);
-    void handleStartJackTrip(osc::ReceivedMessageArgumentStream & args, session_id_t s_id);
+    void handleStartJackTrip(osc::ReceivedMessageArgumentStream & args, session_id_t s_id, AuthTypeE role=MEMBER);
     void sendKeyToClient(unsigned char * key, session_id_t s_id);
     void handleUnsubscribe(session_id_t);
     void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);

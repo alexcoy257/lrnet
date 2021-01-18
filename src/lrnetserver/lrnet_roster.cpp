@@ -49,43 +49,59 @@ Roster::~Roster(){
 }
 
 void Roster::addMember(QString &netid, session_id_t s_id){
-    //Must have some sort of ID to be a member.
-
-    if (netid.length()==0)
+    Member * newMem = addMemberOrChef(netid, s_id, membersBySessionID, members);
+    if (!newMem)
         return;
-
-    //Can't log in twice on the same session
-    if (membersBySessionID.contains(s_id))
-        return;
-
-    Member * newMem = new Member(netid, s_id, this);
-
-    members[newMem->getSerialID()]=newMem;
-    membersBySessionID[s_id]=newMem;
-
-
-
 
     //newMem->setPort(61002);
-    qDebug() <<"Assigned UDP Port:" << newMem->getPort();
-
-    qDebug() <<"Member's port is now " << newMem->getPort();
-
-
-
-     qDebug() <<"New member " <<newMem->getNetID();
+    qDebug() <<"New member " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
 
     QObject::connect(newMem, &Member::readyToFan,
         this, &Roster::fanNewMember);
     emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
 }
 
+void Roster::addChef(QString &netid, session_id_t s_id){
+    Member * newMem = addMemberOrChef(netid, s_id, chefsBySessionID, chefs);
+    if (!newMem)
+        return;
+
+     qDebug() <<"New chef " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
+    QObject::connect(newMem, &Member::readyToFan,
+        this, &Roster::fanNewChef);
+    //emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
+}
+
+Member * Roster::addMemberOrChef(QString &netid,
+        session_id_t s_id,
+        QHash<session_id_t, Member *> & group,
+        QHash<Member::serial_t, Member *> & sGroup){
+            //Must have some sort of ID to be a member.
+    if (netid.length()==0)
+        return NULL;
+    //Can't log in twice on the same session
+    if (group.contains(s_id))
+        return NULL;
+    Member * newMem = new Member(netid, s_id, this);
+    group[s_id]=newMem;
+    sGroup[newMem->getSerialID()]=newMem;    
+    return newMem;
+}
+
+
 QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
         return m_server->getActiveSessions();
     }
 
 void Roster::startJackTrip(session_id_t s_id, bool encrypt){
-    JackTripWorker * w = membersBySessionID[s_id]->getThread();
+    Member * m = membersBySessionID[s_id];
+    if (!m)
+        m = chefsBySessionID[s_id];
+
+    if (!m)
+        return;
+
+    JackTripWorker * w = m->getThread();
     
     if (!w){
         qDebug() <<"JackTripWorker not set";
@@ -169,6 +185,13 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
     }
 }
 
+void Roster::removeChefBySessionID(session_id_t s_id){
+    qDebug() <<"Remove a chef by session id";
+    Member * m = chefsBySessionID.take(s_id);
+    if (m)
+    chefs.take(m->getSerialID());
+}
+
 /**
  * @brief Roster::removeMember
  * @param m
@@ -220,11 +243,18 @@ int Roster::releaseThread(Member::serial_t id)
     mTotalRunningThreads--;
     }
 
+    if (chefs.contains(id)){
+    //members[id]->setThread(NULL);
+    chefs[id]->resetThread();
+    //mPortPool.returnPort(members[id]->getPort());
+    mTotalRunningThreads--;
+    }
+
     return 0; /// \todo Check if we really need to return an argument here
 }
 
 void Roster::stopAllThreads()
-{   
+{   {
     QHashIterator<Member::serial_t, Member *> iterator(members);
     qDebug() <<members.size() <<"members to stop.";
     while (iterator.hasNext()) {
@@ -235,16 +265,33 @@ void Roster::stopAllThreads()
             iterator.value()->getThread()->stopThread();
         }
     }
+}
+{
+    QHashIterator<session_id_t, Member *> iterator(chefsBySessionID);
+    qDebug() <<chefsBySessionID.size() <<"chefs to stop.";
+    while (iterator.hasNext()) {
+        iterator.next();
+        qDebug() <<iterator.value();
+        
+        if (iterator.value()->getThread() != nullptr) {
+            iterator.value()->getThread()->stopThread();
+        }
+    }
+}
     mThreadPool.waitForDone();
 }
 
 void Roster::setControl(Member::serial_t id, int out, float val){
    Member * m =  members[id];
+   qDebug() << __FUNCTION__;
    if (m) m->setControl(out, val);
 }
 
 void Roster::stopJackTrip(session_id_t s_id){
     Member * m = membersBySessionID[s_id];
+    if (!m){
+        m = chefsBySessionID[s_id];
+    }
     if (!m)
         return;
     m->getThread()->stopThread();
@@ -269,6 +316,10 @@ void Roster::fanNewMember(Member * member){
                 jack_port_name(m->getAudioInputPort(1)));
         }
     }
+}
+
+void Roster::fanNewChef(Member * chef){
+    qDebug() << "Fanning chefs not implemented";
 }
 
 void Roster::setRedundancyBySessionID(int newRed, session_id_t s_id){

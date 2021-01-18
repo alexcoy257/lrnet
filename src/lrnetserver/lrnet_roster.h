@@ -36,6 +36,9 @@ class Roster : public QObject
     QHash<Member::serial_t, Member *> members;
     QHash<session_id_t, Member *> membersBySessionID;
 
+    QHash<Member::serial_t, Member *> chefs;
+    QHash<session_id_t, Member *> chefsBySessionID;
+
     LRNetServer * m_server;
     jack_status_t * m_jackStatus;
     jack_client_t * m_jackClient;
@@ -65,6 +68,11 @@ class Roster : public QObject
 
     void removeMember(Member * m);
     void fanNewMember(Member * m);
+    void fanNewChef(Member * c);
+    Member * addMemberOrChef(QString &netid,
+        session_id_t s_id,
+        QHash<session_id_t, Member *> & group,
+        QHash<Member::serial_t, Member *> & sGroup);
 
 
 public:
@@ -74,10 +82,12 @@ public:
     bool initJackClient();
     ~Roster();
     void addMember(QString & netid, session_id_t s_id);
+    void addChef(QString & netid, session_id_t s_id);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
     QStringList & getValidSections(){return sections;}
     void removeMemberBySerialID(Member::serial_t id);
     void removeMemberBySessionID(session_id_t s_id);
+    void removeChefBySessionID(session_id_t s_id);
     QString getNameBySessionID(session_id_t s_id);
     void setNameBySessionID(QString & name, session_id_t s_id);
     void setSectionBySessionID(QString & section, session_id_t s_id);

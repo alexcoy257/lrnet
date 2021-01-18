@@ -65,7 +65,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
                 }
             }
         });
-        mStimeoutTimer.start();
+        //mStimeoutTimer.start();
 
     mCtimeoutTimer.setInterval(20000); //20 seconds for a connection
     mCtimeoutTimer.callOnTimeout([=](){
@@ -141,8 +141,8 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 //*******************************************************************************
 LRNetServer::~LRNetServer()
 {
-    jackServer.stop();
-
+    //jackServer.stop();
+    //delete jackServer;
     //delete mJTWorker;
 }
 
@@ -257,6 +257,7 @@ void LRNetServer::receivedNewConnection()
                     connectionPair myConn = activeConnections[clientSocket];
                     activeSessions[myConn.assocSession].lastSeenConnection=NULL;
                     mRoster->removeMemberBySessionID(myConn.assocSession);
+                    mRoster->removeChefBySessionID(myConn.assocSession);
                     activeChefs.remove(myConn.assocSession);
                     myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
@@ -519,8 +520,16 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
            handleSectionUpdate(&args, tSess);
         }
 
-        else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
-           mRoster->startJackTrip(tSess);
+        else if (std::strcmp(msg->AddressPattern(), "/chef/startjacktrip") == 0){
+            if (role & (SUPERCHEF | CHEF ))
+                handleStartJackTrip(args, tSess, CHEF);
+                 
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/chef/stopjacktrip") == 0){
+            if (role & (SUPERCHEF | CHEF ))
+                mRoster->stopJackTrip(tSess);
+                 
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/setselfloopback") == 0){
@@ -790,6 +799,8 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
 
 void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     activeChefs.insert(tSess, tSess);
+    QString netid = QString::fromStdString(activeSessions[tSess].netid);
+    mRoster->addChef(netid, tSess);
     sendRoster(activeSessions[tSess].lastSeenConnection);
     qDebug() << "Number of chefs: " << activeChefs.count();
 }
@@ -1078,7 +1089,8 @@ void LRNetServer::handleUpdateRedundancy(
 
 void LRNetServer::handleStartJackTrip(
     osc::ReceivedMessageArgumentStream & args,
-    session_id_t s_id)
+    session_id_t s_id,
+    AuthTypeE role)
 {   bool encrypt=false;
     try{
         args >> encrypt;

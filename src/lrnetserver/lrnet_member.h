@@ -68,12 +68,12 @@ private:
     ControlUI * ui;
     jackaudio * audio;
 
-    float currentControlValues[8] = {0.,2.,-24.,15.,40.,2.,0,0};
+    float currentControlValues[9] = {0.,2.,-24.,15.,40.,2.,0,0, 1};
     void connectChannelStrip();
 
 
 public:
-    static int constexpr numControlValues = 8;
+    static int constexpr numControlValues = 9;
     explicit Member(QObject *parent = nullptr);
     explicit Member(QString & netid, session_id_t s_id, Roster * roster,  QObject *parent = nullptr);
     ~Member();

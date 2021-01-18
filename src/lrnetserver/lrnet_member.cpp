@@ -137,7 +137,7 @@ void Member::setSection(QString & nsection){
 void Member::setControl(int out, float val){
     if (out < numControlValues){
         currentControlValues[out] = val;
-        ui->decodeControl(currentControlValues, numControlValues);
+        cses.at(0)->ui->decodeControl(currentControlValues, numControlValues);
     }
 }
 
@@ -188,12 +188,12 @@ audioPortHandle_t Member::getAudioInputPort(int n){
 audioPortHandle_t Member::getAudioOutputPort(int n){
     if (mNumChannels == 1){
         if(cses.at(0)->audio){
-            return cses.at(0)->audio->getOutputPort(0);
+            return cses.at(0)->audio->getOutputPort(1);
         }
     }
     else if (mNumChannels == 2){
         if(cses.at(1)->audio){
-            return cses.at(1)->audio->getOutputPort(0);
+            return cses.at(1)->audio->getOutputPort(1);
         }
     }
     //if(audio)
