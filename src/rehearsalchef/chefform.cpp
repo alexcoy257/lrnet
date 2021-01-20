@@ -15,6 +15,9 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
     QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
     QObject::connect(ui->tbSetupButton, &QAbstractButton::released, m_tbSetupForm, &QWidget::show);
+    QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::startJackTrip, this, [=](){emit startJackTrip();});
+    QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::stopJackTrip, this, [=](){emit stopJackTrip();});
+
 }
 
 ChefForm::~ChefForm()
@@ -89,4 +92,20 @@ void ChefForm::updateAuthCode(){
 void ChefForm::updateAuthCodeEnabled(){
     ui->codeEnabledBox->clearFocus();
     emit authCodeEnabledUpdated(ui->codeEnabledBox->isChecked());
+}
+
+void ChefForm::disableJackForm(){
+    m_tbSetupForm->disableJackForm();
+}
+
+void ChefForm::enableJackForm(){
+    m_tbSetupForm->enableJackForm();
+}
+
+void ChefForm::loadSetup(QSettings & settings){
+    m_tbSetupForm->loadSetup(settings);
+}
+
+void ChefForm::saveSetup(QSettings & settings){
+    m_tbSetupForm->saveSetup(settings);
 }
