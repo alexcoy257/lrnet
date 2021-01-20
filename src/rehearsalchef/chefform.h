@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QDebug>
+#include <QSettings>
 
 #include "channelstrip.h"
 #include "compressor.h"
@@ -38,10 +39,15 @@ public slots:
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void deleteChannelStrip(int id);
 
+    void loadSetup(QSettings &settings);
+    void saveSetup(QSettings &settings);
+
 signals:
     void sendControlUpdate(int id, QVector<float> & controls);
     void authCodeUpdated(const QString & nname);
     void authCodeEnabledUpdated(bool enabled);
+    void startJackTrip();
+    void stopJackTrip();
 
 private:
     Ui::ChefForm *ui;
@@ -50,6 +56,8 @@ private:
 
 private slots:
     void newValueHandler(LRMClient * myClient, int type, float value);
+    void disableJackForm();
+    void enableJackForm();
 
 public:
     ChatForm * m_chatForm;

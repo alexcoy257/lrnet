@@ -298,21 +298,23 @@ m_changeRoleAction->setEnabled(true);
 }
 
 void MainWindow::launchChef(){
-m_roleForm = new ChefForm(this);
-m_role = CHEF;
-m_stackedWidget->addWidget(m_roleForm);
-m_stackedWidget->setCurrentWidget(m_roleForm);
-QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)m_roleForm, &ChefForm::addChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)m_roleForm, &ChefForm::updateChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
-QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
-QObject::connect(((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
-QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
-QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
-QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
-QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
-m_netClient->subChef();
-m_changeRoleAction->setEnabled(true);
+    m_roleForm = new ChefForm(this);
+    m_role = CHEF;
+    m_stackedWidget->addWidget(m_roleForm);
+    m_stackedWidget->setCurrentWidget(m_roleForm);
+    QObject::connect(m_netClient, &LRNetClient::newMember, (ChefForm *)m_roleForm, &ChefForm::addChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)m_roleForm, &ChefForm::updateChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
+    QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+    QObject::connect(((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+    QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
+    QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+    QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
+    QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+    QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
+    m_netClient->subChef();
+    ((ChefForm *)m_roleForm)->loadSetup(m_settings);
+    m_changeRoleAction->setEnabled(true);
 }
 
 
@@ -350,15 +352,28 @@ void MainWindow::setUdpPort(int port){
 
 //---------------------------------------------------------------------------------------
 void MainWindow::startJackTrip(){
-    if (m_role != MEMBER)
-        return;
-    QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
-    QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
-    qDebug() << "Want to start JackTrip";
-    m_netClient->startJackTrip();
-    ((MemberForm *)m_roleForm)->disableJackForm();
-    QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
+    switch (m_role){
+    case MEMBER:
+        QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+        QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
+        qDebug() << "Want to start JackTrip";
+        m_netClient->startJackTrip();
+        ((MemberForm *)m_roleForm)->disableJackForm();
+        QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
+        break;
 
+    case CHEF:
+        QObject::disconnect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
+        QObject::connect((ChefForm *)m_roleForm, &ChefForm::stopJackTrip, this, &MainWindow::stopJackTrip);
+        qDebug() << "Want to start JackTrip for talkback";
+        m_netClient->startJackTrip(CHEF);
+        QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
+        break;
+
+    default:
+        break;
+
+    }
 }
 
 void MainWindow::startJackTripThread(){
@@ -369,13 +384,23 @@ void MainWindow::startJackTripThread(){
 }
 
 void MainWindow::stopJackTrip(){
-    if (m_role != MEMBER)
-        return;
-    QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
-    QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
-    qDebug() << "Want to stop JackTrip";
-    m_netClient->stopJackTrip();
-    ((MemberForm *)m_roleForm)->enableJackForm();
+    switch (m_role){
+    case MEMBER:
+        QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
+        QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+        qDebug() << "Want to stop JackTrip";
+        m_netClient->stopJackTrip();
+        ((MemberForm *)m_roleForm)->enableJackForm();
+        break;
+    case CHEF:
+        QObject::disconnect((ChefForm *)m_roleForm, &ChefForm::stopJackTrip, this, &MainWindow::stopJackTrip);
+        QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
+        qDebug() << "Want to stop JackTrip";
+        m_netClient->stopJackTrip();
+        break;
+    default:
+        break;
+    }
     stopJackTripThread();
 }
 
