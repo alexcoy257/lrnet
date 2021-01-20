@@ -1114,7 +1114,20 @@ void LRNetServer::sendKeyToClient(unsigned char * key, session_id_t s_id){
 void LRNetServer::handleSetNumChannels(
     osc::ReceivedMessageArgumentStream & args,
     session_id_t session){
-        mRoster->setNumChannelsBySessionID(1, session);
+        int nc = 1;
+        bool err=false;
+         try{
+        args >> nc;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a blob.
+            qDebug() << "Wrong type of arguments for loopback. Need an int";
+            err = true;
+        }catch(osc::MissingArgumentException & e){
+            qDebug() << "Wrong number of arguments for loopback. Need an int";
+            err =true;
+        }
+        if(!err)
+        mRoster->setNumChannelsBySessionID(nc, session);
     }
 
 void LRNetServer::handleSelfLoopback(
