@@ -6,6 +6,7 @@
 #include <QtNetwork/QSslSocket>
 #include <QtNetwork/QSslCipher>
 #include <cstdio>
+#include <list>
 #include <QRandomGenerator>
 
 /**
@@ -428,6 +429,10 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             if (role & (SUPERCHEF | CHEF))
                 sendRoster(socket);
         }
+        else if (std::strcmp(msg->AddressPattern(), "/get/roles") == 0){
+            if (role & (SUPERCHEF))
+                sendRoles(socket);
+        }
         else if (std::strcmp(msg->AddressPattern(), "/auth/storekey/send") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 handleStoreKey(args, tSess);
@@ -518,6 +523,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
            handleSectionUpdate(&args, tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/update/permission") == 0){
+            if (role & (SUPERCHEF))
+                handlePermissionUpdate(&args);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/chef/startjacktrip") == 0){
@@ -658,6 +668,23 @@ void LRNetServer::sendRoster(QSslSocket * socket){
           oscOutStream << osc::EndMessage;
     writeStreamToSocket(socket);
     qDebug() <<"Sending Roster " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::sendRoles(QSslSocket * socket){
+    qDebug() << "Requesting user roles";
+    std::list<auth_roster_t> * userRoles = authorizer.getRoles();
+    if (userRoles->empty())
+        return;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/roles" );
+
+    for (auth_roster_t user : *userRoles){
+        qDebug() << "Name: " << QString(user.name.data()) << ", Role: " << user.authType;
+        oscOutStream << user.name.data();
+        oscOutStream << int(user.authType);
+    }
+        oscOutStream << osc::EndMessage;
+    writeStreamToSocket(socket);
 }
 
 void LRNetServer::loadMemberFrame(Member * m){
@@ -851,7 +878,25 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
         QString qsName = QString::fromStdString(name);
              mRoster->setSectionBySessionID(qsName, tSess);
         }
+    }
+}
+
+void LRNetServer::handlePermissionUpdate(osc::ReceivedMessageArgumentStream *args){
+    if (!args->Eos()){
+        const char * name;
+        int authType;
+        try{
+            *args >> name;
+            try{
+                *args >> authType;
+                authorizer.updatePermission(QString(name), AuthTypeE(authType));
+            }catch(osc::WrongArgumentTypeException & e){
+                // Not an int.
+            }
+        }catch(osc::WrongArgumentTypeException & e){
+            // Not a string.
         }
+    }
 }
 
 void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){

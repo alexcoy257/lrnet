@@ -63,3 +63,7 @@ DEFINES += __LINUX__
 }
 
 DEFINES += WAIRTOHUB
+
+FORMS +=
+
+SOURCES +=

@@ -135,6 +135,33 @@ QByteArray * LRdbClient::getKeyForID(int id){
     return arr;
 }
 
+std::list<auth_roster_t> * LRdbClient::getRoles(){
+    std::list<auth_roster_t> * stdAuthRoster = new std::list<auth_roster_t>();
+    QSqlQuery query(readDb);
+    query.prepare("SELECT DISTINCT netid, role FROM users");
+    if (query.exec()){
+        qDebug() << "Succeeded to query getRoles";
+
+        while (query.next()){
+            AuthTypeE authType;
+            QString authTypeString = query.value(1).toString();
+            if (authTypeString == "superchef")
+                    authType = SUPERCHEF;
+            else if (authTypeString == "chef")
+                    authType = CHEF;
+            else if (authTypeString == "user")
+                    authType = MEMBER;
+            else
+                    authType = NONE;
+
+            stdAuthRoster->push_back({query.value(0).toString().toStdString(),
+                                    authType});
+        }
+    }
+
+    return stdAuthRoster;
+}
+
 /**
  * You must delete the QString produced by this method.
  */
@@ -203,7 +230,7 @@ void LRdbClient::setRoleForID(AuthTypeE role, int id){
         sRole = "chef";
         break;
     case MEMBER:
-        sRole = "member";
+        sRole = "user";
         break;
     case NONE:
         break;
@@ -223,7 +250,7 @@ void LRdbClient::setRoleForID(AuthTypeE role, int id){
     }
 }
 
-void LRdbClient::setRoleForNetID(AuthTypeE role, QString & netid){
+void LRdbClient::setRoleForNetID(AuthTypeE role, QString netid){
     QSqlQuery query(readDb);
     QString sRole = QString();
     query.prepare("UPDATE users SET role=? WHERE netid=?");
@@ -249,7 +276,7 @@ void LRdbClient::setRoleForNetID(AuthTypeE role, QString & netid){
     query.bindValue(1, QVariant(netid));
 
     if(query.exec()){
-        qDebug() << "Succeeded to query role";
+        qDebug() << "Succeeded to set role";
 
 
     }

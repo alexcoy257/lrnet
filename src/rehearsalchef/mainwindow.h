@@ -11,6 +11,7 @@
 #include "channelstrip.h"
 #include "compressor.h"
 #include "channeltester.h"
+#include "superchefform.h"
 #include "chefform.h"
 #include "memberform.h"
 #include "lrchef_connectform.h"

@@ -70,7 +70,8 @@ SOURCES += \
     mainwindow.cpp \
     memberform.cpp \
     rc_tests_1.cpp \
-    rcjtworker.cpp
+    rcjtworker.cpp \
+    superchefform.cpp
 
 HEADERS += \
     RehearsalChefabout.h \
@@ -84,6 +85,7 @@ HEADERS += \
     mainwindow.h \
     memberform.h \
     rcjtworker.h \
+    superchefform.h \
     testworker.h
 
 
@@ -94,7 +96,8 @@ FORMS += \
     chefform.ui \
     compressor.ui \
     mainwindow.ui \
-    memberform.ui
+    memberform.ui \
+    superchefform.ui
 
 
 # Default rules for deployment.

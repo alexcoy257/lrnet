@@ -51,6 +51,8 @@ private:
     void fstartJacktrip();
     void fstopJacktrip();
 
+    void enableJackTripButton();
+    void disableJackTripButton();
 
 };
 

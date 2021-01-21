@@ -2,6 +2,7 @@
 #define AUTH_TYPES_H
 #include <stdint.h>
 #include <cstddef>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -57,6 +58,11 @@ typedef struct {
   session_id_t session_id;
   AuthTypeE authType;
 } auth_type_t;
+
+typedef struct {
+    std::string name;
+    AuthTypeE authType;
+} auth_roster_t;
 
 
 #endif // AUTH_TYPES_H

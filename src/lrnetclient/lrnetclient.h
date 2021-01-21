@@ -36,6 +36,10 @@
 #define INPUT_BUFFER_SIZE 1024
 
 
+struct AuthRoster{
+    QString name;
+    AuthTypeE authType;
+};
 
 class  LIBLRNET_EXPORT LRNetClient : public QObject
     {
@@ -110,12 +114,14 @@ private:
         void gotUdpPort(int port);
         void serverJTReady();
         void chatReceived(const QString& name, const QString& chatMsg);
+        void rolesReceived(QList<AuthRoster> *authRoster);
         void gotEncryptionKey(char * key);
     
     public slots:
         void tryConnect(const QString &host, int port);
         void disconnectFromHost();
         void requestRoster();
+        void requestRoles();
         void setNetid(const QString & nnetid);
         void setRSAKey (RSA * key);
         void setTempCode (const QString &_tempCode){tempCode = _tempCode;}
@@ -124,13 +130,14 @@ private:
         void setCodeAuthMethod(){setAuthMethod(CODE);}
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
+        void updatePermission(QString name, AuthTypeE authType);
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);
         void sendPublicKey();
         void updateAuthCodeEnabled(bool enabled);
 
-        void subSuperchef();
+        void subSuperChef();
 
 
         void subChef();
@@ -171,6 +178,7 @@ private:
         void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
         void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
+        void handleRoles(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & args);
         void handleNewEncryptionKey(osc::ReceivedMessageArgumentStream & args);

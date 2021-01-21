@@ -150,9 +150,18 @@ bool Auth::addKey(const char * key, AuthPacket & pck){
     return err;
 }
 
+std::list<auth_roster_t> * Auth::getRoles(){
+    return readdb.getRoles();
+}
+
+void Auth::updatePermission(QString name, AuthTypeE authType){
+    readdb.setRoleForNetID(authType, name);
+}
+
 void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
     qDebug() <<"Verified key, adding to db if not present";
     QByteArray bakey(key, 451);
     QString netid = QString::fromLocal8Bit(pkt.netid, pkt.netid_length);
     readdb.addKeyToNetid(bakey, netid);
+    readdb.setRoleForNetID(MEMBER, netid);
 }

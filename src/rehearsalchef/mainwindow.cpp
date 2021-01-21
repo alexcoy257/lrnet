@@ -266,7 +266,9 @@ void MainWindow::changeRole(){
     if (m_role == MEMBER){
         ((MemberForm *)m_roleForm)->saveSetup(m_settings);
     }
+    qDebug() << "Works here";
     delete m_roleForm;
+    qDebug() << "DOES NOT WORK HERE";
     m_role = NONE;
     m_roleForm = NULL;
     m_netClient->unsubscribe();
@@ -289,9 +291,18 @@ void MainWindow::launchLauncher(){
 
 void MainWindow::launchSuperChef(){
 qDebug()<<"Chose superchef";
+m_roleForm = new SuperChefForm(this);
 m_role = SUPERCHEF;
-m_netClient->subSuperchef();
+m_netClient->subSuperChef();
+m_netClient->requestRoles();
+m_stackedWidget->addWidget(m_roleForm);
+m_stackedWidget->setCurrentWidget(m_roleForm);
 m_changeRoleAction->setEnabled(true);
+
+QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::requestRoles, m_netClient, &LRNetClient::requestRoles);
+QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::updatePermission, m_netClient, &LRNetClient::updatePermission);
+QObject::connect(m_netClient, &LRNetClient::rolesReceived, (SuperChefForm *)m_roleForm, &SuperChefForm::updateLists);
+
 }
 
 void MainWindow::launchChef(){

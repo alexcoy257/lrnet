@@ -105,7 +105,7 @@ void LRNetClient::sendKeyAuthPacket(auth_packet_t & pck){
     osc::Blob b(reinterpret_cast<const char*>(const_cast<const auth_packet_t *>(&pck)), sizeof(auth_packet_t));
     oscOutStream << b << osc::EndMessage;
     writeStreamToSocket();
-    //socket->write(oscOutStream.Data(), oscOutStream.Size());
+    //socket->write(oscOutStream(), oscOutStream.Size());
 }
 
 void LRNetClient::sendCodeAuthPacket(){
@@ -131,6 +131,14 @@ void LRNetClient::requestRoster(){
             << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::requestRoles(){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/get/roles" )
+            << osc::Blob(&session, sizeof(session))
+            << osc::EndMessage;
+    writeStreamToSocket();
 }
 
 void LRNetClient::readResponse()
@@ -200,6 +208,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         while (!args.Eos()){
             handleMemberGroup(args, MEMBER_ADD);
         }
+    }
+
+    else if (std::strcmp(ap, "/push/roles") == 0){
+        handleRoles(args);
     }
 
 
@@ -295,7 +307,7 @@ void LRNetClient::sendSmallMessage(QString & handle){
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
-void LRNetClient::subSuperchef(){
+void LRNetClient::subSuperChef(){
     QString handle = "/sub/superchef";
     sendSmallMessage(handle);
 }
@@ -405,6 +417,40 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
     catch (osc::MissingArgumentException & e){
         qDebug() <<"Not enough data for new UDP port";
     }
+}
+
+void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
+    QList<AuthRoster> * authRoster = new QList<AuthRoster>();
+    const char * name;
+    int authType;
+    while (!args.Eos()){
+        try{
+            args >> name;
+            try{
+                args >> authType;
+                qDebug() << QString(name) << " has role: " << AuthTypeE(authType);
+                authRoster->append({QString(name), AuthTypeE(authType)});
+
+            }catch(osc::WrongArgumentTypeException & e){
+                // Not an int.
+            }
+        }catch(osc::WrongArgumentTypeException & e){
+            // Not a const char *.
+        }
+    }
+
+    if (!authRoster->empty())
+        emit rolesReceived(authRoster);
+}
+
+void LRNetClient::updatePermission(QString name, AuthTypeE authType){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/update/permission" )
+                << osc::Blob(&session, sizeof(session))
+                << name.toStdString().data()
+                << int(authType)
+                << osc::EndMessage;
+    writeStreamToSocket();
 }
 
 void LRNetClient::startJackTrip(){

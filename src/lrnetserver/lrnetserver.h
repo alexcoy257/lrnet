@@ -123,6 +123,7 @@ private slots:
     void sendAuthResponse(QSslSocket * socket, auth_type_t at);
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
+    void sendRoles(QSslSocket * socket);
     void sendPong(QSslSocket * socket);
     void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
@@ -138,6 +139,7 @@ private slots:
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handlePermissionUpdate(osc::ReceivedMessageArgumentStream * args);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
     void loadMemberFrame(Member * m);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
