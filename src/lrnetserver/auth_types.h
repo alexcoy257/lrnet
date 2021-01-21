@@ -60,7 +60,7 @@ typedef struct {
 } auth_type_t;
 
 typedef struct {
-    std::string name;
+    std::string netid;
     AuthTypeE authType;
 } auth_roster_t;
 

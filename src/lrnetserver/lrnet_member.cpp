@@ -25,16 +25,24 @@ class Member::csControlPair{
         }
         ~csControlPair(){
             qDebug() <<"CS Control Pair: Destructor!";
-            if (audio)
+            if (audio){
+                qDebug() << "Try to stop audio";
                 audio->stop();
+            }
             if (cs){
                  munlock(cs, sizeof(ChannelStrip));
+                 qDebug() << "Try to delete CS";
                 delete cs;
             }
-            if (ui)
+            if (ui){
+                qDebug() << "Try to delete UI";
                 delete ui;
-            if (audio)
+            }
+            if (audio){
+                qDebug() << "Try to delete Audio";
                 delete audio;
+            }
+            qDebug() <<"CC Control Pair Destructor End";
         }
     };
 
@@ -56,12 +64,10 @@ Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * 
             new csControlPair(new ChannelStrip(), new ControlUI(), new jackaudio(false))));
 
     qDebug() <<"Pushed back.";
-    qDebug() <<"At 0:" <<cses.at(0)->cs <<cses.at(0)->ui <<cses.at(0)->audio;
-
-    
-
-    cses.at(0)->audio->init(netid.append("-%1").arg("CS").toStdString().data(), cses.at(0)->cs);
+    //qDebug() <<"At 0:" <<cses.at(0)->cs <<cses.at(0)->ui <<cses.at(0)->audio;
+    cses.at(0)->audio->init(netid.append("-%1").arg("CS-LM").toStdString().data(), cses.at(0)->cs);
     cses.at(0)->audio->start();
+    setControl(MUTE, 1);
 
     //mlock(cs, sizeof(ChannelStrip));
     //cs->buildUserInterface(ui);
@@ -138,6 +144,9 @@ void Member::setControl(int out, float val){
     if (out < numControlValues){
         currentControlValues[out] = val;
         cses.at(0)->ui->decodeControl(currentControlValues, numControlValues);
+        if (cses.size() == 2){
+            cses.at(1)->ui->decodeControl(currentControlValues, numControlValues);
+        }
     }
 }
 
@@ -186,14 +195,16 @@ audioPortHandle_t Member::getAudioInputPort(int n){
  *  Disregards n and returns the port that comes from the channel strip.
  */
 audioPortHandle_t Member::getAudioOutputPort(int n){
+    if (n<0) n=0;
+    if (n>1) n=1;
     if (mNumChannels == 1){
         if(cses.at(0)->audio){
             return cses.at(0)->audio->getOutputPort(1);
         }
     }
     else if (mNumChannels == 2){
-        if(cses.at(1)->audio){
-            return cses.at(1)->audio->getOutputPort(1);
+        if(cses.at(n)->audio){
+            return cses.at(n)->audio->getOutputPort(1);
         }
     }
     //if(audio)
@@ -254,5 +265,22 @@ void Member::setLoopback(bool lb){
             jack_port_name(cses.at(1)->audio->getOutputPort(0)),
             jack_port_name(toPorts[1]));
         }
+    }
+}
+
+void Member::setNumChannels(int n){
+    if (n<1) n=1;
+    if (n>2) n=2;
+    mNumChannels = n;
+    if (cses.size() < n){
+        cses.push_back(
+        std::unique_ptr<csControlPair>(
+            new csControlPair(new ChannelStrip(), new ControlUI(), new jackaudio(false))));
+
+        qDebug() <<"Pushed back.";
+        //qDebug() <<"At 0:" <<cses.at(0)->cs <<cses.at(0)->ui <<cses.at(0)->audio;
+        cses.at(1)->audio->init(netid.arg("CS-R").toStdString().data(), cses.at(1)->cs);
+        cses.at(1)->audio->start();
+         setControl(MUTE, 1);
     }
 }

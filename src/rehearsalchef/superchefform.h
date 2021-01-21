@@ -21,7 +21,7 @@ public slots:
     void updateLists(QList<AuthRoster> * authRoster);
 
 signals:
-    void updatePermission(QString user, AuthTypeE authType);
+    void updatePermission(QString netid, AuthTypeE authType);
     void requestRoles();
 
 

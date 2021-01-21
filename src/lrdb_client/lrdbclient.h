@@ -31,7 +31,7 @@ public:
     QByteArray * getKeyForID(int id);
     QString * getRoleForID(int id);
     std::list<auth_roster_t> * getRoles();
-    void updatePermission(QString name, AuthTypeE authType);
+    void updatePermission(QString netid, AuthTypeE authType);
     void setRoleForID(AuthTypeE role, int id);
     void setRoleForNetID(AuthTypeE role, QString netid);
     bool tryToMakeSchema();

@@ -26,6 +26,32 @@
    <property name="bottomMargin">
     <number>2</number>
    </property>
+   <item row="1" column="2">
+    <widget class="QLabel" name="c_gainVal">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>20</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Make-up: 2dB</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLabel" name="c_threshVal">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>20</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Threshold: -24dB</string>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QDial" name="c_ratioKnob">
      <property name="sizePolicy">
@@ -33,6 +59,12 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>70</width>
+       <height>70</height>
+      </size>
      </property>
      <property name="maximumSize">
       <size>
@@ -51,8 +83,39 @@
      </property>
     </widget>
    </item>
+   <item row="0" column="2">
+    <widget class="QDial" name="c_gainKnob">
+     <property name="minimumSize">
+      <size>
+       <width>70</width>
+       <height>70</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>100</width>
+       <height>100</height>
+      </size>
+     </property>
+     <property name="minimum">
+      <number>-96</number>
+     </property>
+     <property name="maximum">
+      <number>96</number>
+     </property>
+     <property name="value">
+      <number>2</number>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="1">
     <widget class="QDial" name="c_threshKnob">
+     <property name="minimumSize">
+      <size>
+       <width>70</width>
+       <height>70</height>
+      </size>
+     </property>
      <property name="maximumSize">
       <size>
        <width>100</width>
@@ -79,76 +142,18 @@
       </size>
      </property>
      <property name="text">
-      <string>Ratio: 1</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QLabel" name="c_threshVal">
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>20</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>Threshold</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="QDial" name="c_gainKnob">
-     <property name="maximumSize">
-      <size>
-       <width>100</width>
-       <height>100</height>
-      </size>
-     </property>
-     <property name="minimum">
-      <number>-96</number>
-     </property>
-     <property name="maximum">
-      <number>96</number>
-     </property>
-     <property name="value">
-      <number>2</number>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2">
-    <widget class="QLabel" name="c_gainVal">
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>20</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>Make-up</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QDial" name="c_attackKnob">
-     <property name="maximumSize">
-      <size>
-       <width>100</width>
-       <height>100</height>
-      </size>
-     </property>
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <number>1000</number>
-     </property>
-     <property name="value">
-      <number>15</number>
+      <string>Ratio: 2</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1">
     <widget class="QDial" name="c_releaseKnob">
+     <property name="minimumSize">
+      <size>
+       <width>70</width>
+       <height>70</height>
+      </size>
+     </property>
      <property name="maximumSize">
       <size>
        <width>100</width>
@@ -175,7 +180,7 @@
       </size>
      </property>
      <property name="text">
-      <string>Attack</string>
+      <string>Attack: 15ms</string>
      </property>
     </widget>
    </item>
@@ -188,7 +193,32 @@
       </size>
      </property>
      <property name="text">
-      <string>Release</string>
+      <string>Release: 40ms</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QDial" name="c_attackKnob">
+     <property name="minimumSize">
+      <size>
+       <width>70</width>
+       <height>70</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>100</width>
+       <height>100</height>
+      </size>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="value">
+      <number>15</number>
      </property>
     </widget>
    </item>

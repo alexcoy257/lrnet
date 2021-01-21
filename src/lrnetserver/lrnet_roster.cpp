@@ -188,8 +188,10 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
 void Roster::removeChefBySessionID(session_id_t s_id){
     qDebug() <<"Remove a chef by session id";
     Member * m = chefsBySessionID.take(s_id);
-    if (m)
+    if (m){
     chefs.take(m->getSerialID());
+    delete m;
+    }
 }
 
 /**
@@ -305,15 +307,34 @@ void Roster::fanNewMember(Member * member){
             jack_connect(m_jackClient,
                 jack_port_name(m->getAudioOutputPort(0)),
                 jack_port_name(member->getAudioInputPort(0)));
+            
+            if (m->getNumChannels()==2){
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(1)),
+                jack_port_name(member->getAudioInputPort(1)));
+            }
+            else{
             jack_connect(m_jackClient,
                 jack_port_name(m->getAudioOutputPort(0)),
                 jack_port_name(member->getAudioInputPort(1)));
+            }
+
             jack_connect(m_jackClient,
                 jack_port_name(member->getAudioOutputPort(0)),
                 jack_port_name(m->getAudioInputPort(0)));
+
+            if (member->getNumChannels()==2){
+            jack_connect(m_jackClient,
+                jack_port_name(member->getAudioOutputPort(1)),
+                jack_port_name(m->getAudioInputPort(1)));
+            }
+            else{
+
+            //Fan 1 channel to member's R
             jack_connect(m_jackClient,
                 jack_port_name(member->getAudioOutputPort(0)),
                 jack_port_name(m->getAudioInputPort(1)));
+            }
         }
     }
 }
@@ -335,6 +356,7 @@ void Roster::setNumChannelsBySessionID(int newCh, session_id_t s_id){
     Member * m = membersBySessionID[s_id];
     if (!m)
         return;
+    m->setNumChannels(newCh);
 }
 
 void Roster::setLoopbackBySessionID(bool lb, session_id_t s_id){

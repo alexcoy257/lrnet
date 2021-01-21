@@ -50,10 +50,11 @@ void LRdbClient::init(QString & uname, QString & pw, QString & database, QString
         std::cout << "Database Not okay \n ";
         connGood = false;
     }
+    readDb.close();
 }
 
 bool LRdbClient::netidExists(QString& netid){
-
+    readDb.open();
     QSqlQuery query;
     query.prepare("SELECT netid FROM users WHERE netid=?");
     query.bindValue(0, QVariant(netid));
@@ -63,10 +64,13 @@ bool LRdbClient::netidExists(QString& netid){
             nothing = true;
             QString country = query.value(0).toString();
         }
+
+    readDb.close();
     return nothing;
 }
 
 bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
+    readDb.open();
     QSqlQuery query(readDb);
     query.prepare("SELECT netid FROM users WHERE netid=? AND pubkey=?");
     query.bindValue(0, QVariant(netid));
@@ -83,19 +87,23 @@ bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
 
     if (nothing){
 
-        query.prepare("INSERT INTO users (netid, pubkey) VALUES (?,?)");
+        query.prepare("INSERT INTO users (netid, pubkey, role) VALUES (?,?,?)");
         query.bindValue(0, QVariant(netid));
         query.bindValue(1, QVariant(key));
+        query.bindValue(2, QVariant("user")); //May want to change this.
         if(query.exec())
             qDebug() << "Succeeded to add";
         else
             qDebug() << "Fail add";
     }
 
+    readDb.close();
     return false;
+    
 }
 
 QVector<int> * LRdbClient::getIDsForNetid(QString &netid){
+    readDb.open();
     QSqlQuery query(readDb);
     QVector<int> * vec = new QVector<int>();
     query.prepare("SELECT id FROM users WHERE netid=?");
@@ -111,6 +119,7 @@ QVector<int> * LRdbClient::getIDsForNetid(QString &netid){
     else{
         qDebug() <<__FUNCTION__ <<__LINE__ << "Failed to get ids for netid " <<netid;
     }
+    readDb.close();
     return vec;
 }
 
@@ -120,6 +129,7 @@ QVector<int> * LRdbClient::getIDsForNetid(char * netid, int len){
 }
 
 QByteArray * LRdbClient::getKeyForID(int id){
+    readDb.open();
     QSqlQuery query(readDb);
     QByteArray * arr = NULL;
     query.prepare("SELECT pubkey FROM users WHERE id=?");
@@ -132,6 +142,7 @@ QByteArray * LRdbClient::getKeyForID(int id){
         }
 
     }
+    readDb.close();
     return arr;
 }
 
@@ -166,6 +177,7 @@ std::list<auth_roster_t> * LRdbClient::getRoles(){
  * You must delete the QString produced by this method.
  */
 QString * LRdbClient::getRoleForID(int id){
+    readDb.open();
     QSqlQuery query(readDb);
     QString * str = NULL;
     query.prepare("SELECT role FROM users WHERE id=?");
@@ -178,6 +190,7 @@ QString * LRdbClient::getRoleForID(int id){
         }
 
     }
+    readDb.close();
     return str;
 }
 
@@ -187,6 +200,7 @@ LRdbClient::~LRdbClient(){
 }
 
 void LRdbClient::getPrivileges(){
+    readDb.open();
     QSqlQuery query(readDb);
     QString * str = NULL;
     query.prepare("SHOW GRANTS;");
@@ -198,12 +212,14 @@ void LRdbClient::getPrivileges(){
             delete str;
         }
     }
+    readDb.close();
 }
 
 bool LRdbClient::tryToMakeSchema(){
     if (!connGood){
         return false;
     }
+    readDb.open();
     QSqlQuery query(readDb);
     QString qBase = "CREATE TABLE users (\
     id int(11) NOT NULL AUTO_INCREMENT,\
@@ -213,12 +229,15 @@ bool LRdbClient::tryToMakeSchema(){
     PRIMARY KEY (id))";
     query.prepare(qBase);
     if(query.exec() && query.lastError().type() == QSqlError::NoError){
+        readDb.close();
         return true;
     }
+    readDb.close();
     return false;
 }
 
 void LRdbClient::setRoleForID(AuthTypeE role, int id){
+    readDb.open();
     QSqlQuery query(readDb);
     QString sRole = QString();
     query.prepare("UPDATE users SET role=? WHERE id=?");
@@ -248,9 +267,11 @@ void LRdbClient::setRoleForID(AuthTypeE role, int id){
 
 
     }
+    readDb.close();
 }
 
 void LRdbClient::setRoleForNetID(AuthTypeE role, QString netid){
+    readDb.open();
     QSqlQuery query(readDb);
     QString sRole = QString();
     query.prepare("UPDATE users SET role=? WHERE netid=?");
@@ -280,4 +301,5 @@ void LRdbClient::setRoleForNetID(AuthTypeE role, QString netid){
 
 
     }
+    readDb.close();
 }

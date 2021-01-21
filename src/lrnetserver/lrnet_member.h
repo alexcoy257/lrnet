@@ -38,7 +38,8 @@ public:
         COMP_RELEASE,
         COMP_MAKEUP,
         GROUP_GAIN,
-        INDIV_GAIN
+        INDIV_GAIN,
+        MUTE
     }CSControlsE;
     typedef enum {
         COMP_BYPASSE = 0
@@ -86,6 +87,8 @@ public:
     void setName(QString & nname);
     void setSection(QString & nsection);
     void setThread(JackTripWorker * thread){assocThread=thread;}
+    void setNumChannels(int n);
+    int getNumChannels(){return mNumChannels;}
     void setPort(int port){mPort = port;}
     int getPort(){return mPort;}
     audioPortHandle_t getAudioInputPort(int n);

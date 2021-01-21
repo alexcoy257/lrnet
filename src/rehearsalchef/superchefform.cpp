@@ -38,17 +38,14 @@ void SuperChefForm::updateLists(QList<AuthRoster> * authRoster){
     for (AuthRoster authItem : *authRoster){
         if (authItem.authType == NONE)
             qDebug() << "Hit NONE";
-        else if (authItem.authType == MEMBER){
-            qDebug() << "Hit MEMBER";
+        else if (authItem.authType == MEMBER){;
             ui->memberList->addItem(authItem.name);
         }
         else if (authItem.authType == CHEF){
-                qDebug() << "Hit CHEF";
-                ui->chefList->addItem(authItem.name);
+            ui->chefList->addItem(authItem.name);
         }
         else if (authItem.authType == SUPERCHEF){
-                qDebug() << "Hit SUPERCHEF";
-                ui->superChefList->addItem(authItem.name);
+            ui->superChefList->addItem(authItem.name);
         }
     }
 }

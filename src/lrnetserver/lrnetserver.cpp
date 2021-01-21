@@ -679,8 +679,8 @@ void LRNetServer::sendRoles(QSslSocket * socket){
     oscOutStream << osc::BeginMessage( "/push/roles" );
 
     for (auth_roster_t user : *userRoles){
-        qDebug() << "Name: " << QString(user.name.data()) << ", Role: " << user.authType;
-        oscOutStream << user.name.data();
+        qDebug() << "NetID: " << QString(user.netid.data()) << ", Role: " << user.authType;
+        oscOutStream << user.netid.data();
         oscOutStream << int(user.authType);
     }
         oscOutStream << osc::EndMessage;
@@ -883,13 +883,13 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
 
 void LRNetServer::handlePermissionUpdate(osc::ReceivedMessageArgumentStream *args){
     if (!args->Eos()){
-        const char * name;
+        const char * netid;
         int authType;
         try{
-            *args >> name;
+            *args >> netid;
             try{
                 *args >> authType;
-                authorizer.updatePermission(QString(name), AuthTypeE(authType));
+                authorizer.updatePermission(QString(netid), AuthTypeE(authType));
             }catch(osc::WrongArgumentTypeException & e){
                 // Not an int.
             }
@@ -1159,7 +1159,20 @@ void LRNetServer::sendKeyToClient(unsigned char * key, session_id_t s_id){
 void LRNetServer::handleSetNumChannels(
     osc::ReceivedMessageArgumentStream & args,
     session_id_t session){
-        mRoster->setNumChannelsBySessionID(1, session);
+        int nc = 1;
+        bool err=false;
+         try{
+        args >> nc;
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a blob.
+            qDebug() << "Wrong type of arguments for loopback. Need an int";
+            err = true;
+        }catch(osc::MissingArgumentException & e){
+            qDebug() << "Wrong number of arguments for loopback. Need an int";
+            err =true;
+        }
+        if(!err)
+        mRoster->setNumChannelsBySessionID(nc, session);
     }
 
 void LRNetServer::handleSelfLoopback(

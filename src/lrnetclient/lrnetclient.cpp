@@ -421,15 +421,15 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
 
 void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
     QList<AuthRoster> * authRoster = new QList<AuthRoster>();
-    const char * name;
+    const char * netid;
     int authType;
     while (!args.Eos()){
         try{
-            args >> name;
+            args >> netid;
             try{
                 args >> authType;
-                qDebug() << QString(name) << " has role: " << AuthTypeE(authType);
-                authRoster->append({QString(name), AuthTypeE(authType)});
+                qDebug() << QString(netid) << " has role: " << AuthTypeE(authType);
+                authRoster->append({QString(netid), AuthTypeE(authType)});
 
             }catch(osc::WrongArgumentTypeException & e){
                 // Not an int.
@@ -443,30 +443,50 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
         emit rolesReceived(authRoster);
 }
 
-void LRNetClient::updatePermission(QString name, AuthTypeE authType){
+void LRNetClient::updatePermission(QString netid, AuthTypeE authType){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/update/permission" )
                 << osc::Blob(&session, sizeof(session))
-                << name.toStdString().data()
+                << netid.toStdString().data()
                 << int(authType)
                 << osc::EndMessage;
     writeStreamToSocket();
 }
 
-void LRNetClient::startJackTrip(){
+void LRNetClient::startJackTrip(AuthTypeE role){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/member/startjacktrip" )
-    << osc::Blob(&session, sizeof(session))
+    switch(role){
+    case MEMBER:
+        oscOutStream << osc::BeginMessage( "/member/startjacktrip" );
+        break;
+    case CHEF:
+        oscOutStream << osc::BeginMessage( "/chef/startjacktrip" );
+        break;
+    default:
+        qDebug() << "Role doesn't have jacktrip!";
+        return;
+    }
+    oscOutStream << osc::Blob(&session, sizeof(session))
     << mEncryptionEnabled
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
 }
 
-void LRNetClient::stopJackTrip(){
+void LRNetClient::stopJackTrip(AuthTypeE role){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/member/stopjacktrip" )
-    << osc::Blob(&session, sizeof(session))
+    switch(role){
+    case MEMBER:
+        oscOutStream << osc::BeginMessage( "/member/stopjacktrip" );
+        break;
+    case CHEF:
+        oscOutStream << osc::BeginMessage( "/chef/stopjacktrip" );
+        break;
+    default:
+        qDebug() << "Role doesn't have jacktrip!";
+        return;
+    }
+    oscOutStream << osc::Blob(&session, sizeof(session))
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());

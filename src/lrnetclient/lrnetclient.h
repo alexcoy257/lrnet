@@ -130,7 +130,7 @@ private:
         void setCodeAuthMethod(){setAuthMethod(CODE);}
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
-        void updatePermission(QString name, AuthTypeE authType);
+        void updatePermission(QString netid, AuthTypeE authType);
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);
@@ -148,8 +148,8 @@ private:
         void setNumChannels(int n);
         void setEncryption(bool e) {mEncryptionEnabled = e;}
         void setjtSelfLoopback(bool e);
-        void startJackTrip();
-        void stopJackTrip();
+        void startJackTrip(AuthTypeE role = MEMBER);
+        void stopJackTrip(AuthTypeE role = MEMBER);
 
         void unsubscribe();
 

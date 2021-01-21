@@ -72,6 +72,7 @@ SOURCES += \
     rc_tests_1.cpp \
     rcjtworker.cpp \
     superchefform.cpp
+    talkbacksettingsform.cpp
 
 HEADERS += \
     RehearsalChefabout.h \
@@ -86,6 +87,7 @@ HEADERS += \
     memberform.h \
     rcjtworker.h \
     superchefform.h \
+    talkbacksettingsform.h \
     testworker.h
 
 
@@ -98,6 +100,7 @@ FORMS += \
     mainwindow.ui \
     memberform.ui \
     superchefform.ui
+    talkbacksettingsform.ui
 
 
 # Default rules for deployment.
