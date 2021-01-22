@@ -71,7 +71,7 @@ SOURCES += \
     memberform.cpp \
     rc_tests_1.cpp \
     rcjtworker.cpp \
-    superchefform.cpp
+    superchefform.cpp \
     talkbacksettingsform.cpp
 
 HEADERS += \
@@ -99,7 +99,7 @@ FORMS += \
     compressor.ui \
     mainwindow.ui \
     memberform.ui \
-    superchefform.ui
+    superchefform.ui \
     talkbacksettingsform.ui
 
 
