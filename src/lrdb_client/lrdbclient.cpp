@@ -147,6 +147,7 @@ QByteArray * LRdbClient::getKeyForID(int id){
 }
 
 std::list<auth_roster_t> * LRdbClient::getRoles(){
+    readDb.open();
     std::list<auth_roster_t> * stdAuthRoster = new std::list<auth_roster_t>();
     QSqlQuery query(readDb);
     query.prepare("SELECT DISTINCT netid, role FROM users");
@@ -169,7 +170,7 @@ std::list<auth_roster_t> * LRdbClient::getRoles(){
                                     authType});
         }
     }
-
+    readDb.close();
     return stdAuthRoster;
 }
 

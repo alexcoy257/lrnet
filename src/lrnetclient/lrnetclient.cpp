@@ -428,7 +428,6 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
             args >> netid;
             try{
                 args >> authType;
-                qDebug() << QString(netid) << " has role: " << AuthTypeE(authType);
                 authRoster->append({QString(netid), AuthTypeE(authType)});
 
             }catch(osc::WrongArgumentTypeException & e){

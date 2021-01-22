@@ -50,8 +50,8 @@ typedef uint64_t session_id_t;
 typedef enum {
       NONE = 0,
       MEMBER = 1,
-      CHEF = MEMBER | (1<<1) ,
-      SUPERCHEF = CHEF | (1<<2)
+      CHEF = (1<<1) ,
+      SUPERCHEF = (1<<2)
   } AuthTypeE;
 
 typedef struct {

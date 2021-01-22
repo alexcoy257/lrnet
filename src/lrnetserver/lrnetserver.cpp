@@ -526,7 +526,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/update/permission") == 0){
-            if (role & (SUPERCHEF))
+            if (activeSessions[tSess].role & (SUPERCHEF))
                 handlePermissionUpdate(&args);
         }
 
@@ -890,6 +890,16 @@ void LRNetServer::handlePermissionUpdate(osc::ReceivedMessageArgumentStream *arg
             try{
                 *args >> authType;
                 authorizer.updatePermission(QString(netid), AuthTypeE(authType));
+                for (unsigned long key : activeSessions.keys()){
+                    if (strcmp(activeSessions[key].netid, netid) == 0){
+                        qDebug() << "Role before: " << activeSessions[key].role;
+                        activeSessions[key].role = AuthTypeE(authType);
+                        if (activeChefs.contains(key) && (AuthTypeE(authType) == MEMBER))
+                                activeChefs.remove(key);
+                        qDebug() << "Role after: " << activeSessions[key].role;
+                    }
+                }
+
             }catch(osc::WrongArgumentTypeException & e){
                 // Not an int.
             }
