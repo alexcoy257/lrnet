@@ -485,6 +485,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/send/authcode") == 0){
+            if (role & (SUPERCHEF | CHEF))
             handleAuthCodeUpdate(&args, tSess);
         }
 
@@ -522,11 +523,12 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
-           handleSectionUpdate(&args, tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleSectionUpdate(&args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/update/permission") == 0){
-            if (activeSessions[tSess].role & (SUPERCHEF))
+            if (role & (SUPERCHEF))
                 handlePermissionUpdate(&args);
         }
 
@@ -543,11 +545,13 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/setselfloopback") == 0){
-           handleSelfLoopback(args, tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleSelfLoopback(args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/setnumchannels") == 0){
-           handleSetNumChannels(args, tSess);
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+               handleSetNumChannels(args, tSess);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
