@@ -130,8 +130,8 @@ private:
         void setCodeAuthMethod(){setAuthMethod(CODE);}
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
-        void updatePermission(QString netid, AuthTypeE authType);
-        void removeUser(QString netid, AuthTypeE authType);
+        void updatePermissions(QList<QString> *netidsSelected, AuthTypeE authType);
+        void removeUsers(QList<QString> *netidsSelected);
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);

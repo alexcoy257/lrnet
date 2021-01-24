@@ -21,15 +21,15 @@ public slots:
     void updateLists(QList<AuthRoster> * authRoster);
 
 signals:
-    void updatePermission(QString netid, AuthTypeE authType);
+    void updatePermissions(QList<QString> *netidsSelected, AuthTypeE authType);
     void requestRoles();
-    void removeUser(QString netid, AuthTypeE authType);
+    void removeUsers(QList<QString> *netidsSelected);
 
 
 private:
     Ui::SuperChefForm *ui;
-    void updatePermissions(AuthTypeE);
-    void removeUsers();
+    void updateSelectedPermissions(AuthTypeE authType);
+    void removeSelectedUsers();
 };
 
 #endif // SUPERCHEFFORM_H

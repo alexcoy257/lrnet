@@ -59,6 +59,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
                     activeSessions.remove(i.key());
                     activeChefs.remove(i.key());
+                    activeSuperChefs.remove(i.key());
 
                 }
                 else{
@@ -260,6 +261,7 @@ void LRNetServer::receivedNewConnection()
                     mRoster->removeMemberBySessionID(myConn.assocSession);
                     mRoster->removeChefBySessionID(myConn.assocSession);
                     activeChefs.remove(myConn.assocSession);
+                    activeSuperChefs.remove(myConn.assocSession);
                     myConn.buffer->deleteLater();
                     activeConnections.remove(clientSocket);
                 }
@@ -470,6 +472,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             if (role & (SUPERCHEF)){
                 activeSessions[tSess].subcribedRole = SUPERCHEF;
                 qDebug() <<"Subscribed as superchef";
+                handleNewSuperChef(&args, tSess);
             }
         }
 
@@ -525,14 +528,14 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handleSectionUpdate(&args, tSess);
         }
 
-        else if (std::strcmp(msg->AddressPattern(), "/update/permission") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/update/permissions") == 0){
             if (role & (SUPERCHEF))
-                handlePermissionUpdate(&args);
+                handlePermissionUpdates(&args);
         }
 
-        else if (std::strcmp(msg->AddressPattern(), "/remove/user") == 0){
+        else if (std::strcmp(msg->AddressPattern(), "/remove/users") == 0){
             if (role & (SUPERCHEF))
-                removeUser(&args);
+                removeUsers(&args);
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/chef/startjacktrip") == 0){
@@ -557,7 +560,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
 
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
             if (role & (SUPERCHEF | CHEF))
-                handleAuthCodeEnabled(&args, tSess);
+                handleAuthCodeEnabled(&args);
         }
     }
 
@@ -690,6 +693,14 @@ void LRNetServer::sendRoles(QSslSocket * socket){
     }
         oscOutStream << osc::EndMessage;
     writeStreamToSocket(socket);
+}
+
+void LRNetServer::notifyRolesUpdated(){
+    qDebug() << "Recommending that super chefs request roles";
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/rolesupdated" )
+                 << osc::EndMessage;
+    broadcastToSuperChefs();
 }
 
 void LRNetServer::loadMemberFrame(Member * m){
@@ -837,6 +848,14 @@ void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, sessi
     qDebug() << "Number of chefs: " << activeChefs.count();
 }
 
+void LRNetServer::handleNewSuperChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    activeSuperChefs.insert(tSess, tSess);
+    QString netid = QString::fromStdString(activeSessions[tSess].netid);
+//    mRoster->addSuperChef(netid,tSess);
+    sendRoles(activeSessions[tSess].lastSeenConnection);
+    qDebug() << "Number of super chefs: " << activeSuperChefs.count();
+}
+
 void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
         const char * name = NULL;
@@ -858,6 +877,8 @@ void LRNetServer::handleUnsubscribe(session_id_t tSess){
     switch (activeSessions[tSess].subcribedRole){
         case NONE:
         case SUPERCHEF:
+            activeSuperChefs.remove(tSess);
+            qDebug() << "Number of super chefs: " << activeSuperChefs.count();
         case CHEF:
             activeChefs.remove(tSess);
             qDebug() << "Number of chefs: " << activeChefs.count();
@@ -886,62 +907,76 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
     }
 }
 
-void LRNetServer::handlePermissionUpdate(osc::ReceivedMessageArgumentStream *args){
+void LRNetServer::handlePermissionUpdates(osc::ReceivedMessageArgumentStream *args){
     if (!args->Eos()){
-        const char * netid;
         int authType;
+        const char * netid;
+        QList<QString> netidsSelected = QList<QString>();
         try{
-            *args >> netid;
+            *args >> authType;
             try{
-                *args >> authType;
-                authorizer.updatePermission(QString(netid), AuthTypeE(authType));
+                while (!args->Eos()){
+                    *args >> netid;
+                    netidsSelected.append(QString(netid));
+                }
+            }catch(osc::WrongArgumentTypeException & e){
+                // Not a string.
+            }
+            for (QString netid : netidsSelected){
+                authorizer.updatePermission(netid, AuthTypeE(authType));
                 for (unsigned long key : activeSessions.keys()){
-                    if (strcmp(activeSessions[key].netid, netid) == 0){
+                    if (netid == QString(activeSessions[key].netid)){
                         qDebug() << "Role before: " << activeSessions[key].role;
                         activeSessions[key].role = AuthTypeE(authType);
                         if (activeChefs.contains(key) && (AuthTypeE(authType) == MEMBER))
-                                activeChefs.remove(key);
+                            activeChefs.remove(key);
+                        if (activeSuperChefs.contains(key) && (AuthTypeE(authType) & (CHEF | MEMBER)))
+                            activeSuperChefs.remove(key);
                         qDebug() << "Role after: " << activeSessions[key].role;
                     }
                 }
-
-            }catch(osc::WrongArgumentTypeException & e){
-                // Not an int.
             }
+
+            notifyRolesUpdated();
+
         }catch(osc::WrongArgumentTypeException & e){
-            // Not a string.
+            // Not an int.
         }
     }
 }
 
-void LRNetServer::removeUser(osc::ReceivedMessageArgumentStream * args){
+void LRNetServer::removeUsers(osc::ReceivedMessageArgumentStream * args){
     if (!args->Eos()){
         const char * netid;
-        int authType;
+        QList<QString> netidsSelected = QList<QString>();
         try{
-            *args >> netid;
-            try{
-                *args >> authType;
-                authorizer.removeUser(QString(netid), AuthTypeE(authType));
-                for (unsigned long key : activeSessions.keys()){
-                    if ((strcmp(activeSessions[key].netid, netid) == 0) && (activeSessions[key].role = AuthTypeE(authType))){
-                        qDebug() << "Removing current user: " << netid << "with permission " << authType << "...";
-                        activeSessions.remove(key);
-                        if (activeChefs.contains(key))
-                            activeChefs.remove(key);
-                        qDebug() << "Successfully removed!";
-                    }
-                }
-            }catch(osc::WrongArgumentTypeException & e){
-                // Not an int.
+            while (!args->Eos()){
+                *args >> netid;
+                netidsSelected.append(QString(netid));
             }
         }catch(osc::WrongArgumentTypeException & e){
             // Not a string.
         }
+        for (QString netid : netidsSelected){
+            authorizer.removeUser(netid);
+            for (unsigned long key : activeSessions.keys()){
+                if (netid == QString(activeSessions[key].netid)){
+                    qDebug() << "Removing current user: " << netid << "...";
+                    activeSessions.remove(key);
+                    if (activeChefs.contains(key))
+                        activeChefs.remove(key);
+                    if (activeSuperChefs.contains(key))
+                        activeSuperChefs.remove(key);
+                    qDebug() << "Successfully removed!";
+                }
+            }
+        }
+
+        notifyRolesUpdated();
     }
 }
 
-void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args){
     if (!args->Eos()){
         bool enabled;
         try{
@@ -950,24 +985,20 @@ void LRNetServer::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * arg
             // Not a boolean value.
             enabled = mAuthCodeEnabled;
         }
+        if (mAuthCodeEnabled != enabled){
+            mAuthCodeEnabled = enabled;
 
-        if (activeChefs.contains(tSess)){
-            if (mAuthCodeEnabled != enabled){
-                mAuthCodeEnabled = enabled;
+            qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
 
-                qDebug() << "Auth code enabled set to " << mAuthCodeEnabled;
+            oscOutStream.Clear();
+            oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
+                         << mAuthCodeEnabled
+                         << osc::EndMessage;
 
-                oscOutStream.Clear();
-                oscOutStream << osc::BeginMessage( "/push/authcodeenabled" )
-                             << mAuthCodeEnabled
-                             << osc::EndMessage;
-
-                broadcastToChefs();
-            }
+            broadcastToChefs();
         }
     }
 }
-
 
 void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     if (!args->Eos()){
@@ -1068,6 +1099,13 @@ void LRNetServer::broadcastToChefs(){
     }
 }
 
+void LRNetServer::broadcastToSuperChefs(){
+    for (session_id_t t:activeSuperChefs.keys()){
+        QSslSocket * conn = activeSessions[t].lastSeenConnection;
+        writeStreamToSocket(conn);
+    }
+}
+
 void LRNetServer::sendJackTripReady(session_id_t s_id){
     qDebug() << "Sending JackTrip Ready";
     oscOutStream.Clear();
@@ -1150,7 +1188,8 @@ void LRNetServer::handleStoreKey(
     if (c.size == sizeof(auth_packet_t)){
         qDebug() <<"Must verify sent key";
         AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(c.data)));
-        authorizer.addKey((const char *)b.data,pkt);
+        if (!authorizer.addKey((const char *)b.data,pkt))
+            notifyRolesUpdated();
     }
 }
 

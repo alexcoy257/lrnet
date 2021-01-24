@@ -295,14 +295,13 @@ qDebug()<<"Chose superchef";
 m_roleForm = new SuperChefForm(this);
 m_role = SUPERCHEF;
 m_netClient->subSuperChef();
-m_netClient->requestRoles();
 m_stackedWidget->addWidget(m_roleForm);
 m_stackedWidget->setCurrentWidget(m_roleForm);
 m_changeRoleAction->setEnabled(true);
 
 QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::requestRoles, m_netClient, &LRNetClient::requestRoles);
-QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::updatePermission, m_netClient, &LRNetClient::updatePermission);
-QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::removeUser, m_netClient, &LRNetClient::removeUser);
+QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::updatePermissions, m_netClient, &LRNetClient::updatePermissions);
+QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::removeUsers, m_netClient, &LRNetClient::removeUsers);
 QObject::connect(m_netClient, &LRNetClient::rolesReceived, (SuperChefForm *)m_roleForm, &SuperChefForm::updateLists);
 
 }

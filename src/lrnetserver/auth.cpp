@@ -158,8 +158,8 @@ void Auth::updatePermission(QString netid, AuthTypeE authType){
     readdb.setRoleForNetID(authType, netid);
 }
 
-void Auth::removeUser(QString netid, AuthTypeE authType){
-    readdb.removeUser(netid, authType);
+void Auth::removeUser(QString netid){
+    readdb.removeUser(netid);
 }
 
 void Auth::addKeyToDb(const char * key, AuthPacket & pkt){

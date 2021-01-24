@@ -124,6 +124,7 @@ private slots:
     void sendAuthFail(QSslSocket * socket);
     void sendRoster(QSslSocket * socket);
     void sendRoles(QSslSocket * socket);
+    void notifyRolesUpdated();
     void sendPong(QSslSocket * socket);
     void sendJackTripReady(session_id_t s_id);
     void handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t session);
@@ -134,17 +135,19 @@ private slots:
     void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);
     void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
     void notifyChefsMemLeft(Member::serial_t id);
+    void broadcastToSuperChefs();
     void broadcastToChefs();
     void broadcastToAll();
+    void handleNewSuperChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
-    void handlePermissionUpdate(osc::ReceivedMessageArgumentStream * args);
-    void removeUser(osc::ReceivedMessageArgumentStream * args);
+    void handlePermissionUpdates(osc::ReceivedMessageArgumentStream * args);
+    void removeUsers(osc::ReceivedMessageArgumentStream * args);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
     void loadMemberFrame(Member * m);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
-    void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void writeStreamToSocket(QSslSocket * socket);
     void handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t session);
@@ -255,6 +258,13 @@ private:
      *  Used for publishing new member events.
      */
     QHash<session_id_t, session_id_t>activeChefs;
+
+    /**
+     *  a hash table of super chefs who have checked
+     *  in between 30 and 60 minutes ago.
+     *  Used for publishing authorization updates.
+     */
+    QHash<session_id_t, session_id_t>activeSuperChefs;
 
     /**
      *  a hash table of connections that are still alive (and

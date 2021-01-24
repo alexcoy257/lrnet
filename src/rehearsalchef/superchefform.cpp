@@ -10,47 +10,43 @@ SuperChefForm::SuperChefForm(QWidget *parent) :
     ui->chefList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->memberList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-    connect(ui->toSuperChef, &QAbstractButton::released, this, [=]{updatePermissions(SUPERCHEF);});
-    connect(ui->toChef, &QAbstractButton::released, this, [=]{updatePermissions(CHEF);});
-    connect(ui->toMember, &QAbstractButton::released, this, [=]{updatePermissions(MEMBER);});
-    connect(ui->removeUsers, &QAbstractButton::released, this, &SuperChefForm::removeUsers);
+    connect(ui->toSuperChef, &QAbstractButton::released, this, [=]{updateSelectedPermissions(SUPERCHEF);});
+    connect(ui->toChef, &QAbstractButton::released, this, [=]{updateSelectedPermissions(CHEF);});
+    connect(ui->toMember, &QAbstractButton::released, this, [=]{updateSelectedPermissions(MEMBER);});
+    connect(ui->removeUsers, &QAbstractButton::released, this, &SuperChefForm::removeSelectedUsers);
 }
 
-void SuperChefForm::updatePermissions(AuthTypeE authType){
-    QList<QListWidgetItem *> usersSelected = QList<QListWidgetItem *>()
+void SuperChefForm::updateSelectedPermissions(AuthTypeE authType){
+    QList<QListWidgetItem *> itemsSelected = QList<QListWidgetItem *>()
                                         << ui->superChefList->selectedItems()
                                         << ui->chefList->selectedItems()
                                         << ui->memberList->selectedItems();
 
-    if (usersSelected.empty())
+    if (itemsSelected.empty())
         return;
 
-    for (QListWidgetItem * user : usersSelected) {
-        emit updatePermission(user->text(), authType);
+    QList<QString> *netidsSelected = new QList<QString>();
+    for (QListWidgetItem * item : itemsSelected) {
+        netidsSelected->append(item->text());
     }
 
-    emit requestRoles();
+    emit updatePermissions(netidsSelected, authType);
 }
 
-void SuperChefForm::removeUsers(){
-    bool empty = true;
-    for (QListWidgetItem * user : ui->superChefList->selectedItems()) {
-        empty = false;
-        emit removeUser(user->text(), SUPERCHEF);
-    }
+void SuperChefForm::removeSelectedUsers(){
+    QList<QListWidgetItem *> itemsSelected = QList<QListWidgetItem *>()
+                                        << ui->superChefList->selectedItems()
+                                        << ui->chefList->selectedItems()
+                                        << ui->memberList->selectedItems();
 
-    for (QListWidgetItem * user : ui->chefList->selectedItems()) {
-        empty = false;
-        emit removeUser(user->text(), CHEF);
-    }
+    if (itemsSelected.empty())
+        return;
 
-    for (QListWidgetItem * user : ui->memberList->selectedItems()) {
-        empty = false;
-        emit removeUser(user->text(), MEMBER);
-    }
+    QList<QString> *netidsSelected = new QList<QString>();
+    for (QListWidgetItem * item : itemsSelected)
+        netidsSelected->append(item->text());
 
-    if (!empty)
-        emit requestRoles();
+    emit removeUsers(netidsSelected);
 }
 
 void SuperChefForm::updateLists(QList<AuthRoster> * authRoster){

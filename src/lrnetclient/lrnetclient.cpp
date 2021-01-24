@@ -276,6 +276,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         handleNewChat(args);
     }
 
+    else if (std::strcmp(ap, "/push/rolesupdated") == 0){
+        requestRoles();
+    }
+
     else if (std::strcmp(ap, "/push/authcodeupdated") == 0){
         handleAuthCodeUpdated(args);
     }
@@ -442,23 +446,26 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
         emit rolesReceived(authRoster);
 }
 
-void LRNetClient::updatePermission(QString netid, AuthTypeE authType){
+void LRNetClient::updatePermissions(QList<QString> *netidsSelected, AuthTypeE authType){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/update/permission" )
+    oscOutStream << osc::BeginMessage( "/update/permissions" )
                  << osc::Blob(&session, sizeof(session))
-                 << netid.toStdString().data()
-                 << int(authType)
-                 << osc::EndMessage;
+                 << int(authType);
+    for (QString netid : *netidsSelected)
+        oscOutStream << netid.toStdString().data();
+
+    oscOutStream << osc::EndMessage;
     writeStreamToSocket();
 }
 
-void LRNetClient::removeUser(QString netid, AuthTypeE authType){
+void LRNetClient::removeUsers(QList<QString> *netidsSelected){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/remove/user" )
-                 << osc::Blob(&session, sizeof(session))
-                 << netid.toStdString().data()
-                 << int(authType)
-                 << osc::EndMessage;
+    oscOutStream << osc::BeginMessage( "/remove/users" )
+                 << osc::Blob(&session, sizeof(session));
+    for (QString netid : *netidsSelected)
+        oscOutStream << netid.toStdString().data();
+
+    oscOutStream << osc::EndMessage;
     writeStreamToSocket();
 }
 
