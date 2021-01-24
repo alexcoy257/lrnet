@@ -140,6 +140,7 @@ private slots:
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handlePermissionUpdate(osc::ReceivedMessageArgumentStream * args);
+    void removeUser(osc::ReceivedMessageArgumentStream * args);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);
     void loadMemberFrame(Member * m);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);

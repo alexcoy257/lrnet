@@ -33,7 +33,8 @@ class Auth : public QObject{
   auth_type_t checkCredentials (AuthPacket &pkt);
   bool addKey (const char * key, AuthPacket &pkt);
   std::list<auth_roster_t> * getRoles();
-  void updatePermission(QString name, AuthTypeE authType);
+  void updatePermission(QString netid, AuthTypeE authType);
+  void removeUser(QString netid, AuthTypeE authType);
 
 
   signals:

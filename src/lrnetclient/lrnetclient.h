@@ -131,6 +131,7 @@ private:
         void updateName(const QString & nname);
         void updateSection(const QString & nsection);
         void updatePermission(QString netid, AuthTypeE authType);
+        void removeUser(QString netid, AuthTypeE authType);
         void tryToAuthenticate();
         void sendChat(const QString &chatMsg);
         void sendAuthCode(const QString &chatMsg);

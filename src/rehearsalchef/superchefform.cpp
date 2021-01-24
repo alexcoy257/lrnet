@@ -13,6 +13,7 @@ SuperChefForm::SuperChefForm(QWidget *parent) :
     connect(ui->toSuperChef, &QAbstractButton::released, this, [=]{updatePermissions(SUPERCHEF);});
     connect(ui->toChef, &QAbstractButton::released, this, [=]{updatePermissions(CHEF);});
     connect(ui->toMember, &QAbstractButton::released, this, [=]{updatePermissions(MEMBER);});
+    connect(ui->removeUsers, &QAbstractButton::released, this, &SuperChefForm::removeUsers);
 }
 
 void SuperChefForm::updatePermissions(AuthTypeE authType){
@@ -29,6 +30,27 @@ void SuperChefForm::updatePermissions(AuthTypeE authType){
     }
 
     emit requestRoles();
+}
+
+void SuperChefForm::removeUsers(){
+    bool empty = true;
+    for (QListWidgetItem * user : ui->superChefList->selectedItems()) {
+        empty = false;
+        emit removeUser(user->text(), SUPERCHEF);
+    }
+
+    for (QListWidgetItem * user : ui->chefList->selectedItems()) {
+        empty = false;
+        emit removeUser(user->text(), CHEF);
+    }
+
+    for (QListWidgetItem * user : ui->memberList->selectedItems()) {
+        empty = false;
+        emit removeUser(user->text(), MEMBER);
+    }
+
+    if (!empty)
+        emit requestRoles();
 }
 
 void SuperChefForm::updateLists(QList<AuthRoster> * authRoster){

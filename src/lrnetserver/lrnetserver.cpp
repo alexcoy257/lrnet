@@ -474,9 +474,8 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/sub/unsubscribe") == 0){
-            if (role & (SUPERCHEF | CHEF | MEMBER)){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
                 handleUnsubscribe(tSess);
-            }
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/send/chat") == 0){
@@ -503,7 +502,6 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 handleStartJackTrip(args, tSess);
-                 
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/setredundancy") == 0){
@@ -532,16 +530,19 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handlePermissionUpdate(&args);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/remove/user") == 0){
+            if (role & (SUPERCHEF))
+                removeUser(&args);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/chef/startjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF ))
                 handleStartJackTrip(args, tSess, CHEF);
-                 
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/chef/stopjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF ))
-                mRoster->stopJackTrip(tSess);
-                 
+                mRoster->stopJackTrip(tSess);        
         }
 
         else if (std::strcmp(msg->AddressPattern(), "/member/setselfloopback") == 0){
@@ -904,6 +905,33 @@ void LRNetServer::handlePermissionUpdate(osc::ReceivedMessageArgumentStream *arg
                     }
                 }
 
+            }catch(osc::WrongArgumentTypeException & e){
+                // Not an int.
+            }
+        }catch(osc::WrongArgumentTypeException & e){
+            // Not a string.
+        }
+    }
+}
+
+void LRNetServer::removeUser(osc::ReceivedMessageArgumentStream * args){
+    if (!args->Eos()){
+        const char * netid;
+        int authType;
+        try{
+            *args >> netid;
+            try{
+                *args >> authType;
+                authorizer.removeUser(QString(netid), AuthTypeE(authType));
+                for (unsigned long key : activeSessions.keys()){
+                    if ((strcmp(activeSessions[key].netid, netid) == 0) && (activeSessions[key].role = AuthTypeE(authType))){
+                        qDebug() << "Removing current user: " << netid << "with permission " << authType << "...";
+                        activeSessions.remove(key);
+                        if (activeChefs.contains(key))
+                            activeChefs.remove(key);
+                        qDebug() << "Successfully removed!";
+                    }
+                }
             }catch(osc::WrongArgumentTypeException & e){
                 // Not an int.
             }

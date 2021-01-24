@@ -445,10 +445,20 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
 void LRNetClient::updatePermission(QString netid, AuthTypeE authType){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/update/permission" )
-                << osc::Blob(&session, sizeof(session))
-                << netid.toStdString().data()
-                << int(authType)
-                << osc::EndMessage;
+                 << osc::Blob(&session, sizeof(session))
+                 << netid.toStdString().data()
+                 << int(authType)
+                 << osc::EndMessage;
+    writeStreamToSocket();
+}
+
+void LRNetClient::removeUser(QString netid, AuthTypeE authType){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/remove/user" )
+                 << osc::Blob(&session, sizeof(session))
+                 << netid.toStdString().data()
+                 << int(authType)
+                 << osc::EndMessage;
     writeStreamToSocket();
 }
 

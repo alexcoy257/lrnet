@@ -102,6 +102,35 @@ bool LRdbClient::addKeyToNetid(QByteArray& key, QString& netid){
     
 }
 
+void LRdbClient::removeUser(QString& netid, AuthTypeE authType){
+    readDb.open();
+    QSqlQuery query(readDb);
+    query.prepare("DELETE FROM users WHERE netid=? and role=?");
+    query.bindValue(0, QVariant(netid));
+    switch(authType){
+        case NONE:
+            qDebug() << "Tried to remove user of type NONE";
+            query.bindValue(1, QVariant());
+            break;
+        case MEMBER:
+            query.bindValue(1, QVariant("user"));
+            break;
+        case CHEF:
+            query.bindValue(1, QVariant("chef"));
+            break;
+        case SUPERCHEF:
+            query.bindValue(1, QVariant("superchef"));
+            break;
+    }
+
+
+    if (query.exec())
+        qDebug() << "Succeeded in removing " << netid << " with auth type " << authType;
+    else
+        qDebug() << "Failed to remove " << netid << " with auth type " << authType;
+    readDb.close();
+}
+
 QVector<int> * LRdbClient::getIDsForNetid(QString &netid){
     readDb.open();
     QSqlQuery query(readDb);

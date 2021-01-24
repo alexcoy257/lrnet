@@ -302,6 +302,7 @@ m_changeRoleAction->setEnabled(true);
 
 QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::requestRoles, m_netClient, &LRNetClient::requestRoles);
 QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::updatePermission, m_netClient, &LRNetClient::updatePermission);
+QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::removeUser, m_netClient, &LRNetClient::removeUser);
 QObject::connect(m_netClient, &LRNetClient::rolesReceived, (SuperChefForm *)m_roleForm, &SuperChefForm::updateLists);
 
 }

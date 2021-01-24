@@ -154,8 +154,12 @@ std::list<auth_roster_t> * Auth::getRoles(){
     return readdb.getRoles();
 }
 
-void Auth::updatePermission(QString name, AuthTypeE authType){
-    readdb.setRoleForNetID(authType, name);
+void Auth::updatePermission(QString netid, AuthTypeE authType){
+    readdb.setRoleForNetID(authType, netid);
+}
+
+void Auth::removeUser(QString netid, AuthTypeE authType){
+    readdb.removeUser(netid, authType);
 }
 
 void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
@@ -163,5 +167,4 @@ void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
     QByteArray bakey(key, 451);
     QString netid = QString::fromLocal8Bit(pkt.netid, pkt.netid_length);
     readdb.addKeyToNetid(bakey, netid);
-    readdb.setRoleForNetID(MEMBER, netid);
 }

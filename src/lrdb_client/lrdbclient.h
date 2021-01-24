@@ -25,6 +25,7 @@ public:
     ~LRdbClient();
     bool netidExists(QString& netid);
     bool addKeyToNetid(QByteArray& key, QString& netid);
+    void removeUser(QString& netid, AuthTypeE authType);
     bool connIsGood() {return connGood;};
     QVector<int> * getIDsForNetid(QString& netid);
     QVector<int> * getIDsForNetid(char * netid, int len);

@@ -23,12 +23,13 @@ public slots:
 signals:
     void updatePermission(QString netid, AuthTypeE authType);
     void requestRoles();
-
+    void removeUser(QString netid, AuthTypeE authType);
 
 
 private:
     Ui::SuperChefForm *ui;
     void updatePermissions(AuthTypeE);
+    void removeUsers();
 };
 
 #endif // SUPERCHEFFORM_H
