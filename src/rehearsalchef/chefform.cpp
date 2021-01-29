@@ -4,12 +4,15 @@
 ChefForm::ChefForm(QWidget *parent) :
     QWidget(parent),
     m_tbSetupForm(new TalkbackSettingsForm(NULL)),
+    m_csAreaLayout(new QHBoxLayout(NULL)),
     ui(new Ui::ChefForm)
 
 {
     ui->setupUi(this);
     m_chatForm = ui->m_chatForm;
-    ui->m_channelStripArea->addStretch();
+    //ui->m_channelStripArea->addStretch();
+    ui->m_channelStripScrollParent->setLayout(m_csAreaLayout);
+    m_csAreaLayout->addStretch();
     //ui->chatArea->addWidget(m_chatForm);
 
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
@@ -38,8 +41,9 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         cStruct->id = id;
         qDebug() <<"Controls: " <<controls;
         cStruct->cs->newControls(controls);
-        qDebug() <<"Widgets present: " << ui->m_channelStripArea->count();
-        ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
+        //qDebug() <<"Widgets present: " << ui->m_channelStripArea->count();
+        //ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
+        m_csAreaLayout->insertWidget(m_csAreaLayout->count()-1,cStruct->cs);
         //ui->m_channelStripArea->addWidget(cStruct->cs, 0, Qt::AlignLeft);
         //cStruct->cs->show();
         QObject::connect(cStruct->cs, &ChannelStrip::setActive, this, [=](){highlightInsert(cStruct->comp);}, Qt::QueuedConnection);

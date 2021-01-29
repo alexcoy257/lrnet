@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QDebug>
 #include <QSettings>
+#include <QHBoxLayout>
 
 #include "channelstrip.h"
 #include "compressor.h"
@@ -28,6 +29,7 @@ class ChefForm : public QWidget
     Compressor * m_actComp = NULL;
     QHash<int, LRMClient *> m_clients;
     TalkbackSettingsForm * m_tbSetupForm = NULL;
+    QHBoxLayout * m_csAreaLayout;
 public:
     explicit ChefForm(QWidget *parent = nullptr);
     virtual ~ChefForm();
