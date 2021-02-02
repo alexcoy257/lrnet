@@ -651,7 +651,7 @@ void LRNetServer::sendAuthResponse(QSslSocket * socket, auth_type_t at){
 
 void LRNetServer::sendAuthFail(QSslSocket * socket){
     oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/auth/failed" )
+    oscOutStream << osc::BeginMessage( "/auth/fail" )
             << 0 << osc::EndMessage;
     writeStreamToSocket(socket);
     qDebug() <<"Sending Auth Failed " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
