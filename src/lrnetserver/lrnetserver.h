@@ -150,7 +150,8 @@ private slots:
     void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void writeStreamToSocket(QSslSocket * socket);
-    void handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t session);
+    void handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t session, QSslSocket * socket);
+    void notifyStoreKeyResults(QSslSocket *socket, bool success);
     void handleSetNumChannels(osc::ReceivedMessageArgumentStream & args, session_id_t session);
     void handleSelfLoopback(osc::ReceivedMessageArgumentStream & args, session_id_t session);
 

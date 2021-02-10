@@ -212,6 +212,8 @@ void MainWindow::tryConnect(const QString & host, int port){
 
 void MainWindow::disconnected(){
     m_stackedWidget->setCurrentWidget(m_connectForm);
+    setMinimumSize(300,100);
+    resize(467,181);
     delete m_launcherForm;
     m_launcherForm = NULL;
     if (m_role == MEMBER){
@@ -266,6 +268,8 @@ void MainWindow::handleAuth(AuthTypeE type){
 
 void MainWindow::changeRole(){
     m_stackedWidget->setCurrentWidget(m_launcherForm);
+    setMinimumSize(300,100);
+    resize(400,180);
     if (m_role == MEMBER){
         ((MemberForm *)m_roleForm)->saveSetup(m_settings);
     }
@@ -273,19 +277,20 @@ void MainWindow::changeRole(){
     m_role = NONE;
     m_roleForm = NULL;
     m_netClient->unsubscribe();
-    m_changeRoleAction->setEnabled(false);
+    m_changeRoleAction->setDisabled(true);
 }
 
 void MainWindow::launchLauncher(){
 
     if (m_authType != NONE){
-        m_launcherForm = new Launcher(m_authType, this);
+        m_launcherForm = new Launcher(m_authType, m_connectForm->m_usingKey, this);
         m_stackedWidget->addWidget(m_launcherForm);
         m_stackedWidget->setCurrentWidget(m_launcherForm);
         connect(m_launcherForm, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
         connect(m_launcherForm, &Launcher::choseChef, this, &MainWindow::launchChef);
         connect(m_launcherForm, &Launcher::choseMember, this, &MainWindow::launchMember);
         connect(m_launcherForm, &Launcher::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
+        connect(m_netClient, &LRNetClient::storeKeyResultReceived, this, &MainWindow::storeKeyResultReceived);
         m_disconnectAction->setEnabled(true);
     }
 }
@@ -304,6 +309,7 @@ QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::updatePermission
 QObject::connect(((SuperChefForm *)m_roleForm), &SuperChefForm::removeUsers, m_netClient, &LRNetClient::removeUsers);
 QObject::connect(m_netClient, &LRNetClient::rolesReceived, (SuperChefForm *)m_roleForm, &SuperChefForm::updateLists);
 
+resize(m_roleForm->sizeHint());
 }
 
 void MainWindow::launchChef(){
@@ -324,6 +330,8 @@ void MainWindow::launchChef(){
     m_netClient->subChef();
     ((ChefForm *)m_roleForm)->loadSetup(m_settings);
     m_changeRoleAction->setEnabled(true);
+
+    resize(m_roleForm->sizeHint());
 }
 
 
@@ -350,6 +358,7 @@ QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUd
 ((MemberForm *)m_roleForm)->loadSetup(m_settings);
 m_changeRoleAction->setEnabled(true);
 m_stackedWidget->setCurrentWidget(m_roleForm);
+resize(m_roleForm->sizeHint());
 }
 
 
@@ -418,6 +427,17 @@ void MainWindow::stopJackTripThread(){
     m_jacktrip->stopThread();
 }
 
+
+void MainWindow::storeKeyResultReceived(bool success){
+    if (success){
+        QString base = "Success!  You can now log in to %1 using this computer and Net ID '%2'";
+        statusBar()->showMessage(base.arg(m_connectForm->m_hostBox->text(),m_connectForm->m_netidBox->text()));
+        m_launcherForm->storeKeyResultReceived(success);
+    } else {
+        QString base = "Failed to remember you...  Try again?";
+        statusBar()->showMessage(base);
+    }
+}
 
 void MainWindow::releaseThread(int n){
     if (m_role != MEMBER)

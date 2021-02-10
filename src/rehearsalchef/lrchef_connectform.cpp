@@ -11,17 +11,17 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
   , m_portBox(new QLineEdit("4463", this))
   , m_netidBox(new QLineEdit(this))
 
-  , m_authByKeyButton(new QRadioButton("Key Authorization", this))
+  , m_authByKeyButton(new QRadioButton("User Login", this))
   , m_lPublicKey(m_ksw->m_lPublicKey)
 
-  , m_authByCodeButton(new QRadioButton("Code Authorization", this))
+  , m_authByCodeButton(new QRadioButton("Guest Login", this))
 
   , m_errLabel(new QLabel(this))
   , m_submitButton(new QPushButton("Connect",this))
 
 
 {
-    m_ksw->show();
+    m_ksw->hide();
     m_csw->hide();
     m_authByKeyButton->setChecked(true);
 
@@ -32,18 +32,26 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     tl_layout->addWidget(m_ksw);
     tl_layout->addWidget(m_csw);
 
-    bu_layout->addWidget(m_hostBox);
-    bu_layout->addWidget(m_portBox);
-    bu_layout->addWidget(m_netidBox);
-    bu_layout->addWidget(m_submitButton);
+    bu_layout->addWidget(m_hostBox,0,Qt::AlignLeft);
+    bu_layout->addWidget(m_portBox,0,Qt::AlignCenter);
+    bu_layout->addWidget(m_netidBox,0,Qt::AlignCenter);
+    bu_layout->addWidget(m_submitButton,0,Qt::AlignRight);
 
-    kc_layout->addWidget(m_authByKeyButton);
-    kc_layout->addWidget(m_authByCodeButton);
+    kc_layout->addWidget(m_authByKeyButton,0,Qt::AlignLeft);
+    kc_layout->addWidget(m_authByCodeButton,0,Qt::AlignLeft);
 
     m_portBox->setPlaceholderText("Port");
+    m_portBox->setFixedWidth(43);
+
     m_hostBox->setPlaceholderText("Server");
+    m_hostBox->setFixedWidth(200);
+
     m_netidBox->setPlaceholderText("netid");
+    m_netidBox->setFixedWidth(80);
+
     m_portBox->setValidator(new QIntValidator(1024, 65535));
+
+    m_submitButton->setFixedWidth(100);
 
 
     //QObject::connect(m_portBox, &QLineEdit::inputRejected, this, [=](){qDebug()<<"Input Rejected";});
@@ -57,7 +65,8 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     );
 
     QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){m_submitButton->setEnabled(true);m_errLabel->hide();});
-    QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());});
+    QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){m_usingKey = m_authByKeyButton->isChecked();
+                                                                             emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());});
 
     QObject::connect(m_authByKeyButton, &QAbstractButton::toggled, this, &ConnectForm::setKeyAuth);
     QObject::connect(m_authByCodeButton, &QAbstractButton::toggled, this, &ConnectForm::setCodeAuth);
@@ -75,7 +84,7 @@ ConnectForm::~ConnectForm(){
 void ConnectForm::setKeyAuth(bool checked){
     if (!checked)
         return;
-    m_ksw->show();
+//    m_ksw->show();
     m_csw->hide();
     emit setToKeyAuth();
 }

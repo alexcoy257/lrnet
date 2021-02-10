@@ -437,7 +437,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         }
         else if (std::strcmp(msg->AddressPattern(), "/auth/storekey/send") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
-                handleStoreKey(args, tSess);
+                handleStoreKey(args, tSess, socket);
         }
         else if (std::strcmp(msg->AddressPattern(), "/ping") == 0){
             //All sessions should have active connections. If not, pinging updates the connection.
@@ -1169,7 +1169,8 @@ void LRNetServer::writeStreamToSocket(QSslSocket * socket){
 
 void LRNetServer::handleStoreKey(
     osc::ReceivedMessageArgumentStream & args,
-    session_id_t s_id)
+    session_id_t s_id,
+    QSslSocket * socket)
     {
     osc::Blob b;
     osc::Blob c;
@@ -1184,13 +1185,28 @@ void LRNetServer::handleStoreKey(
         qDebug() << "Wrong number of arguments for adjusting parameters. Needed two blobs";
         err =true;
     }
-    if(err || b.size!=451) return;
-    if (c.size == sizeof(auth_packet_t)){
+    if(err || b.size!=451) {
+        notifyStoreKeyResults(socket, false);
+    }
+    else if (c.size == sizeof(auth_packet_t)){
         qDebug() <<"Must verify sent key";
         AuthPacket pkt(*reinterpret_cast<auth_packet_t *>(const_cast<void *>(c.data)));
-        if (!authorizer.addKey((const char *)b.data,pkt))
+        if (!authorizer.addKey((const char *)b.data,pkt)){
             notifyRolesUpdated();
+            notifyStoreKeyResults(socket, true);
+        } else{
+            notifyStoreKeyResults(socket, false);
+        }
     }
+}
+
+void LRNetServer::notifyStoreKeyResults(QSslSocket *socket, bool success){
+    qDebug() << "Notifying client: Store Key success ... " << success;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/storekey/result" )
+                 << success
+                 << osc::EndMessage;
+    writeStreamToSocket(socket);
 }
 
 void LRNetServer::handleUpdateRedundancy(

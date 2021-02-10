@@ -23,6 +23,12 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
 
+    // This section should be removed as functionality is implemented
+    ui->sectionLabel->hide();
+    ui->sectionChoice->hide();
+    ui->tcpAudioButton->hide();
+    ui->udpAudioButton->hide();
+    //
 }
 
 void MemberForm::updateName(){

@@ -248,6 +248,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
             emit authFailed();
      }
 
+    else if (std::strcmp(ap, "/auth/storekey/result") == 0){
+        handleStoreKeyResult(args);
+    }
+
     else if (std::strcmp(ap, "/push/roster/newmember") == 0){
         handleMemberGroup(args, MEMBER_ADD);
     }
@@ -655,6 +659,16 @@ void LRNetClient::sendPublicKey(){
         }
     }
 
+}
+
+void LRNetClient::handleStoreKeyResult(osc::ReceivedMessageArgumentStream & args){
+    bool success;
+    try{
+        args >> success;
+        emit storeKeyResultReceived(success);
+    }catch(osc::WrongArgumentTypeException & e){
+        // Not a boolean
+    }
 }
 
 void LRNetClient::setRedundancy(int newRed){

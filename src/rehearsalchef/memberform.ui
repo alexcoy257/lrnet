@@ -6,9 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>563</width>
-    <height>322</height>
+    <width>550</width>
+    <height>343</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -72,20 +84,6 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="SectionArea">
-     <item>
-      <widget class="QLabel" name="sectionLabel">
-       <property name="text">
-        <string>Section</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="sectionChoice"/>
-     </item>
-    </layout>
-   </item>
    <item row="10" column="0">
     <widget class="QPushButton" name="startJackTripButton">
      <property name="enabled">
@@ -122,7 +120,45 @@
    <item row="2" column="1" rowspan="6">
     <layout class="QVBoxLayout" name="chatArea"/>
    </item>
-   <item row="0" column="0">
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="sentChannelsLabel">
+       <property name="text">
+        <string>Sent Channels</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="sentChannelsChoice">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>2</number>
+       </property>
+       <property name="value">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="1">
+    <layout class="QHBoxLayout" name="SectionArea">
+     <item>
+      <widget class="QLabel" name="sectionLabel">
+       <property name="text">
+        <string>Section</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="sectionChoice"/>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
     <layout class="QHBoxLayout" name="NameArea">
      <item>
       <widget class="QLabel" name="nameLabel">
@@ -144,30 +180,6 @@
          <width>600</width>
          <height>16777215</height>
         </size>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="5" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLabel" name="sentChannelsLabel">
-       <property name="text">
-        <string>Sent Channels</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="sentChannelsChoice">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>2</number>
-       </property>
-       <property name="value">
-        <number>1</number>
        </property>
       </widget>
      </item>

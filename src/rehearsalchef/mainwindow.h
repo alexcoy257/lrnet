@@ -63,7 +63,6 @@ private:
 
     ChefForm * m_chefForm;
 
-
     AuthTypeE m_authType;
     QSettings m_settings;
     LRNetClient * m_netClient;
@@ -95,6 +94,7 @@ private slots:
     void tryConnect(const QString & host, int port);
     void disconnected();
     void handleAuth(AuthTypeE type);
+    void storeKeyResultReceived(bool success);
     void launchLauncher();
     void launchSuperChef();
     void launchChef();

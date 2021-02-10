@@ -60,6 +60,7 @@ class ConnectForm : public QWidget
         {
             setLayout(code_layout);
             code_layout->addWidget(m_authCodeBox);
+            m_authCodeBox->setPlaceholderText("Login Code");
 
         }
 
@@ -67,7 +68,6 @@ class ConnectForm : public QWidget
 
     KeySubwidget * m_ksw;
     CodeSubwidget * m_csw;
-
 
     QBoxLayout * tl_layout;
     QBoxLayout * bu_layout;
@@ -81,6 +81,8 @@ class ConnectForm : public QWidget
     QPlainTextEdit * m_lPublicKey;
 
     QRadioButton * m_authByCodeButton;
+
+    bool m_usingKey;
 
     QLabel * m_errLabel;
     QPushButton * m_submitButton;
