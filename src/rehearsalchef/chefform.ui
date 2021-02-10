@@ -25,24 +25,14 @@
         <enum>Qt::RightToLeft</enum>
        </property>
        <property name="text">
-        <string>Code Enabled</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="authLabel">
-       <property name="toolTip">
-        <string>Sets the authorization code members can use to connect with</string>
-       </property>
-       <property name="text">
-        <string>Auth Code</string>
+        <string>Enable Guests</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QLineEdit" name="authCodeEdit">
        <property name="placeholderText">
-        <string>Set authorization code here...</string>
+        <string>Set guest login code here...</string>
        </property>
       </widget>
      </item>
@@ -85,8 +75,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>559</width>
-        <height>205</height>
+        <width>565</width>
+        <height>236</height>
        </rect>
       </property>
      </widget>

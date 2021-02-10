@@ -47,8 +47,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(m_connectForm, &ConnectForm::updateCode, this, [=](const QString & code){
         m_netClient->setTempCode(code);
-        QString base = "Updated code to: %1";
-        statusBar()->showMessage(base.arg(code));
     });
     QObject::connect(m_connectForm, &ConnectForm::setToKeyAuth, m_netClient, &LRNetClient::setKeyAuthMethod);
     QObject::connect(m_connectForm, &ConnectForm::setToCodeAuth, m_netClient, &LRNetClient::setCodeAuthMethod);
@@ -66,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(m_netClient, &LRNetClient::disconnected, this, &MainWindow::disconnected);
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
     QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
+    QObject::connect(m_netClient, &LRNetClient::authCodeIncorrect, this, [=](){statusBar()->showMessage("Incorrect login code");});
+    QObject::connect(m_netClient, &LRNetClient::authCodeDisabled, this, [=](){statusBar()->showMessage("Guest login disabled.  Ask a leader to enable it");});
     QObject::connect(m_connectForm, &ConnectForm::netidUpdated, this, [&](const QString & nnetid){m_netid = nnetid; m_netClient->setNetid(nnetid);});
     QObject::connect(m_netClient, &LRNetClient::gotEncryptionKey, this, &MainWindow::setEncryptionKey);
 
@@ -331,7 +331,7 @@ void MainWindow::launchChef(){
     ((ChefForm *)m_roleForm)->loadSetup(m_settings);
     m_changeRoleAction->setEnabled(true);
 
-    resize(m_roleForm->sizeHint());
+    resize(800,700);
 }
 
 
@@ -430,8 +430,8 @@ void MainWindow::stopJackTripThread(){
 
 void MainWindow::storeKeyResultReceived(bool success){
     if (success){
-        QString base = "Success!  You can now log in to %1 using this computer and Net ID '%2'";
-        statusBar()->showMessage(base.arg(m_connectForm->m_hostBox->text(),m_connectForm->m_netidBox->text()));
+        QString base = "Success!  'User Login' now available for %1 on this computer";
+        statusBar()->showMessage(base.arg(m_connectForm->m_netidBox->text()));
         m_launcherForm->storeKeyResultReceived(success);
     } else {
         QString base = "Failed to remember you...  Try again?";

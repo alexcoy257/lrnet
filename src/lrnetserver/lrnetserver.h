@@ -122,6 +122,8 @@ private slots:
     session_id_t checkForValidSession(osc::ReceivedMessageArgumentStream & msgs, QSslSocket * socket);
     void sendAuthResponse(QSslSocket * socket, auth_type_t at);
     void sendAuthFail(QSslSocket * socket);
+    void sendAuthCodeIncorrect(QSslSocket *socket);
+    void sendAuthCodeDisabled(QSslSocket *socket);
     void sendRoster(QSslSocket * socket);
     void sendRoles(QSslSocket * socket);
     void notifyRolesUpdated();

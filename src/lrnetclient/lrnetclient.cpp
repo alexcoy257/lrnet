@@ -248,6 +248,14 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
             emit authFailed();
      }
 
+    else if (std::strcmp(ap, "/auth/fail/wrongcode") == 0){
+        emit authCodeIncorrect();
+    }
+
+    else if (std::strcmp(ap, "/auth/fail/codedisabled") == 0){
+        emit authCodeDisabled();
+    }
+
     else if (std::strcmp(ap, "/auth/storekey/result") == 0){
         handleStoreKeyResult(args);
     }

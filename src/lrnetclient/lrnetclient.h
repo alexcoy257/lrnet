@@ -111,6 +111,8 @@ private:
         void lostMember(int id);
         void authenticated(AuthTypeE type);
         void authFailed();
+        void authCodeIncorrect();
+        void authCodeDisabled();
         void storeKeyResultReceived(bool success);
         void gotUdpPort(int port);
         void serverJTReady();

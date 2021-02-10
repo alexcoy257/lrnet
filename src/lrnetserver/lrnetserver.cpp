@@ -412,12 +412,12 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                         tt.netid[8] = 0;
                         activeSessions.insert(at.session_id, tt);
                     } else {
-                        sendAuthFail(socket);
+                        sendAuthCodeIncorrect(socket);
                        }
                 }
             }
         } else {
-            sendAuthFail(socket);
+            sendAuthCodeDisabled(socket);
         }
     }
     else
@@ -655,6 +655,22 @@ void LRNetServer::sendAuthFail(QSslSocket * socket){
             << 0 << osc::EndMessage;
     writeStreamToSocket(socket);
     qDebug() <<"Sending Auth Failed " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetServer::sendAuthCodeIncorrect(QSslSocket *socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/fail/wrongcode" )
+                 << osc::EndMessage;
+    writeStreamToSocket(socket);
+    qDebug() << "Notifying user their auth code was incorrect";
+}
+
+void LRNetServer::sendAuthCodeDisabled(QSslSocket *socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/auth/fail/codedisabled" )
+                 << osc::EndMessage;
+    writeStreamToSocket(socket);
+    qDebug() << "Notifying user that auth code authentication is disabled";
 }
 
 void LRNetServer::sendPong(QSslSocket * socket){
