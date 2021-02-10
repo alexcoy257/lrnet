@@ -296,17 +296,31 @@ void Roster::stopJackTrip(session_id_t s_id){
     }
     if (!m)
         return;
+    qDebug() <<"Stop jacktrip member" <<m->getName();
     m->getThread()->stopThread();
     m->resetThread();
 }
 
 void Roster::fanNewMember(Member * member){
-    qDebug() <<"Fanning new member";
+    qDebug() <<"Fanning new member"
+    <<member->getName();
     for (Member * m:members){
+        qDebug() << "Looking at" <<m->getName();
+        //Quick fix: lone members don't have JackTrips, don't try to fan out
+        //to them. Other ports end up connected instead.
+        if(!m->getAudioInputPort(0)){
+            qDebug() <<"Member has no JackTrip port yet";
+        continue;
+        }
         if(m != member){
             jack_connect(m_jackClient,
                 jack_port_name(m->getAudioOutputPort(0)),
                 jack_port_name(member->getAudioInputPort(0)));
+            qDebug()<< "Connect other "
+                <<jack_port_name(m->getAudioOutputPort(0))
+                <<" to new member (R)"
+                <<jack_port_name(member->getAudioInputPort(0))
+                ;
             
             if (m->getNumChannels()==2){
             jack_connect(m_jackClient,
@@ -317,11 +331,22 @@ void Roster::fanNewMember(Member * member){
             jack_connect(m_jackClient,
                 jack_port_name(m->getAudioOutputPort(0)),
                 jack_port_name(member->getAudioInputPort(1)));
+                qDebug()<< "Connect other (LM) "
+                <<jack_port_name(m->getAudioOutputPort(0))
+                <<" to new member (R)"
+                <<jack_port_name(member->getAudioInputPort(1))
+                ;
             }
 
             jack_connect(m_jackClient,
                 jack_port_name(member->getAudioOutputPort(0)),
                 jack_port_name(m->getAudioInputPort(0)));
+
+                qDebug()<< "Connect new member (LM) "
+                <<jack_port_name(member->getAudioOutputPort(0))
+                <<" to other (L) "
+                <<jack_port_name(m->getAudioInputPort(0))
+                ;
 
             if (member->getNumChannels()==2){
             jack_connect(m_jackClient,
@@ -334,6 +359,12 @@ void Roster::fanNewMember(Member * member){
             jack_connect(m_jackClient,
                 jack_port_name(member->getAudioOutputPort(0)),
                 jack_port_name(m->getAudioInputPort(1)));
+
+                qDebug()<< "Connect new member (LM) "
+                <<jack_port_name(member->getAudioOutputPort(0))
+                <<" to other (R) "
+                <<jack_port_name(m->getAudioInputPort(1))
+                ;
             }
         }
     }

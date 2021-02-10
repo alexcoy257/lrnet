@@ -104,7 +104,7 @@ void JackTripWorker::setJackTrip(
         QMutexLocker locker(&mMutex);
         mSpawning = true;
     }
-    mID = 0;
+    //mID = 0;
     // Set the jacktrip address and ports
     //mClientAddress.setAddress(client_address);
     mClientAddress = client_address;

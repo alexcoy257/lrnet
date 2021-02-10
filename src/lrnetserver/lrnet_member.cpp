@@ -131,7 +131,7 @@ Member::~Member(){
 
 
 void Member::setName(QString & nname){
-    qDebug() <<"Set name " <<nname;
+    qDebug() <<"Set name " <<nname << "serial is" <<serial;
     name = nname;
 }
 
@@ -155,6 +155,14 @@ const float * Member::getCurrentControls(){
 }
 
 void Member::resetThread(){
+    qDebug() <<"Member " <<getName() <<"reset JackTrip thread.";
+    fromPorts[0]=NULL;
+    fromPorts[1]=NULL;
+    toPorts[0]=NULL;
+    toPorts[1]=NULL;
+    broadcastPorts[0]=NULL;
+    broadcastPorts[1]=NULL;
+
     if (!assocThread)
         return;
 
@@ -162,6 +170,7 @@ void Member::resetThread(){
         netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
+    
     //{
     //    QMutexLocker lock(&mRoster->mMutex);
 
