@@ -682,16 +682,15 @@ void LRNetServer::sendPong(QSslSocket * socket){
 }
 
 void LRNetServer::sendRoster(QSslSocket * socket){
-    
-    oscOutStream.Clear();
-    oscOutStream << osc::BeginMessage( "/push/roster" );
-    for(Member * m:mRoster->getMembers()){
-        loadMemberFrame(m);
-}
-          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
-          oscOutStream << osc::EndMessage;
-    writeStreamToSocket(socket);
     qDebug() <<"Sending Roster " ;//<<socket->write(oscOutStream.Data(), oscOutStream.Size());
+    for (Member * m:mRoster->getMembers()){
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage( "/push/roster" );
+        loadMemberFrame(m);
+          //oscOutStream  << "James" <<"Sax" <<0 << "Coy" <<"Tbn" <<1;
+        oscOutStream << osc::EndMessage;
+    writeStreamToSocket(socket);
+    }
 }
 
 void LRNetServer::sendRoles(QSslSocket * socket){
