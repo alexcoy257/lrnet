@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QSettings>
 #include <QPlainTextEdit>
+#include <QCheckBox>
 
 
 #include <openssl/bn.h>
@@ -53,16 +54,21 @@ class ConnectForm : public QWidget
         friend class ConnectForm;
         QBoxLayout * code_layout;
         QLineEdit * m_authCodeBox;
+
     public:
         explicit CodeSubwidget(QWidget * parent): QWidget(parent)
         , code_layout(new QHBoxLayout(this))
         , m_authCodeBox(new QLineEdit(NULL))
+        , m_saveKeyCheckbox(new QCheckBox("Remember Me"))
         {
             setLayout(code_layout);
             code_layout->addWidget(m_authCodeBox);
+            code_layout->addWidget(m_saveKeyCheckbox);
             m_authCodeBox->setPlaceholderText("Login Code");
 
         }
+
+        QCheckBox * m_saveKeyCheckbox;
 
     };
 
@@ -113,6 +119,9 @@ signals:
     void setToCodeAuth();
     void updateCode(const QString & code);
     void netidUpdated(const QString & netid);
+
+private:
+    bool validInputs();
 
 };
 

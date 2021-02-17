@@ -52,6 +52,7 @@ public slots:
 
 private:
     Ui::MainWindow *ui;
+    QSize m_connectFormSize;
     ChannelStrip * m_channelStrip;
     Compressor * m_comp;
 
@@ -89,6 +90,7 @@ private:
 
 signals:
     void deleteChannel(int id);
+    void sendPublicKey();
 
 private slots:
     void tryConnect(const QString & host, int port);

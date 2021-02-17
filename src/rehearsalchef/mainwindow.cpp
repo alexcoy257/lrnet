@@ -5,6 +5,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_connectFormSize(528,181)
     , m_chefForm(NULL)
     , m_stackedWidget(new QStackedWidget(this))
     , m_connectForm(new ConnectForm(this))
@@ -63,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
     QObject::connect(m_netClient, &LRNetClient::disconnected, this, &MainWindow::disconnected);
     QObject::connect(m_netClient, &LRNetClient::authenticated, this, &MainWindow::handleAuth);
+    QObject::connect(this, &MainWindow::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
+    QObject::connect(m_netClient, &LRNetClient::storeKeyResultReceived, this, &MainWindow::storeKeyResultReceived);
     QObject::connect(m_netClient, &LRNetClient::authFailed, this, [=](){statusBar()->showMessage("Login failed");});
     QObject::connect(m_netClient, &LRNetClient::authCodeIncorrect, this, [=](){statusBar()->showMessage("Incorrect login code");});
     QObject::connect(m_netClient, &LRNetClient::authCodeDisabled, this, [=](){statusBar()->showMessage("Guest login disabled.  Ask a leader to enable it");});
@@ -90,6 +93,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_netClient->setNetid(m_netid);
     m_connectForm->setHost(m_hostname);
     m_connectForm->setPort(m_port);
+
+    setMinimumSize(m_connectFormSize);
+    resize(m_connectFormSize);
 }
 
 
@@ -212,8 +218,8 @@ void MainWindow::tryConnect(const QString & host, int port){
 
 void MainWindow::disconnected(){
     m_stackedWidget->setCurrentWidget(m_connectForm);
-    setMinimumSize(300,100);
-    resize(467,181);
+    setMinimumSize(m_connectFormSize);
+    resize(m_connectFormSize);
     delete m_launcherForm;
     m_launcherForm = NULL;
     if (m_role == MEMBER){
@@ -262,14 +268,16 @@ void MainWindow::saveSetup(){
 
 void MainWindow::handleAuth(AuthTypeE type){
     m_authType = type;
+    if (!m_connectForm->m_usingKey && m_connectForm->m_csw->m_saveKeyCheckbox->isChecked())
+        emit sendPublicKey();
 
     launchLauncher();
 }
 
 void MainWindow::changeRole(){
     m_stackedWidget->setCurrentWidget(m_launcherForm);
-    setMinimumSize(300,100);
-    resize(400,180);
+    setMinimumSize(m_connectFormSize);
+    resize(m_connectFormSize);
     if (m_role == MEMBER){
         ((MemberForm *)m_roleForm)->saveSetup(m_settings);
     }
@@ -283,14 +291,13 @@ void MainWindow::changeRole(){
 void MainWindow::launchLauncher(){
 
     if (m_authType != NONE){
-        m_launcherForm = new Launcher(m_authType, m_connectForm->m_usingKey, this);
+        m_launcherForm = new Launcher(m_authType, this);
         m_stackedWidget->addWidget(m_launcherForm);
         m_stackedWidget->setCurrentWidget(m_launcherForm);
         connect(m_launcherForm, &Launcher::choseSuperChef, this, &MainWindow::launchSuperChef);
         connect(m_launcherForm, &Launcher::choseChef, this, &MainWindow::launchChef);
         connect(m_launcherForm, &Launcher::choseMember, this, &MainWindow::launchMember);
-        connect(m_launcherForm, &Launcher::sendPublicKey, m_netClient, &LRNetClient::sendPublicKey);
-        connect(m_netClient, &LRNetClient::storeKeyResultReceived, this, &MainWindow::storeKeyResultReceived);
+
         m_disconnectAction->setEnabled(true);
     }
 }
@@ -432,7 +439,7 @@ void MainWindow::storeKeyResultReceived(bool success){
     if (success){
         QString base = "Success!  'User Login' now available for %1 on this computer";
         statusBar()->showMessage(base.arg(m_connectForm->m_netidBox->text()));
-        m_launcherForm->storeKeyResultReceived(success);
+
     } else {
         QString base = "Failed to remember you...  Try again?";
         statusBar()->showMessage(base);

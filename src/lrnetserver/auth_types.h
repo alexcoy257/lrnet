@@ -8,7 +8,7 @@
 
 
 typedef struct __attribute__ ((packed)) {
-    char netid[10];
+    char netid[30];
     uint8_t netid_length;
     unsigned char challenge[214]; //256-42 = 214
     unsigned char sig[256];
@@ -27,7 +27,7 @@ public:
     }
 
     AuthPacket(auth_packet_t &pkt){
-        std::memcpy(netid, pkt.netid, 10);
+        std::memcpy(netid, pkt.netid, 30);
         std::memcpy(&netid_length, &pkt.netid_length, 1);
         std::memcpy(challenge, pkt.challenge, 214);
         std::memcpy(sig, pkt.sig, 256);
@@ -39,7 +39,7 @@ public:
      * @param pkt
      */
     void pack(auth_packet_t & pkt){
-        std::memcpy(pkt.netid, netid, 10);
+        std::memcpy(pkt.netid, netid, 30);
         std::memcpy(&pkt.netid_length, &netid_length, 1);
         std::memcpy(pkt.challenge, challenge, 214);
         std::memcpy(pkt.sig, sig, 256);

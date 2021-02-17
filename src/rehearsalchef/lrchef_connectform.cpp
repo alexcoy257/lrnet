@@ -7,7 +7,7 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
   , tl_layout(new QVBoxLayout(this))
   , bu_layout(new QHBoxLayout(NULL))
   , kc_layout(new QHBoxLayout(NULL))
-  , m_hostBox(new QLineEdit("localhost", this))
+  , m_hostBox(new QLineEdit(this))
   , m_portBox(new QLineEdit("4463", this))
   , m_netidBox(new QLineEdit(this))
 
@@ -41,13 +41,14 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     kc_layout->addWidget(m_authByCodeButton,0,Qt::AlignLeft);
 
     m_portBox->setPlaceholderText("Port");
-    m_portBox->setFixedWidth(43);
+    m_portBox->setFixedWidth(80);
 
-    m_hostBox->setPlaceholderText("Server");
-    m_hostBox->setFixedWidth(200);
+    m_hostBox->setPlaceholderText("Host");
+    m_hostBox->setFixedWidth(225);
 
-    m_netidBox->setPlaceholderText("netid");
+    m_netidBox->setPlaceholderText("NetID");
     m_netidBox->setFixedWidth(80);
+    m_netidBox->setMaxLength(30);
 
     m_portBox->setValidator(new QIntValidator(1024, 65535));
 
@@ -65,18 +66,32 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     );
 
     QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){m_submitButton->setEnabled(true);m_errLabel->hide();});
+//    QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){if (validInputs()){
+//                                                                                 m_usingKey = m_authByKeyButton->isChecked();
+//                                                                                 emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());
+//                                                                            }});
+
     QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){m_usingKey = m_authByKeyButton->isChecked();
                                                                              emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());});
 
     QObject::connect(m_authByKeyButton, &QAbstractButton::toggled, this, &ConnectForm::setKeyAuth);
     QObject::connect(m_authByCodeButton, &QAbstractButton::toggled, this, &ConnectForm::setCodeAuth);
 
-    QObject::connect(m_csw->m_authCodeBox, &QLineEdit::editingFinished, this, [=](){emit updateCode(m_csw->m_authCodeBox->text());
-                                                                                    m_usingKey = m_authByKeyButton->isChecked();
-                                                                                    emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());});
+    QObject::connect(m_csw->m_authCodeBox, &QLineEdit::editingFinished, this, [=](){emit updateCode(m_csw->m_authCodeBox->text());});
+    QObject::connect(m_csw->m_authCodeBox, &QLineEdit::returnPressed, this, [=](){emit m_csw->m_authCodeBox->editingFinished();
+                                                                                  m_submitButton->click();});
+
     QObject::connect(m_netidBox, &QLineEdit::editingFinished, this, [=](){emit netidUpdated( m_netidBox->text());});
+    QObject::connect(m_netidBox, &QLineEdit::returnPressed, this, [=](){emit m_netidBox->editingFinished();
+                                                                        m_submitButton->click();});
+
     QObject::connect(m_hostBox, &QLineEdit::editingFinished, this, [=](){emit updateHost( m_hostBox->text());});
+    QObject::connect(m_hostBox, &QLineEdit::returnPressed, this, [=](){emit m_hostBox->editingFinished();
+                                                                       m_submitButton->click();});
+
     QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){emit updatePort( m_portBox->text().toInt());});
+    QObject::connect(m_portBox, &QLineEdit::returnPressed, this, [=](){emit m_portBox->editingFinished();
+                                                                       m_submitButton->click();});
 
 }
 
@@ -99,4 +114,16 @@ void ConnectForm::setCodeAuth(bool checked){
    emit setToCodeAuth();
 }
 
+bool ConnectForm::validInputs(){
+    bool valid = true;
+    if (m_hostBox->text().isEmpty())
+        valid = false;
 
+    if (m_portBox->text().isEmpty())
+        valid = false;
+
+    if (m_netidBox->text().isEmpty())
+        valid = false;
+
+    return valid;
+}
