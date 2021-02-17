@@ -126,6 +126,7 @@ private slots:
     void sendAuthCodeDisabled(QSslSocket *socket);
     void sendRoster(QSslSocket * socket);
     void sendRoles(QSslSocket * socket);
+    void sendAuthCodeStatus(QSslSocket * socket);
     void notifyRolesUpdated();
     void sendPong(QSslSocket * socket);
     void sendJackTripReady(session_id_t s_id);

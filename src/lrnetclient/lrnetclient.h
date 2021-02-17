@@ -113,6 +113,9 @@ private:
         void authFailed();
         void authCodeIncorrect();
         void authCodeDisabled();
+        void updateAuthCodeStatus(bool enabled, const QString & authCode);
+        void serverUpdatedAuthCodeEnabled(bool enabled);
+        void serverUpdatedAuthCode(const QString & authCode);
         void storeKeyResultReceived(bool success);
         void gotUdpPort(int port);
         void serverJTReady();
@@ -184,6 +187,7 @@ private:
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
         void handleRoles(osc::ReceivedMessageArgumentStream & args);
         void handleStoreKeyResult(osc::ReceivedMessageArgumentStream & args);
+        void handleAuthCodeStatus(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & args);
         void handleNewEncryptionKey(osc::ReceivedMessageArgumentStream & args);

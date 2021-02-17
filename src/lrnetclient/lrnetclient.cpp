@@ -288,6 +288,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         handleNewChat(args);
     }
 
+    else if (std::strcmp(ap, "/push/authcodestatus") == 0){
+        handleAuthCodeStatus(args);
+    }
+
     else if (std::strcmp(ap, "/push/rolesupdated") == 0){
         requestRoles();
     }
@@ -556,6 +560,26 @@ void LRNetClient::handleNewChat(osc::ReceivedMessageArgumentStream & args){
     }
 }
 
+void LRNetClient::handleAuthCodeStatus(osc::ReceivedMessageArgumentStream & args){
+    bool enabled;
+    const char * authCode;
+    try{
+        args >> enabled;
+
+        try{
+            args >> authCode;
+
+            emit updateAuthCodeStatus(enabled, QString(authCode));
+
+        }catch(osc::WrongArgumentTypeException & e){
+            // Not a string
+            authCode = NULL;
+        }
+    }catch(osc::WrongArgumentTypeException & e){
+        // Not a boolean
+    }
+}
+
 void LRNetClient::handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args){
     const char * authCode;
     try{
@@ -566,7 +590,7 @@ void LRNetClient::handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & arg
     }
 
     if (authCode){
-        std::cout << "Authorization code changed to " << authCode  << std::endl;
+        emit serverUpdatedAuthCode(QString(authCode));
     }
 }
 
@@ -575,11 +599,9 @@ void LRNetClient::handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream & arg
     try{
         args >> enabled;
 
-        if (enabled){
-            std::cout << "Authorization code enabled on server" << std::endl;
-        } else{
-            std::cout << "Authorization code disabled on server" << std::endl;
-        }
+        qDebug() << "Auth code enabled on server: " << enabled;
+
+        emit serverUpdatedAuthCodeEnabled(enabled);
 
     } catch(osc::WrongArgumentTypeException & e){
         // Not a boolean.

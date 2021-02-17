@@ -328,6 +328,9 @@ void MainWindow::launchChef(){
     QObject::connect(m_netClient, &LRNetClient::updateMember, (ChefForm *)m_roleForm, &ChefForm::updateChannelStrip);
     QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
     QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+    QObject::connect(m_netClient, &LRNetClient::updateAuthCodeStatus, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeStatus);
+    QObject::connect(m_netClient, &LRNetClient::serverUpdatedAuthCodeEnabled, (ChefForm *)m_roleForm, &ChefForm::handleAuthCodeEnabledUpdated);
+    QObject::connect(m_netClient, &LRNetClient::serverUpdatedAuthCode, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeLabel);
     QObject::connect(((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeUpdated, m_netClient, &LRNetClient::sendAuthCode);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);

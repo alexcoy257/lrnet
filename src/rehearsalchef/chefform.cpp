@@ -98,6 +98,19 @@ void ChefForm::updateAuthCodeEnabled(){
     emit authCodeEnabledUpdated(ui->codeEnabledBox->isChecked());
 }
 
+void ChefForm::updateAuthCodeStatus(bool enabled, const QString & authCode){
+    handleAuthCodeEnabledUpdated(enabled);
+    updateAuthCodeLabel(authCode);
+}
+
+void ChefForm::handleAuthCodeEnabledUpdated(bool enabled){
+    ui->codeEnabledBox->setChecked(enabled);
+}
+
+void ChefForm::updateAuthCodeLabel(const QString &authCode){
+    ui->authCodeLabel->setText(authCode);
+}
+
 void ChefForm::disableJackForm(){
     m_tbSetupForm->disableJackForm();
 }

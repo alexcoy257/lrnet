@@ -37,6 +37,9 @@ public:
 
 public slots:
     void highlightInsert(Compressor * cp);
+    void updateAuthCodeStatus(bool enabled, const QString & authCode);
+    void handleAuthCodeEnabledUpdated(bool enabled);
+    void updateAuthCodeLabel(const QString & authCode);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void deleteChannelStrip(int id);

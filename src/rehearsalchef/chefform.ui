@@ -14,27 +14,84 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   </item>
+   <item row="1" column="1">
+    <widget class="ChatForm" name="m_chatForm" native="true"/>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   </item>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="m_authArea">
      <item>
-      <widget class="QCheckBox" name="codeEnabledBox">
-       <property name="toolTip">
-        <string>If checked, users can connect to the server using the current authorization code</string>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
-       </property>
-       <property name="text">
-        <string>Enable Guests</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="authCodeEdit">
-       <property name="placeholderText">
-        <string>Set guest login code here...</string>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QCheckBox" name="codeEnabledBox">
+             <property name="toolTip">
+              <string>If checked, users can connect to the server using the current authorization code</string>
+             </property>
+             <property name="layoutDirection">
+              <enum>Qt::RightToLeft</enum>
+             </property>
+             <property name="text">
+              <string>Guests Enabled</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>  Code:  </string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="authCodeLabel">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="authCodeEdit">
+           <property name="placeholderText">
+            <string>Set guest login code here...</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="tbArea">
@@ -56,15 +113,6 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="1">
-    <widget class="ChatForm" name="m_chatForm" native="true"/>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
-   </item>
    <item row="2" column="0" colspan="2">
     <widget class="QScrollArea" name="m_channelStripScrollArea">
      <property name="widgetResizable">
@@ -76,7 +124,7 @@
         <x>0</x>
         <y>0</y>
         <width>565</width>
-        <height>236</height>
+        <height>234</height>
        </rect>
       </property>
      </widget>

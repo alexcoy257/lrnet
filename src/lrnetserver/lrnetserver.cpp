@@ -860,6 +860,7 @@ void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, sessi
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
     mRoster->addChef(netid, tSess);
     sendRoster(activeSessions[tSess].lastSeenConnection);
+    sendAuthCodeStatus(activeSessions[tSess].lastSeenConnection);
     qDebug() << "Number of chefs: " << activeChefs.count();
 }
 
@@ -1039,6 +1040,16 @@ void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args
             broadcastToChefs();
         }
     }
+}
+
+void LRNetServer::sendAuthCodeStatus(QSslSocket * socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/authcodestatus" )
+                 << mAuthCodeEnabled
+                 << mAuthCode.toStdString().data()
+                 << osc::EndMessage;
+
+    writeStreamToSocket(socket);
 }
 
 void LRNetServer::notifyChefsMemLeft(Member::serial_t id){
