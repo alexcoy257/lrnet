@@ -502,6 +502,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handleSectionUpdate(&args, tSess);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/update/solo") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleSoloUpdate(&args);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/member/startjacktrip") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 handleStartJackTrip(args, tSess);
@@ -923,6 +928,31 @@ void LRNetServer::handleSectionUpdate(osc::ReceivedMessageArgumentStream * args,
     }
 }
 
+void LRNetServer::handleSoloUpdate(osc::ReceivedMessageArgumentStream * args){
+    int64_t id;
+    bool isSolo;
+
+    try{
+        *args >> id;
+        try{
+            *args >> isSolo;
+
+            oscOutStream.Clear();
+            oscOutStream << osc::BeginMessage("/push/soloupdated")
+                         << id
+                         << isSolo
+                         << osc::EndMessage;
+            broadcastToChefs();
+
+        }catch(osc::WrongArgumentTypeException & e){
+            // not a bool
+        }
+
+    }catch(osc::WrongArgumentTypeException & e){
+        // not an int
+    }
+}
+
 void LRNetServer::handlePermissionUpdates(osc::ReceivedMessageArgumentStream *args){
     if (!args->Eos()){
         int authType;
@@ -1166,7 +1196,15 @@ void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
                 qDebug() << "Wrong number of arguments for adjusting parameters. Needed int and float";
             }
             mRoster->setControl(serial, paramNum, paramVal);
+
         }
+
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage( "/push/control/update" );
+        loadMemberFrame(mRoster->getMembers()[serial]);
+        oscOutStream << osc::EndMessage;
+
+        broadcastToChefs();
     }
 
 }

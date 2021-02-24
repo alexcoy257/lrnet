@@ -28,6 +28,7 @@ class ChefForm : public QWidget
 
     Compressor * m_actComp = NULL;
     QHash<int, LRMClient *> m_clients;
+    QHash<int, LRMClient *> m_soloers;
     TalkbackSettingsForm * m_tbSetupForm = NULL;
     QHBoxLayout * m_csAreaLayout;
 public:
@@ -40,8 +41,11 @@ public slots:
     void updateAuthCodeStatus(bool enabled, const QString & authCode);
     void handleAuthCodeEnabledUpdated(bool enabled);
     void updateAuthCodeLabel(const QString & authCode);
+    void soloRequested(int id, bool checked);
+    void handleSoloResponse(int id, bool isSolo);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
+    void updateChannelStripControls(QVector<float> &controls, int id);
     void deleteChannelStrip(int id);
 
     void loadSetup(QSettings &settings);
@@ -49,6 +53,7 @@ public slots:
 
 signals:
     void sendControlUpdate(int id, QVector<float> & controls);
+    void sendSoloUpdate(int id, bool isSolo);
     void authCodeUpdated(const QString & nname);
     void authCodeEnabledUpdated(bool enabled);
     void startJackTrip();

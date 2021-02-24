@@ -14,16 +14,24 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   <item row="6" column="0" colspan="2">
+    <widget class="QScrollArea" name="m_channelStripScrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="m_channelStripScrollParent">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>565</width>
+        <height>203</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="ChatForm" name="m_chatForm" native="true"/>
-   </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="m_actCompArea"/>
-   </item>
-   <item row="0" column="0">
+   <item row="3" column="0">
     <layout class="QHBoxLayout" name="m_authArea">
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -113,22 +121,62 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QScrollArea" name="m_channelStripScrollArea">
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <widget class="QWidget" name="m_channelStripScrollParent">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>565</width>
-        <height>234</height>
-       </rect>
-      </property>
-     </widget>
-    </widget>
+   <item row="8" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QCheckBox" name="joinMutedBox">
+       <property name="text">
+        <string>Members join muted</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="muteAllButton">
+       <property name="text">
+        <string>Mute All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="unmuteAllButton">
+       <property name="text">
+        <string>Unmute All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="4" column="0">
+    <layout class="QHBoxLayout" name="m_actCompArea"/>
+   </item>
+   <item row="4" column="1">
+    <widget class="ChatForm" name="m_chatForm" native="true"/>
    </item>
   </layout>
  </widget>

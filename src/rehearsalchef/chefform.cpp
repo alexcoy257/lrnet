@@ -15,6 +15,13 @@ ChefForm::ChefForm(QWidget *parent) :
     m_csAreaLayout->addStretch();
     //ui->chatArea->addWidget(m_chatForm);
 
+    // Remove this when implemented
+    ui->joinMutedBox->hide();
+    ui->muteAllButton->hide();
+    ui->unmuteAllButton->hide();
+    //
+
+
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
     QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
     QObject::connect(ui->tbSetupButton, &QAbstractButton::released, m_tbSetupForm, &QWidget::show);
@@ -49,6 +56,7 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         QObject::connect(cStruct->cs, &ChannelStrip::setActive, this, [=](){highlightInsert(cStruct->comp);}, Qt::QueuedConnection);
         QObject::connect(cStruct->comp, &Compressor::valueChanged, this, &ChefForm::newValueHandler);
         QObject::connect(cStruct->cs, &ChannelStrip::valueChanged, this, &ChefForm::newValueHandler);
+        QObject::connect(cStruct->cs, &ChannelStrip::requestSolo, this, &ChefForm::soloRequested);
         m_clients[id] = cStruct;
     }
 }
@@ -64,6 +72,13 @@ void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, in
     if(client){
         client ->cs->setName(mName);
         client->cs->setSection(sName);
+    }
+}
+
+void ChefForm::updateChannelStripControls(QVector<float> &controls, int id){
+    LRMClient * client = m_clients[id];
+    if (client){
+        client->cs->newControls(controls);
     }
 }
 
@@ -109,6 +124,38 @@ void ChefForm::handleAuthCodeEnabledUpdated(bool enabled){
 
 void ChefForm::updateAuthCodeLabel(const QString &authCode){
     ui->authCodeLabel->setText(authCode);
+}
+
+void ChefForm::soloRequested(int id, bool checked){
+    if (checked && !m_soloers.contains(id)){
+        for (int client_id:m_clients.keys()){
+            if (id != client_id && !m_soloers.contains(client_id)){
+                m_clients[client_id]->cs->sendMute(true);
+            }
+        }
+        emit sendSoloUpdate(id, checked);
+        if (m_clients[id]->cs->getMuted()){
+            m_clients[id]->cs->sendMute(false);
+        }
+    }
+    else{
+        if (m_soloers.contains(id)){
+            if (m_soloers.count() > 1 && !m_soloers[id]->cs->getMuted()){
+                m_soloers[id]->cs->sendMute(true);
+            }
+            emit sendSoloUpdate(id, checked);
+        }
+    }
+}
+
+void ChefForm::handleSoloResponse(int id, bool isSolo){
+    if (isSolo)
+        m_soloers.insert(id, m_clients[id]);
+    else
+        m_soloers.remove(id);
+
+    if (m_clients.contains(id))
+        m_clients[id]->cs->setSolo(isSolo);
 }
 
 void ChefForm::disableJackForm(){

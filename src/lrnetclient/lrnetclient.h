@@ -108,11 +108,13 @@ private:
         void timeout();
         void newMember(const QString& name, const QString& group, const QVector<float> controls, int id);
         void updateMember(const QString& name, const QString& group, int id);
+        void updateMemberControls(QVector<float> &controls, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);
         void authFailed();
         void authCodeIncorrect();
         void authCodeDisabled();
+        void handleSoloResponse(int id, bool isSolo);
         void updateAuthCodeStatus(bool enabled, const QString & authCode);
         void serverUpdatedAuthCodeEnabled(bool enabled);
         void serverUpdatedAuthCode(const QString & authCode);
@@ -149,6 +151,7 @@ private:
 
         void subChef();
         void sendControlUpdate(int64_t id, QVector<float> & controls);
+        void sendSoloUpdate(int64_t id, bool isSolo);
 
         void subMember();
         void setRedundancy(int n);
@@ -184,8 +187,10 @@ private:
         void handleMemberGroup(osc::ReceivedMessageArgumentStream & args, MemberInfoTypeE type);
         void handleRemoveMember(osc::ReceivedMessageArgumentStream & args);
         void handleNewUdpPort(osc::ReceivedMessageArgumentStream & args);
+        void handleControlUpdate(osc::ReceivedMessageArgumentStream & args);
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
         void handleRoles(osc::ReceivedMessageArgumentStream & args);
+        void handleSoloUpdate(osc::ReceivedMessageArgumentStream & args);
         void handleStoreKeyResult(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeStatus(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);

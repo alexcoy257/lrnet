@@ -296,6 +296,14 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         requestRoles();
     }
 
+    else if (std::strcmp(ap, "/push/soloupdated") == 0){
+        handleSoloUpdate(args);
+    }
+
+    else if (std::strcmp(ap, "/push/control/update") == 0){
+        handleControlUpdate(args);
+    }
+
     else if (std::strcmp(ap, "/push/authcodeupdated") == 0){
         handleAuthCodeUpdated(args);
     }
@@ -380,7 +388,7 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     const char * memName;
     const char * memSect;
     int64_t id;
-    QVector<float> currControls(8);
+    QVector<float> currControls(9); //ChannelStrip::numControlValues
 
     try{
     args >> memName;
@@ -391,7 +399,7 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
     switch (type){
     case MEMBER_ADD:
-        for (int i=0; i<8; i++){
+        for (int i=0; i<9; i++){ // ChannelStrip::numControlValues
             args >> (currControls.data())[i];
         }
     emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id);
@@ -460,6 +468,25 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
 
     if (!authRoster->empty())
         emit rolesReceived(authRoster);
+}
+
+void LRNetClient::handleSoloUpdate(osc::ReceivedMessageArgumentStream & args){
+    int64_t id;
+    bool isSolo;
+
+    try{
+        args >> id;
+        try{
+            args >> isSolo;
+
+            emit handleSoloResponse(id, isSolo);
+
+        }catch(osc::WrongArgumentTypeException & e){
+            // not a boolean
+        }
+    }catch(osc::WrongArgumentTypeException & e){
+        // not an int
+    }
 }
 
 void LRNetClient::updatePermissions(QList<QString> *netidsSelected, AuthTypeE authType){
@@ -636,11 +663,48 @@ void LRNetClient::sendControlUpdate(int64_t id, QVector<float> & controls){
     oscOutStream << osc::BeginMessage( "/control/member" )
     << osc::Blob(&session, sizeof(session));
     oscOutStream << id;
-    for (int i=0; i<8; i++)
+    for (int i=0; i<9; i++)
         oscOutStream << i << controls[i];
     oscOutStream << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::sendSoloUpdate(int64_t id, bool isSolo){
+    qDebug() << "Sending solo update for " << id << ": " << isSolo;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/update/solo" )
+                 << osc::Blob(&session, sizeof(session))
+                 << id
+                 << isSolo
+                 << osc::EndMessage;
+    writeStreamToSocket();
+}
+
+void LRNetClient::handleControlUpdate(osc::ReceivedMessageArgumentStream & args){
+    const char * memName;
+    const char * memSect;
+    int64_t id;
+    QVector<float> currControls(9); //ChannelStrip::numControlValues
+
+    try{
+        args >> memName;
+        args >> memSect;
+        args >> id;
+
+        for (int i=0; i<9; i++){ //ChannelStrip::numControlValues
+            args >> (currControls.data())[i];
+        }
+
+        emit updateMemberControls(currControls, id);
+
+    }
+    catch (osc::WrongArgumentTypeException & e){
+        qDebug() <<"Member control argument was a bad type";
+    }
+    catch (osc::MissingArgumentException & e){
+        qDebug() <<"Not enough data for member controls";
+    }
 }
 
 void LRNetClient::writeStreamToSocket(){

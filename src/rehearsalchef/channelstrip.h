@@ -29,16 +29,23 @@ public:
         COMP_RELEASE,
         COMP_MAKEUP,
         GROUP_GAIN,
-        INDIV_GAIN
+        INDIV_GAIN,
+        MUTE
     } CSValuesE;
+
+    static int constexpr numControlValues = 9;
 
     explicit ChannelStrip(LRMClient * cStruct, QWidget *parent = nullptr, QString cname = "");
     ~ChannelStrip();
+    bool getMuted();
     void setCompressorZone(QLayout *zone);
     void setName(const QString & nname);
     void setSection(const QString & sname);
 
 public slots:
+    void sendMute(bool mute);
+    void setMute(bool checked);
+    void setSolo(bool checked);
     void newControls(QVector<float> & controls);
     void setControl(int type, float value){
         currentControls[type] = value;
@@ -57,6 +64,7 @@ private:
 
 signals:
     void setActive();
+    void requestSolo(int id, bool checked);
     void gotNewControls(QVector<float> & controls);
     void valueChanged(LRMClient * myClient, int type, float value);
 

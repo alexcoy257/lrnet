@@ -145,6 +145,7 @@ private slots:
     void handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void handleNameUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
+    void handleSoloUpdate(osc::ReceivedMessageArgumentStream * args);
     void handlePermissionUpdates(osc::ReceivedMessageArgumentStream * args);
     void removeUsers(osc::ReceivedMessageArgumentStream * args);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);

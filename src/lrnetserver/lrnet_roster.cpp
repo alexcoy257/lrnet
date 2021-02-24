@@ -285,7 +285,7 @@ void Roster::stopAllThreads()
 
 void Roster::setControl(Member::serial_t id, int out, float val){
    Member * m =  members[id];
-   qDebug() << __FUNCTION__;
+   qDebug() << __FUNCTION__ << "to " << val << " for field " << out;
    if (m) m->setControl(out, val);
 }
 
