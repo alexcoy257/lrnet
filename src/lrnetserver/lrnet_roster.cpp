@@ -89,6 +89,7 @@ Member * Roster::addMemberOrChef(QString &netid,
         return NULL;
     }
     Member * newMem = new Member(netid, s_id, this);
+    newMem->setControl(Member::MUTE, (float)mJoinMuted);
     group[s_id]=newMem;
     sGroup[newMem->getSerialID()]=newMem;    
     return newMem;
@@ -256,6 +257,10 @@ void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
 }
 
+void Roster::setJoinMuted(bool joinMuted){
+    mJoinMuted = joinMuted;
+}
+
 int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
@@ -306,7 +311,7 @@ void Roster::stopAllThreads()
 
 void Roster::setControl(Member::serial_t id, int out, float val){
    Member * m =  members[id];
-   qDebug() << __FUNCTION__;
+   qDebug() << __FUNCTION__ << "to " << val << " for field " << out;
    if (m) m->setControl(out, val);
 }
 
