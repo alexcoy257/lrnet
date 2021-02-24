@@ -848,7 +848,7 @@ void LRNetClient::setNumChannels(int n){
     oscOutStream << osc::EndMessage;
     writeStreamToSocket();
 }
-q
+
 void LRNetClient::startJackTripSec(){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/chef/startjacktripsec" );
