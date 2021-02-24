@@ -157,6 +157,8 @@ private slots:
     void notifyStoreKeyResults(QSslSocket *socket, bool success);
     void handleSetNumChannels(osc::ReceivedMessageArgumentStream & args, session_id_t session);
     void handleSelfLoopback(osc::ReceivedMessageArgumentStream & args, session_id_t session);
+    void handleStartJackTripSec(session_id_t session);
+    void handleStopJackTripSec(session_id_t session);
 
 
 

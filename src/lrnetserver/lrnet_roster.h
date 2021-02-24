@@ -12,6 +12,7 @@ namespace RosterNS {
 enum MemberEventE{
     MEMBER_CAME,
     MEMBER_UPDATE,
+    CHEF_CAME
 };
 }
 
@@ -68,6 +69,8 @@ class Roster : public QObject
 
     void removeMember(Member * m);
     void fanNewMember(Member * m);
+    void fanMemberToGroup(Member * m, QHash<Member::serial_t, Member *>& group);
+    void fanChefToGroup(Member * c, QHash<Member::serial_t, Member *>& group);
     void fanNewChef(Member * c);
     Member * addMemberOrChef(QString &netid,
         session_id_t s_id,
@@ -113,10 +116,12 @@ public:
 
 signals:
     void jacktripRemoveMember(session_id_t s_id);
-    void sigMemberUpdate(Member * member, RosterNS::MemberEventE);
+    void sigMemberUpdate(Member * member, RosterNS::MemberEventE event);
+    void sigNewChef(Member * chef, RosterNS::MemberEventE event);
     void memberRemoved(Member::serial_t id);
     void jackTripStarted(session_id_t s_id);
     void sendKeyToClient(unsigned char * key, session_id_t s_id);
+
 
 
 };

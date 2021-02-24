@@ -103,6 +103,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
 
     QObject::connect(mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::notifyChefsMemEvent);
     QObject::connect(mRoster, &Roster::sigMemberUpdate, this, &LRNetServer::sendMemberUdpPort);
+    QObject::connect(mRoster, &Roster::sigNewChef, this, &LRNetServer::sendMemberUdpPort);
     QObject::connect(mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
     QObject::connect(mRoster, &Roster::jackTripStarted, this, &LRNetServer::sendJackTripReady);
     QObject::connect(mRoster, &Roster::sendKeyToClient, this, &LRNetServer::sendKeyToClient);
@@ -291,7 +292,8 @@ void LRNetServer::receivedClientInfo()
     //make a valid message, give up on that connection.
     OSCStreamingBuffer * cBuf = activeConnections[clientConnection].buffer;
     if (cBuf->remaining() == 0){
-        clientConnection->close();
+        cBuf->reset();
+        //clientConnection->close();
     }
 
     int bytesRead = clientConnection->read(cBuf->head(), cBuf->remaining());
@@ -561,6 +563,16 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
         else if (std::strcmp(msg->AddressPattern(), "/auth/setcodeenabled") == 0){
             if (role & (SUPERCHEF | CHEF))
                 handleAuthCodeEnabled(&args);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/chef/startjacktripsec") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleStartJackTripSec(tSess);
+        }
+
+        else if (std::strcmp(msg->AddressPattern(), "/chef/stopjacktripsec") == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleStopJackTripSec(tSess);
         }
     }
 
@@ -858,6 +870,7 @@ void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, ses
 void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     activeChefs.insert(tSess, tSess);
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
+    qDebug() << "Add chef netid " <<netid;
     mRoster->addChef(netid, tSess);
     sendRoster(activeSessions[tSess].lastSeenConnection);
     sendAuthCodeStatus(activeSessions[tSess].lastSeenConnection);
@@ -1078,7 +1091,7 @@ void LRNetServer::notifyChefsMemEvent(Member * m, RosterNS::MemberEventE event){
 }
 
 void LRNetServer::sendMemberUdpPort(Member * m, RosterNS::MemberEventE event){
-    if (event == RosterNS::MEMBER_CAME){
+    if (event == RosterNS::MEMBER_CAME || event == RosterNS::CHEF_CAME){
         oscOutStream.Clear();
         oscOutStream << osc::BeginMessage( "/config/udpport" )
         << m->getPort();
@@ -1317,3 +1330,17 @@ void LRNetServer::handleSelfLoopback(
     if(!err)
         mRoster->setLoopbackBySessionID(lb, session);
     }
+
+void LRNetServer::handleStartJackTripSec(session_id_t session){
+    QString netid = QString::fromStdString(activeSessions[session].netid);
+    mRoster->addMember(netid, session);
+    mRoster->setNumChannelsBySessionID(2, session);
+    //QString t = "Chef Alt";
+    //mRoster->setNameBySessionID(t, session);
+    //qDebug() <<"Set name by session ID";
+    mRoster->startJackTrip(session, false);
+}
+
+void LRNetServer::handleStopJackTripSec(session_id_t session){
+
+}

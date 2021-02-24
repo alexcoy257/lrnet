@@ -49,6 +49,7 @@ Roster::~Roster(){
 }
 
 void Roster::addMember(QString &netid, session_id_t s_id){
+    qDebug() <<"addMember called with" <<membersBySessionID.size();
     Member * newMem = addMemberOrChef(netid, s_id, membersBySessionID, members);
     if (!newMem)
         return;
@@ -62,6 +63,8 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 }
 
 void Roster::addChef(QString &netid, session_id_t s_id){
+    qDebug() <<"addChef called";
+    
     Member * newMem = addMemberOrChef(netid, s_id, chefsBySessionID, chefs);
     if (!newMem)
         return;
@@ -69,6 +72,7 @@ void Roster::addChef(QString &netid, session_id_t s_id){
      qDebug() <<"New chef " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
     QObject::connect(newMem, &Member::readyToFan,
         this, &Roster::fanNewChef);
+    emit sigNewChef(newMem, RosterNS::CHEF_CAME);
     //emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
 }
 
@@ -80,8 +84,10 @@ Member * Roster::addMemberOrChef(QString &netid,
     if (netid.length()==0)
         return NULL;
     //Can't log in twice on the same session
-    if (group.contains(s_id))
+    if (group.contains(s_id)){
+        qDebug() << "Can't log in twice";
         return NULL;
+    }
     Member * newMem = new Member(netid, s_id, this);
     group[s_id]=newMem;
     sGroup[newMem->getSerialID()]=newMem;    
@@ -94,9 +100,12 @@ QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
     }
 
 void Roster::startJackTrip(session_id_t s_id, bool encrypt){
-    Member * m = membersBySessionID[s_id];
-    if (!m)
+    Member * m = NULL;
+    if (membersBySessionID.contains(s_id))
+        m = membersBySessionID[s_id];
+    else if (chefsBySessionID.contains(s_id)){
         m = chefsBySessionID[s_id];
+    }
 
     if (!m)
         return;
@@ -219,12 +228,24 @@ QString Roster::getNameBySessionID(session_id_t s_id){
     }
 }
 void Roster::setNameBySessionID(QString &name, session_id_t s_id){
-    membersBySessionID[s_id]->setName(name);
-    emit sigMemberUpdate(membersBySessionID[s_id], RosterNS::MEMBER_UPDATE);
+    Member * m = NULL;
+    if (membersBySessionID.contains(s_id))
+        m = membersBySessionID[s_id];
+    else if (chefsBySessionID.contains(s_id)){
+        m = chefsBySessionID[s_id];
+    }
+    m->setName(name);
+    emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
 }
 void Roster::setSectionBySessionID(QString & section, session_id_t s_id){
-    membersBySessionID[s_id]->setSection(section);
-    emit sigMemberUpdate(membersBySessionID[s_id], RosterNS::MEMBER_UPDATE);
+    Member * m = NULL;
+    if (membersBySessionID.contains(s_id))
+        m = membersBySessionID[s_id];
+    else if (chefsBySessionID.contains(s_id)){
+        m = chefsBySessionID[s_id];
+    }
+    m->setSection(section);
+    emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
 }
 void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
     members[s_id]->setName(name);
@@ -290,8 +311,10 @@ void Roster::setControl(Member::serial_t id, int out, float val){
 }
 
 void Roster::stopJackTrip(session_id_t s_id){
-    Member * m = membersBySessionID[s_id];
-    if (!m){
+    Member * m = NULL;
+    if (membersBySessionID.contains(s_id))
+        m = membersBySessionID[s_id];
+    else if (chefsBySessionID.contains(s_id)){
         m = chefsBySessionID[s_id];
     }
     if (!m)
@@ -304,7 +327,15 @@ void Roster::stopJackTrip(session_id_t s_id){
 void Roster::fanNewMember(Member * member){
     qDebug() <<"Fanning new member"
     <<member->getName();
-    for (Member * m:members){
+
+    fanMemberToGroup(member, members);
+    fanMemberToGroup(member, chefs);
+
+;    
+}
+
+void Roster::fanMemberToGroup(Member * member, QHash<Member::serial_t, Member *>& group){
+    for (Member * m:group){
         qDebug() << "Looking at" <<m->getName();
         //Quick fix: lone members don't have JackTrips, don't try to fan out
         //to them. Other ports end up connected instead.
@@ -370,8 +401,73 @@ void Roster::fanNewMember(Member * member){
     }
 }
 
+void Roster::fanChefToGroup(Member * chef, QHash<Member::serial_t, Member *>& group){
+    for (Member * m:group){
+        qDebug() << "Looking at" <<m->getName();
+        //Quick fix: lone members don't have JackTrips, don't try to fan out
+        //to them. Other ports end up connected instead.
+        if(!m->getAudioInputPort(0)){
+            qDebug() <<"Member has no JackTrip port yet";
+        continue;
+        }
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(0)),
+                jack_port_name(chef->getAudioInputPort(0)));
+            qDebug()<< "Connect other "
+                <<jack_port_name(m->getAudioOutputPort(0))
+                <<" to new member (R)"
+                <<jack_port_name(chef->getAudioInputPort(0))
+                ;
+            
+            if (m->getNumChannels()==2){
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(1)),
+                jack_port_name(chef->getAudioInputPort(1)));
+            }
+            else{
+            jack_connect(m_jackClient,
+                jack_port_name(m->getAudioOutputPort(0)),
+                jack_port_name(chef->getAudioInputPort(1)));
+                qDebug()<< "Connect other (LM) "
+                <<jack_port_name(m->getAudioOutputPort(0))
+                <<" to new member (R)"
+                <<jack_port_name(chef->getAudioInputPort(1))
+                ;
+            }
+
+            jack_connect(m_jackClient,
+                jack_port_name(chef->getAudioOutputPort(0)),
+                jack_port_name(m->getAudioInputPort(0)));
+
+                qDebug()<< "Connect new member (LM) "
+                <<jack_port_name(chef->getAudioOutputPort(0))
+                <<" to other (L) "
+                <<jack_port_name(m->getAudioInputPort(0))
+                ;
+
+            {
+
+            //Fan 1 channel to member's R
+            jack_connect(m_jackClient,
+                jack_port_name(chef->getAudioOutputPort(0)),
+                jack_port_name(m->getAudioInputPort(1)));
+
+                qDebug()<< "Connect new member (LM) "
+                <<jack_port_name(chef->getAudioOutputPort(0))
+                <<" to other (R) "
+                <<jack_port_name(m->getAudioInputPort(1))
+                ;
+            }
+        
+    }
+
+    }
+
 void Roster::fanNewChef(Member * chef){
-    qDebug() << "Fanning chefs not implemented";
+   qDebug() <<"Fanning new chef"
+    <<chef->getName();
+    fanChefToGroup(chef, members);
+    fanChefToGroup(chef, chefs);
 }
 
 void Roster::setRedundancyBySessionID(int newRed, session_id_t s_id){
@@ -392,6 +488,9 @@ void Roster::setNumChannelsBySessionID(int newCh, session_id_t s_id){
 
 void Roster::setLoopbackBySessionID(bool lb, session_id_t s_id){
     Member * m = membersBySessionID[s_id];
+    if (!m){
+        m = chefsBySessionID[s_id];
+    }
     if (!m)
         return;
     m->setLoopback(lb);
