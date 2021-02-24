@@ -106,14 +106,21 @@
        <item>
         <widget class="QPushButton" name="tbSetupButton">
          <property name="text">
-          <string>TB Setup</string>
+          <string>JT Setup</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="talkButton">
+        <widget class="QPushButton" name="muteButton">
          <property name="text">
-          <string>TB</string>
+          <string>Unmute</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="secondaryConnectButton">
+         <property name="text">
+          <string>3+4 Connect</string>
          </property>
         </widget>
        </item>
@@ -177,6 +184,22 @@
    </item>
    <item row="4" column="1">
     <widget class="ChatForm" name="m_chatForm" native="true"/>
+   <item row="2" column="0" colspan="2">
+    <widget class="QScrollArea" name="m_channelStripScrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="m_channelStripScrollParent">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>559</width>
+        <height>176</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
    </item>
   </layout>
  </widget>

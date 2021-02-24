@@ -21,8 +21,11 @@ public:
     void saveSetup(QSettings &settings);
 
 signals:
+    void jackStarted();
+    void jackStopped();
     void startJackTrip();
     void stopJackTrip();
+    void setjtSelfLoopback(bool e);
 
 private:
     Ui::TalkbackSettingsForm *ui;

@@ -78,7 +78,18 @@ private:
     int m_port;
 
     RCJTWorker * m_jacktrip;
+    RCJTWorker * m_sJacktrip;
+    jack_client_t * m_jackClient = NULL;
     QThreadPool m_jacktripthreadpool;
+    bool m_expectSecondary = false;
+    int m_secPort = 0;
+
+    jack_port_t * pri_fromPorts[2] = {NULL, NULL};
+    jack_port_t * pri_toPorts[2] = {NULL, NULL};
+    jack_port_t * pri_broadcastPorts[2] = {NULL, NULL};
+    jack_port_t * sec_fromPorts[2] = {NULL, NULL};
+    jack_port_t * sec_toPorts[2] = {NULL, NULL};
+    jack_port_t * sec_broadcastPorts[2] = {NULL, NULL};
 
     QAction *m_disconnectAction;
     QAction *m_changeRoleAction;
@@ -86,6 +97,11 @@ private:
     void loadSetup();
     void keyInit();
     void saveSetup();
+
+    enum {
+        CH_1_2,
+        CH_3_4
+    } muteGroup_e;
 
 
 signals:
@@ -105,12 +121,23 @@ private slots:
     void setUdpPort(int port);
     void startJackTrip();
     void stopJackTrip();
+    void startJackTripSecondary();
+    void stopJackTripSecondary();
     void startJackTripThread();
     void stopJackTripThread();
     void setRedundancy(int n);
     void setEncryption(bool e);
     void setEncryptionKey(char * key);
     void setNumChannels(int n);
+    void connectPrimary();
+    void connectPrimarySend();
+    void connectPrimaryReceive();
+    void disconnectPrimary();
+    void disconnectPrimarySend();
+    void disconnectPrimaryReceive();
+    void connectSecondary();
+    void disconnectSecondary();
+    void setLocalLoopback(bool l);
 
 };
 #endif // MAINWINDOW_H

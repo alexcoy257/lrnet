@@ -7,6 +7,7 @@ TalkbackSettingsForm::TalkbackSettingsForm(QWidget *parent) :
 {
     ui->setupUi(this);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &TalkbackSettingsForm::fStartJacktrip);
+    QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
 
     QObject::connect(ui->jackServer, &JackParameterForm::jackStarted, this, &TalkbackSettingsForm::enableJackTripButton);
     QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, &TalkbackSettingsForm::disableJackTripButton);
@@ -22,10 +23,12 @@ TalkbackSettingsForm::~TalkbackSettingsForm()
 }
 
 void TalkbackSettingsForm::enableJackTripButton(){
+    emit jackStarted();
     ui->startJackTripButton->setEnabled(true);
 }
 
 void TalkbackSettingsForm::disableJackTripButton(){
+    emit jackStopped();
     ui->startJackTripButton->setDisabled(true);
 }
 

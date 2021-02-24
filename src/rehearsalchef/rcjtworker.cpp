@@ -212,6 +212,8 @@ void RCJTWorker::run()
             jacktrip.setClientName(mClientName);
         }
 
+        jacktrip.setJackPortAreas(mFromSpace, mToSpace, mBroadcastSpace, mPortSpaceSize);
+
         // Connect signals and slots
         // -------------------------
         if (gVerboseFlag) cout << "---> RCJTWorker: Connecting signals and slots..." << endl;
@@ -225,6 +227,8 @@ void RCJTWorker::run()
         QObject::connect(&jacktrip, &JackTrip::signalError, &event_loop, &QEventLoop::quit, Qt::QueuedConnection);
         QObject::connect(this, SIGNAL(signalRemoveThread()),
                          &jacktrip, SLOT(slotStopProcesses()), Qt::QueuedConnection);
+
+        QObject::connect(&jacktrip, &JackTrip::jackPortsReady, this, &RCJTWorker::signalJackReady);
 
         //ClientAddress.setAddress(mClientAddress);
         // If I don't type this line, I get a bus error in the next line.

@@ -16,7 +16,7 @@ CONFIG += c++11 link_prl
 
 DESTDIR=./bin
 
-LIBS += -llrnetclient -llrnetjackserver -ljacktrip
+LIBS += -llrnetclient -llrnetjackserver -ljacktrip -ljack
 
 macx{
 QMAKE_INFO_PLIST = $$PWD/Info.plist

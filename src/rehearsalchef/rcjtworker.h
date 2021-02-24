@@ -118,6 +118,17 @@ public:
     void setRedundancy(int newRed){mRedundancy = newRed;}
     void setEncryptionKey(char * key);
 
+    void setPortCBAreas(audioPortHandle_t * fromArea,
+                            audioPortHandle_t * toArea,
+                            audioPortHandle_t * broadcastArea,
+                            size_t size){
+            qDebug() << "Set port callback structs {from addr:" << fromArea <<"}";
+            mFromSpace = fromArea;
+            mToSpace = toArea;
+            mBroadcastSpace = broadcastArea;
+            mPortSpaceSize = size;
+        }
+
 private slots:
     void slotTest()
     { std::cout << "--- RCJTWorker TEST SLOT ---" << std::endl; }
@@ -126,6 +137,7 @@ private slots:
 
 signals:
     void signalRemoveThread();
+    void jackPortsReady();
 
 private:
     int setJackTripFromClientHeader(JackTrip& jacktrip);
@@ -159,6 +171,15 @@ private:
     double mSimulatedJitterRate;
     double mSimulatedDelayRel;
     bool mUseRtUdpPriority;
+
+    audioPortHandle_t * mFromSpace = NULL;
+    audioPortHandle_t * mToSpace = NULL;
+    audioPortHandle_t * mBroadcastSpace = NULL;
+    size_t mPortSpaceSize = 0;
+
+    void signalJackReady(){
+            qDebug() <<"Jack ports ready!";
+            emit jackPortsReady();}
 
     int mIOStatTimeout;
     QSharedPointer<std::ofstream> mIOStatStream;

@@ -21,7 +21,9 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->jackServer, &JackParameterForm::jackStopped, this, &MemberForm::disableJackTripButton);
     QObject::connect(ui->encryptEnabledBox, &QCheckBox::stateChanged, this, [=](int e){emit setEncryption(e);});
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
+    QObject::connect(ui->muteButton, &QAbstractButton::released, this, &MemberForm::toggleMute);
     QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
+    QObject::connect(ui->localLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setLocalLoopback(e);});
 
     // This section should be removed as functionality is implemented
     ui->sectionLabel->hide();
@@ -112,4 +114,16 @@ void MemberForm::disableJackForm(){
 void MemberForm::enableJackForm(){
     if (ui->jackServer)
     ui->jackServer->setEnabled(true);
+}
+
+void MemberForm::toggleMute(){
+    muted = !muted;
+    if(muted){
+        ui->muteButton->setText("Unmute");
+        emit doMute(true);
+    }
+    else{
+        ui->muteButton->setText("Mute");
+        emit doMute(false);
+    }
 }

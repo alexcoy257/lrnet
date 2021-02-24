@@ -13,6 +13,7 @@ ChefForm::ChefForm(QWidget *parent) :
     //ui->m_channelStripArea->addStretch();
     ui->m_channelStripScrollParent->setLayout(m_csAreaLayout);
     m_csAreaLayout->addStretch();
+    ui->secondaryConnectButton->setEnabled(false);
     //ui->chatArea->addWidget(m_chatForm);
 
     // Remove this when implemented
@@ -27,6 +28,11 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sendJoinMutedUpdate);
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::startJackTrip, this, [=](){emit startJackTrip();});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::stopJackTrip, this, [=](){emit stopJackTrip();});
+    QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::setjtSelfLoopback, this, &ChefForm::setjtSelfLoopback);
+    QObject::connect(ui->muteButton, &QAbstractButton::released, this, &ChefForm::toggleMute);
+    QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStarted, this, [=](){ui->secondaryConnectButton->setEnabled(true);});
+    QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStopped, this, [=](){ui->secondaryConnectButton->setEnabled(false);});
+    QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
 
 }
 
@@ -177,4 +183,30 @@ void ChefForm::loadSetup(QSettings & settings){
 
 void ChefForm::saveSetup(QSettings & settings){
     m_tbSetupForm->saveSetup(settings);
+}
+
+void ChefForm::toggleMute(){
+    muted = !muted;
+    if(muted){
+        ui->muteButton->setText("Unmute");
+        emit doMute(true);
+    }
+    else{
+        ui->muteButton->setText("Mute");
+        emit doMute(false);
+    }
+}
+
+void ChefForm::fstartJacktripSec(){
+    emit startJacktripSec();
+    ui->secondaryConnectButton->setText("3+4 Disconnect");
+    QObject::disconnect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
+    QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstopJacktripSec);
+}
+
+void ChefForm::fstopJacktripSec(){
+    emit stopJacktripSec();
+    ui->secondaryConnectButton->setText("3+4 Connect");
+    QObject::disconnect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstopJacktripSec);
+    QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
 }

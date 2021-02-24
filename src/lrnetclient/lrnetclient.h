@@ -162,6 +162,8 @@ private:
         void setjtSelfLoopback(bool e);
         void startJackTrip(AuthTypeE role = MEMBER);
         void stopJackTrip(AuthTypeE role = MEMBER);
+        void startJackTripSec();
+        void stopJackTripSec();
 
         void unsubscribe();
 

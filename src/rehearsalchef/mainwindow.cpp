@@ -20,8 +20,12 @@ MainWindow::MainWindow(QWidget *parent)
     , m_publicKey({})
     , keyPair(NULL)
     , m_jacktrip( new RCJTWorker(this, 10, JackTrip::ZEROS, ""))
+    , m_sJacktrip(NULL)
 {
     ui->setupUi(this);
+
+    m_jacktrip->setPortCBAreas(pri_fromPorts, pri_toPorts, pri_broadcastPorts, 2);
+
 
     m_stackedWidget->addWidget(m_connectForm);
 
@@ -105,6 +109,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
 //    m_jacktrip->stopThread();
+
     stopJackTrip();
     saveSetup();
 
@@ -281,6 +286,7 @@ void MainWindow::changeRole(){
     if (m_role == MEMBER){
         ((MemberForm *)m_roleForm)->saveSetup(m_settings);
     }
+     QObject::disconnect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
     delete m_roleForm;
     m_role = NONE;
     m_roleForm = NULL;
@@ -341,7 +347,25 @@ void MainWindow::launchChef(){
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendSoloUpdate, m_netClient, &LRNetClient::sendSoloUpdate);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendJoinMutedUpdate, m_netClient, &LRNetClient::sendJoinMutedUpdate);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
+    QObject::connect((ChefForm *)m_roleForm, &ChefForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
+    QObject::disconnect(m_jacktrip, &RCJTWorker::jackPortsReady, this, &MainWindow::connectPrimary);
+    QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, this, &MainWindow::connectPrimaryReceive, Qt::QueuedConnection);
+
+
+
+    m_sJacktrip = new RCJTWorker(this, 10, JackTrip::ZEROS, "");
+    m_sJacktrip->setPortCBAreas(sec_fromPorts, sec_toPorts, sec_broadcastPorts, 2);
+    QObject::connect(m_sJacktrip, &RCJTWorker::jackPortsReady, this, &MainWindow::connectSecondary, Qt::QueuedConnection);
+
+    QObject::connect((ChefForm *)m_roleForm, &ChefForm::doMute, this, [=](bool m){
+        if (m) disconnectPrimarySend();
+        else connectPrimarySend();
+    });
+
+
     QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
+    QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJacktripSec, this, &MainWindow::startJackTripSecondary);
+    QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
     m_netClient->subChef();
     ((ChefForm *)m_roleForm)->loadSetup(m_settings);
     m_changeRoleAction->setEnabled(true);
@@ -352,34 +376,51 @@ void MainWindow::launchChef(){
 
 //---------------------------------------------------------------------------------------
 void MainWindow::launchMember(){
-m_roleForm = new MemberForm(this);
-m_role = MEMBER;
-m_stackedWidget->addWidget(m_roleForm);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::nameUpdated, m_netClient, &LRNetClient::updateName);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::sectionUpdated, m_netClient, &LRNetClient::updateSection);
-QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
-QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
-m_netClient->subMember();
+    m_roleForm = new MemberForm(this);
+    m_role = MEMBER;
+    m_stackedWidget->addWidget(m_roleForm);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::nameUpdated, m_netClient, &LRNetClient::updateName);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::sectionUpdated, m_netClient, &LRNetClient::updateSection);
+    QObject::connect(m_netClient, &LRNetClient::chatReceived, ((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+    QObject::connect(((MemberForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
+    m_netClient->subMember();
 
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::changeRedundancy, this, &MainWindow::setRedundancy);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::setNumChannels, this, &MainWindow::setNumChannels);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::changeRedundancy, this, &MainWindow::setRedundancy);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::setNumChannels, this, &MainWindow::setNumChannels);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::setLocalLoopback, this, &MainWindow::setLocalLoopback);
 
-QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
-QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
+    QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, this,
+            &MainWindow::connectPrimary, Qt::QueuedConnection);
 
-((MemberForm *)m_roleForm)->loadSetup(m_settings);
-m_changeRoleAction->setEnabled(true);
-m_stackedWidget->setCurrentWidget(m_roleForm);
-resize(m_roleForm->sizeHint());
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::doMute, this, [=](bool m){
+        if (m) disconnectPrimarySend();
+        else connectPrimarySend();
+    });
+
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
+
+    QObject::connect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
+
+    ((MemberForm *)m_roleForm)->loadSetup(m_settings);
+    m_changeRoleAction->setEnabled(true);
+    m_stackedWidget->setCurrentWidget(m_roleForm);
+    resize(m_roleForm->sizeHint());
 }
 
 
 //---------------------------------------------------------------------------------------
 void MainWindow::setUdpPort(int port){
-    m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, true);
+    if(m_expectSecondary){
+        qDebug() << "Set secondary udp port to" <<port;
+        m_sJacktrip->setJackTrip(m_hostname, 4464, port, 2, false);
+        m_jacktripthreadpool.start(m_sJacktrip, QThread::TimeCriticalPriority);
+    }
+    else{
+    m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, false);
+    }
 }
 
 
@@ -410,10 +451,14 @@ void MainWindow::startJackTrip(){
 }
 
 void MainWindow::startJackTripThread(){
+    jack_status_t status;
+    if (!m_jackClient)
+    m_jackClient = jack_client_open ("rcclient", JackNoStartServer, &status);
     //QThread::msleep(500);
     QObject::disconnect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
 
     m_jacktripthreadpool.start(m_jacktrip, QThread::TimeCriticalPriority);
+
 }
 
 void MainWindow::stopJackTrip(){
@@ -433,6 +478,10 @@ void MainWindow::stopJackTrip(){
         break;
     default:
         break;
+    }
+    if(m_jackClient){
+        jack_client_close(m_jackClient);
+        m_jackClient=NULL;
     }
     stopJackTripThread();
 }
@@ -455,7 +504,7 @@ void MainWindow::storeKeyResultReceived(bool success){
 }
 
 void MainWindow::releaseThread(int n){
-    if (m_role != MEMBER)
+    if (m_role != MEMBER && m_role != CHEF)
         return;
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 }
@@ -479,7 +528,278 @@ void MainWindow::setEncryptionKey(char * key){
     //delete[] key;
 }
 
+void MainWindow::connectPrimary(){
+    connectPrimarySend();
+    connectPrimaryReceive();
+}
+
+void MainWindow::connectPrimarySend(){
+    if (m_jackClient){
+        const char** ports;
+
+            // Get physical output (capture) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsOutput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical capture ports";
+            }
+            else
+            {
+                // Connect capure ports to jacktrip send
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        qDebug() <<"Primary: connect" <<ports[i] <<"to"<<jack_port_name(pri_toPorts[i]);
+                        jack_connect(m_jackClient, ports[i], jack_port_name(pri_toPorts[i]));
+                    }
+                }
+                std::free(ports);
+            }
+    }}
+
+void MainWindow::connectPrimaryReceive(){
+if (m_jackClient){
+
+        const char** ports;
+
+            // Get physical input (playback) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsInput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical playback ports";
+            }
+            else
+            {
+                // Connect playback ports to jacktrip receive
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        qDebug() <<"Primary: connect" <<ports[i] <<"to"<<jack_port_name(pri_fromPorts[i]);
+                        jack_connect(m_jackClient, jack_port_name(pri_fromPorts[i]), ports[i]);
+                    }
+                }
+                std::free(ports);
+            }
+    }
+}
+
+void MainWindow::disconnectPrimary(){
+    disconnectPrimarySend();
+    disconnectPrimaryReceive();
+}
+
+void MainWindow::disconnectPrimarySend(){
+    if (m_jackClient){
+        const char** ports;
+
+            // Get physical output (capture) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsOutput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical capture ports";
+            }
+            else
+            {
+                // Connect capure ports to jacktrip send
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        qDebug() <<"Primary: connect" <<ports[i] <<"to"<<jack_port_name(pri_toPorts[i]);
+                        jack_disconnect(m_jackClient, ports[i], jack_port_name(pri_toPorts[i]));
+                    }
+                }
+                std::free(ports);
+            }
+    }}
+
+void MainWindow::disconnectPrimaryReceive(){
+if (m_jackClient){
+
+        const char** ports;
+
+            // Get physical input (playback) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsInput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical playback ports";
+            }
+            else
+            {
+                // Connect playback ports to jacktrip receive
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        qDebug() <<"Primary: connect" <<ports[i] <<"to"<<jack_port_name(pri_fromPorts[i]);
+                        jack_disconnect(m_jackClient, jack_port_name(pri_fromPorts[i]), ports[i]);
+                    }
+                }
+                std::free(ports);
+            }
+    }
+}
+
+void MainWindow::connectSecondary(){
+    if (m_jackClient){
+        qDebug() <<"Connect secondary";
+        const char** ports;
+
+            // Get physical output (capture) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsOutput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical capture ports";
+            }
+            else
+            {
+                // Connect capure ports to jacktrip send
+                for (int i = 0; i < 4; i++)
+                {
+
+                    if (!ports[i])
+                        break;
+                    // Check that we don't run out of capture ports
+                    if ( (i==2 || i==3) && ports[i] ) {
+                        qDebug() <<"Secondary: connect" <<ports[i] <<"to"<<jack_port_name(sec_toPorts[i-2]);
+                        jack_connect(m_jackClient, ports[i], jack_port_name(sec_toPorts[i-2]));
+                    }
+                }
+                std::free(ports);
+            }
+    }
+}
+
+void MainWindow::disconnectSecondary(){
+    if (m_jackClient){
+        const char** ports;
+
+            // Get physical output (capture) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsOutput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical capture ports";
+            }
+            else
+            {
+                // Connect capure ports to jacktrip send
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        jack_disconnect(m_jackClient, ports[i], jack_port_name(pri_toPorts[i]));
+                    }
+                }
+                std::free(ports);
+            }
+
+            // Get physical input (playback) ports
+            if ( (ports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsInput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical playback ports";
+            }
+            else
+            {
+                // Connect playback ports to jacktrip receive
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( ports[i] != NULL ) {
+                        jack_disconnect(m_jackClient, jack_port_name(pri_fromPorts[i]), ports[i]);
+                    }
+                }
+                std::free(ports);
+            }
+    }
+}
+
 void MainWindow::setNumChannels(int n){
 
     m_netClient->setNumChannels(n);
 }
+
+void MainWindow::startJackTripSecondary(){
+    switch (m_role){
+    case CHEF:
+        QObject::disconnect((ChefForm *)m_roleForm, &ChefForm::startJacktripSec, this, &MainWindow::startJackTripSecondary);
+        QObject::connect((ChefForm *)m_roleForm, &ChefForm::stopJacktripSec, this, &MainWindow::stopJackTripSecondary);
+        qDebug() << "Want to start JackTrip secondary";
+        m_expectSecondary = true;
+
+        m_netClient->startJackTripSec();
+        //QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
+        break;
+
+    default:
+        break;
+
+    }
+}
+
+void MainWindow::stopJackTripSecondary(){
+    switch (m_role){
+    case CHEF:
+        QObject::disconnect((ChefForm *)m_roleForm, &ChefForm::stopJacktripSec, this, &MainWindow::stopJackTripSecondary);
+        QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJacktripSec, this, &MainWindow::startJackTripSecondary);
+        qDebug() << "Want to stop JackTrip secondary";
+        m_netClient->stopJackTripSec();
+        break;
+    default:
+        break;
+    }
+    m_sJacktrip->stopThread();
+}
+
+void MainWindow::setLocalLoopback(bool l){
+    jack_status_t status;
+    if (!m_jackClient)
+        m_jackClient = jack_client_open ("rcclient", JackNoStartServer, &status);
+    if(m_jackClient){
+        const char** inports;
+        const char** outports;
+
+            // Get physical input (playback) ports
+            if ( (inports =
+                  jack_get_ports (m_jackClient, NULL, NULL,
+                                  JackPortIsPhysical | JackPortIsInput)) == NULL
+                 ||
+                 (outports =
+                                   jack_get_ports (m_jackClient, NULL, NULL,
+                                                   JackPortIsPhysical | JackPortIsOutput)) == NULL)
+            {
+                qDebug() << "WARNING: Cannot find any physical playback ports";
+            }
+            else
+            {
+                // Connect playback ports to jacktrip receive
+                for (int i = 0; i < 2; i++)
+                {
+                    // Check that we don't run out of capture ports
+                    if ( inports[i] != NULL && outports[i]!=NULL) {
+                        if(l){
+                        qDebug() <<"Primary: connect" <<inports[i] <<"to"<<outports[i];
+                        jack_connect(m_jackClient, outports[i], inports[i]);
+                        }
+                        else{
+                            qDebug() <<"Primary: disconnect" <<inports[i] <<"to"<<outports[i];
+                            jack_disconnect(m_jackClient, outports[i], inports[i]);
+                        }
+                    }
+                }
+                std::free(inports);
+                std::free(outports);
+            }
+    }
+
+    }
+

@@ -36,12 +36,15 @@ signals:
     void sectionUpdated(const QString & nsection);
     void setEncryption(bool e);
     void setjtSelfLoopback(bool e);
+    void setLocalLoopback(bool e);
     void setNumChannels(int n);
 
     void startJackTrip();
     void stopJackTrip();
 
     void changeRedundancy(int newRed);
+
+    void doMute(bool m);
 
 private:
     Ui::MemberForm *ui;
@@ -53,6 +56,9 @@ private:
 
     void enableJackTripButton();
     void disableJackTripButton();
+    void toggleMute();
+
+    bool muted = false;
 
 };
 

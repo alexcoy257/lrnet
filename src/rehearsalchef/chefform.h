@@ -60,16 +60,24 @@ signals:
     void authCodeEnabledUpdated(bool enabled);
     void startJackTrip();
     void stopJackTrip();
+    void setjtSelfLoopback(bool e);
+    void doMute(bool m);
+    void startJacktripSec();
+    void stopJacktripSec();
 
 private:
     Ui::ChefForm *ui;
     void updateAuthCode();
     void updateAuthCodeEnabled();
+    bool muted = true;
+    void fstartJacktripSec();
+    void fstopJacktripSec();
 
 private slots:
     void newValueHandler(LRMClient * myClient, int type, float value);
     void disableJackForm();
     void enableJackForm();
+    void toggleMute();
 
 public:
     ChatForm * m_chatForm;
