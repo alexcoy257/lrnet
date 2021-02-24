@@ -528,6 +528,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                 handleAdjustParams(&args);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/update/joinmuted" ) == 0){
+            if (role & (SUPERCHEF | CHEF))
+                handleJoinMuted(&args);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/update/section") == 0){
             if (role & (SUPERCHEF | CHEF | MEMBER))
                 handleSectionUpdate(&args, tSess);
@@ -866,6 +871,7 @@ void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, sessi
     mRoster->addChef(netid, tSess);
     sendRoster(activeSessions[tSess].lastSeenConnection);
     sendAuthCodeStatus(activeSessions[tSess].lastSeenConnection);
+    sendJoinMutedStatus(activeSessions[tSess].lastSeenConnection);
     qDebug() << "Number of chefs: " << activeChefs.count();
 }
 
@@ -951,6 +957,35 @@ void LRNetServer::handleSoloUpdate(osc::ReceivedMessageArgumentStream * args){
     }catch(osc::WrongArgumentTypeException & e){
         // not an int
     }
+}
+
+void LRNetServer::handleJoinMuted(osc::ReceivedMessageArgumentStream * args){
+    bool joinMuted;
+
+    try{
+        *args >> joinMuted;
+        mRoster->setJoinMuted(joinMuted);
+
+        oscOutStream.Clear();
+        oscOutStream << osc::BeginMessage("/push/joinmutedupdated")
+                     << joinMuted
+                     << osc::EndMessage;
+
+        broadcastToChefs();
+
+    }catch(osc::WrongArgumentTypeException & e){
+        // not a boolean
+    }
+}
+
+void LRNetServer::sendJoinMutedStatus(QSslSocket * socket){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage("/push/joinmutedupdated")
+                 << mRoster->mJoinMuted
+                 << osc::EndMessage;
+
+    writeStreamToSocket(socket);
+
 }
 
 void LRNetServer::handlePermissionUpdates(osc::ReceivedMessageArgumentStream *args){

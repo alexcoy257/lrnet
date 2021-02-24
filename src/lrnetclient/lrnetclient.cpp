@@ -300,6 +300,10 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
         handleSoloUpdate(args);
     }
 
+    else if (std::strcmp(ap, "/push/joinmutedupdated") == 0){
+        handleJoinMutedUpdated(args);
+    }
+
     else if (std::strcmp(ap, "/push/control/update") == 0){
         handleControlUpdate(args);
     }
@@ -679,6 +683,30 @@ void LRNetClient::sendSoloUpdate(int64_t id, bool isSolo){
                  << isSolo
                  << osc::EndMessage;
     writeStreamToSocket();
+}
+
+void LRNetClient::sendJoinMutedUpdate(bool joinMuted){
+    qDebug() << "Sending join muted updated to " << joinMuted;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/update/joinmuted" )
+                 << osc::Blob(&session, sizeof(session))
+                 << joinMuted
+                 << osc::EndMessage;
+
+    writeStreamToSocket();
+}
+
+void LRNetClient::handleJoinMutedUpdated(osc::ReceivedMessageArgumentStream & args){
+    bool joinMuted;
+
+    try{
+        args >> joinMuted;
+
+        emit handleJoinMutedResponse(joinMuted);
+
+    }catch (osc::WrongArgumentTypeException & e){
+        // not a boolean
+    }
 }
 
 void LRNetClient::handleControlUpdate(osc::ReceivedMessageArgumentStream & args){

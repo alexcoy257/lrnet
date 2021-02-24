@@ -115,6 +115,7 @@ private:
         void authCodeIncorrect();
         void authCodeDisabled();
         void handleSoloResponse(int id, bool isSolo);
+        void handleJoinMutedResponse(bool joinMuted);
         void updateAuthCodeStatus(bool enabled, const QString & authCode);
         void serverUpdatedAuthCodeEnabled(bool enabled);
         void serverUpdatedAuthCode(const QString & authCode);
@@ -152,6 +153,7 @@ private:
         void subChef();
         void sendControlUpdate(int64_t id, QVector<float> & controls);
         void sendSoloUpdate(int64_t id, bool isSolo);
+        void sendJoinMutedUpdate(bool joinMuted);
 
         void subMember();
         void setRedundancy(int n);
@@ -191,6 +193,7 @@ private:
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
         void handleRoles(osc::ReceivedMessageArgumentStream & args);
         void handleSoloUpdate(osc::ReceivedMessageArgumentStream & args);
+        void handleJoinMutedUpdated(osc::ReceivedMessageArgumentStream & args);
         void handleStoreKeyResult(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeStatus(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeUpdated(osc::ReceivedMessageArgumentStream & args);

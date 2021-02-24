@@ -83,6 +83,7 @@ Member * Roster::addMemberOrChef(QString &netid,
     if (group.contains(s_id))
         return NULL;
     Member * newMem = new Member(netid, s_id, this);
+    newMem->setControl(Member::MUTE, (float)mJoinMuted);
     group[s_id]=newMem;
     sGroup[newMem->getSerialID()]=newMem;    
     return newMem;
@@ -233,6 +234,10 @@ void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
 void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
     members[s_id]->setSection(section);
     emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
+}
+
+void Roster::setJoinMuted(bool joinMuted){
+    mJoinMuted = joinMuted;
 }
 
 int Roster::releaseThread(Member::serial_t id)

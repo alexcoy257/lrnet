@@ -16,7 +16,6 @@ ChefForm::ChefForm(QWidget *parent) :
     //ui->chatArea->addWidget(m_chatForm);
 
     // Remove this when implemented
-    ui->joinMutedBox->hide();
     ui->muteAllButton->hide();
     ui->unmuteAllButton->hide();
     //
@@ -25,6 +24,7 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
     QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
     QObject::connect(ui->tbSetupButton, &QAbstractButton::released, m_tbSetupForm, &QWidget::show);
+    QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sendJoinMutedUpdate);
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::startJackTrip, this, [=](){emit startJackTrip();});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::stopJackTrip, this, [=](){emit stopJackTrip();});
 
@@ -156,6 +156,11 @@ void ChefForm::handleSoloResponse(int id, bool isSolo){
 
     if (m_clients.contains(id))
         m_clients[id]->cs->setSolo(isSolo);
+}
+
+void ChefForm::handleJoinMutedResponse(bool joinMuted){
+    ui->joinMutedBox->setChecked(joinMuted);
+    qDebug() << "set muted box checked to " << joinMuted;
 }
 
 void ChefForm::disableJackForm(){

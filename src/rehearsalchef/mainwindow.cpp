@@ -331,6 +331,7 @@ void MainWindow::launchChef(){
     QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
     QObject::connect(m_netClient, &LRNetClient::updateAuthCodeStatus, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeStatus);
     QObject::connect(m_netClient, &LRNetClient::handleSoloResponse, (ChefForm *)m_roleForm, &ChefForm::handleSoloResponse);
+    QObject::connect(m_netClient, &LRNetClient::handleJoinMutedResponse, (ChefForm *)m_roleForm, &ChefForm::handleJoinMutedResponse);
     QObject::connect(m_netClient, &LRNetClient::serverUpdatedAuthCodeEnabled, (ChefForm *)m_roleForm, &ChefForm::handleAuthCodeEnabledUpdated);
     QObject::connect(m_netClient, &LRNetClient::serverUpdatedAuthCode, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeLabel);
     QObject::connect(((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::sendChat, m_netClient, &LRNetClient::sendChat);
@@ -338,6 +339,7 @@ void MainWindow::launchChef(){
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendControlUpdate, m_netClient, &LRNetClient::sendControlUpdate);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendSoloUpdate, m_netClient, &LRNetClient::sendSoloUpdate);
+    QObject::connect(((ChefForm *)m_roleForm), &ChefForm::sendJoinMutedUpdate, m_netClient, &LRNetClient::sendJoinMutedUpdate);
     QObject::connect(((ChefForm *)m_roleForm), &ChefForm::authCodeEnabledUpdated, m_netClient, &LRNetClient::updateAuthCodeEnabled);
     QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
     m_netClient->subChef();

@@ -43,6 +43,7 @@ public slots:
     void updateAuthCodeLabel(const QString & authCode);
     void soloRequested(int id, bool checked);
     void handleSoloResponse(int id, bool isSolo);
+    void handleJoinMutedResponse(bool joinMuted);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void updateChannelStripControls(QVector<float> &controls, int id);
@@ -54,6 +55,7 @@ public slots:
 signals:
     void sendControlUpdate(int id, QVector<float> & controls);
     void sendSoloUpdate(int id, bool isSolo);
+    void sendJoinMutedUpdate(bool joinMuted);
     void authCodeUpdated(const QString & nname);
     void authCodeEnabledUpdated(bool enabled);
     void startJackTrip();
