@@ -1411,9 +1411,9 @@ void LRNetServer::handleStartJackTripSec(session_id_t session){
     //QString t = "Chef Alt";
     //mRoster->setNameBySessionID(t, session);
     //qDebug() <<"Set name by session ID";
-    mRoster->startJackTrip(session, false);
+    mRoster->startJackTrip(session, false, true);
 }
 
 void LRNetServer::handleStopJackTripSec(session_id_t session){
-
+    mRoster->stopJackTrip(session, true);
 }

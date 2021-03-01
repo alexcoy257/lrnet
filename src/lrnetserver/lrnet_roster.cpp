@@ -100,13 +100,14 @@ QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
         return m_server->getActiveSessions();
     }
 
-void Roster::startJackTrip(session_id_t s_id, bool encrypt){
+void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     Member * m = NULL;
-    if (membersBySessionID.contains(s_id))
+     if (hint_member && membersBySessionID.contains(s_id)){
         m = membersBySessionID[s_id];
-    else if (chefsBySessionID.contains(s_id)){
-        m = chefsBySessionID[s_id];
     }
+    else if (chefsBySessionID.contains(s_id))
+        m = chefsBySessionID[s_id];
+    
 
     if (!m)
         return;
@@ -315,13 +316,13 @@ void Roster::setControl(Member::serial_t id, int out, float val){
    if (m) m->setControl(out, val);
 }
 
-void Roster::stopJackTrip(session_id_t s_id){
+void Roster::stopJackTrip(session_id_t s_id, bool hint_member){
     Member * m = NULL;
-    if (membersBySessionID.contains(s_id))
+    if (hint_member && membersBySessionID.contains(s_id)){
         m = membersBySessionID[s_id];
-    else if (chefsBySessionID.contains(s_id)){
-        m = chefsBySessionID[s_id];
     }
+    else if (chefsBySessionID.contains(s_id))
+        m = chefsBySessionID[s_id];
     if (!m)
         return;
     qDebug() <<"Stop jacktrip member" <<m->getName();

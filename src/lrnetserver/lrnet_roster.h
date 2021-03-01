@@ -100,8 +100,8 @@ public:
     void stopAllThreads();
 
     void setRedundancyBySessionID(int newRed, session_id_t s_id);
-    void startJackTrip(session_id_t s_id, bool encrypt=false);
-    void stopJackTrip(session_id_t s_id);
+    void startJackTrip(session_id_t s_id, bool encrypt=false, bool hint_member = false);
+    void stopJackTrip(session_id_t s_id, bool hint_member = false);
     void setControl(Member::serial_t id, int out, float val);
     void returnPort(int port){mPortPool.returnPort(port);}
     int getPort(){return mPortPool.getPort();}
