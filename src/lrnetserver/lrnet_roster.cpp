@@ -102,10 +102,10 @@ QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
 
 void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     Member * m = NULL;
-     if (hint_member && membersBySessionID.contains(s_id)){
+     if (membersBySessionID.contains(s_id)){
         m = membersBySessionID[s_id];
     }
-    else if (chefsBySessionID.contains(s_id))
+    else if (!hint_member && chefsBySessionID.contains(s_id))
         m = chefsBySessionID[s_id];
     
 
