@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     m_connectionLabel->hide();
-    m_connectionLabel->setStyleSheet("QLabel {color:red;}");
+    //m_connectionLabel->setStyleSheet("QLabel {color:yellow;}");
 
     m_jacktrip->setPortCBAreas(pri_fromPorts, pri_toPorts, pri_broadcastPorts, 2);
 
@@ -128,7 +128,7 @@ void MainWindow::updateConnectionLabel(){
     QString label = "";
     for(const QNetworkInterface& iface : QNetworkInterface::allInterfaces()) {
         if (iface.type() == QNetworkInterface::Wifi && iface.flags().testFlag(QNetworkInterface::IsUp)) {
-            label = "WARNING: You are likely using WiFi.  Please only use Ethernet.";
+            label = "Active wifi interface detected. Consider using ethernet only for enhanced reliability.";
         }
     }
     if (label.isEmpty())
