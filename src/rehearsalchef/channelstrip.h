@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QTimer>
 #include "ui_channelStrip.h"
 #include "compressor.h"
 
@@ -61,6 +62,9 @@ private:
     void focusOutEvent(QFocusEvent * event);
     QString name;
     QString section;
+    int volume;
+    QTimer * gainTimer;
+    bool gainChanged = false;
 
 signals:
     void setActive();

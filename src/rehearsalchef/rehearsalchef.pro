@@ -16,7 +16,7 @@ CONFIG += c++11 link_prl
 
 DESTDIR=./bin
 
-LIBS += -llrnetclient -llrnetjackserver -ljacktrip -ljack
+LIBS += -llrnetclient -llrnetjackserver -ljacktrip
 
 macx{
 QMAKE_INFO_PLIST = $$PWD/Info.plist
@@ -27,6 +27,8 @@ LIBS += -framework CoreAudio -framework CoreFoundation
 win32{
 #CONFIG += static
 #DEFINES += #STATIC_LRLIBJACKSERVER #STATIC_LIBJACKTRIP
+INCLUDEPATH += C:\msys64\usr\local\include
+LIBS += -LC:\msys64\usr\local\lib
 INCLUDEPATH += C:\Users\alexc\Documents\lrnet_deps\include
 CONFIG(debug, debug|release){
 LIBS += -LC:\Users\alexc\Documents\lrnet_deps\debug\lib
@@ -51,7 +53,7 @@ LIBS += -lportaudio -lwinmm -lm -luuid -lsetupapi -lole32
 
 
 !win32{
-LIBS += -lcrypto
+LIBS += -lcrypto -ljack
 }
 
 # You can make your code fail to compile if it uses deprecated APIs.

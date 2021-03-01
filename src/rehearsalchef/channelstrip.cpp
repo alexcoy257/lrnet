@@ -8,6 +8,7 @@ ChannelStrip::ChannelStrip(LRMClient * cStruct, QWidget *parent, QString cName)
   , ui(new Ui::ChannelStrip)
   , cs_compressorZone(NULL)
   , name(cName)
+  , gainTimer(new QTimer(this))
 {
   ui->setupUi(this);
   ui->cs_preGain->setMaximumSize(45,45);
@@ -18,11 +19,13 @@ ChannelStrip::ChannelStrip(LRMClient * cStruct, QWidget *parent, QString cName)
   setFocusPolicy(Qt::ClickFocus);
   //cs_compressor.hide();
   QObject::connect(ui->cs_compButton, &QAbstractButton::released, this, &ChannelStrip::passCompressor, Qt::QueuedConnection);
-  QObject::connect(ui->cs_postGain, &QDial::sliderReleased, this,
-                   [=](){emit valueChanged(mCStruct, (int)INDIV_GAIN, float(ui->cs_postGain->value()));});
+  QObject::connect(ui->cs_postGain, &QDial::valueChanged, this, [=](int value){gainChanged = true; volume = value;});
 
   QObject::connect(ui->cs_muteButton, &QAbstractButton::toggled, this, &ChannelStrip::sendMute);
   QObject::connect(ui->cs_soloButton, &QAbstractButton::toggled, this, [=](bool checked){emit requestSolo(mCStruct->id, checked);});
+
+  gainTimer->callOnTimeout(this, [=](){if (gainChanged) emit valueChanged(mCStruct, (int)INDIV_GAIN, float(volume)); gainChanged = false;});
+  gainTimer->start(100);
 }
 
 ChannelStrip::~ChannelStrip()

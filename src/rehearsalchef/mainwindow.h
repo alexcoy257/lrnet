@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QPushButton>
 #include <QTimer>
+#include <QNetworkInterface>
 
 #include "channelstrip.h"
 #include "compressor.h"
@@ -61,13 +62,13 @@ private:
     Launcher * m_launcherForm;
     AuthTypeE m_role;
     QWidget * m_roleForm;
-
-    ChefForm * m_chefForm;
+    QLabel * m_connectionLabel;
 
     AuthTypeE m_authType;
     QSettings m_settings;
     LRNetClient * m_netClient;
     QTimer m_keepAliveTimer;
+    QTimer * m_netStatusTimer;
     QByteArray m_privateKey;
     QByteArray m_publicKey;
     RSA * keyPair;
@@ -118,6 +119,7 @@ private slots:
     void launchChef();
     void launchMember();
     void changeRole();
+    void updateConnectionLabel();
     void setUdpPort(int port);
     void startJackTrip();
     void stopJackTrip();

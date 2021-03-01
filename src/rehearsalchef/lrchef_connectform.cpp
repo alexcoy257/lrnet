@@ -44,7 +44,7 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     m_portBox->setFixedWidth(80);
 
     m_hostBox->setPlaceholderText("Host");
-    m_hostBox->setFixedWidth(225);
+    m_hostBox->setFixedWidth(200);
 
     m_netidBox->setPlaceholderText("NetID");
     m_netidBox->setFixedWidth(80);
@@ -66,10 +66,6 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     );
 
     QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){m_submitButton->setEnabled(true);m_errLabel->hide();});
-//    QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){if (validInputs()){
-//                                                                                 m_usingKey = m_authByKeyButton->isChecked();
-//                                                                                 emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());
-//                                                                            }});
 
     QObject::connect(m_submitButton, &QAbstractButton::released, this, [=](){m_usingKey = m_authByKeyButton->isChecked();
                                                                              emit tryConnect(m_hostBox->text(), m_portBox->text().toInt());});
@@ -92,7 +88,6 @@ ConnectForm::ConnectForm(QWidget *parent) : QWidget(parent)
     QObject::connect(m_portBox, &QLineEdit::editingFinished, this, [=](){emit updatePort( m_portBox->text().toInt());});
     QObject::connect(m_portBox, &QLineEdit::returnPressed, this, [=](){emit m_portBox->editingFinished();
                                                                        m_submitButton->click();});
-
 }
 
 ConnectForm::~ConnectForm(){

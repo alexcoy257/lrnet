@@ -5,10 +5,9 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_connectFormSize(528,181)
-    , m_chefForm(NULL)
-    , m_stackedWidget(new QStackedWidget(this))
-    , m_connectForm(new ConnectForm(this))
+    , m_connectFormSize(528,225)
+    , m_stackedWidget(new QStackedWidget())
+    , m_connectForm(new ConnectForm())
     , m_launcherForm(NULL)
     , m_role(NONE)
     , m_roleForm(NULL)
@@ -16,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_settings(REHEARSALCHEF_DOMAIN, REHEARSALCHEF_TITLE)
     , m_netClient(new LRNetClient())
     , m_keepAliveTimer(this)
+    , m_netStatusTimer(new QTimer(this))
+    , m_connectionLabel(new QLabel(""))
     , m_privateKey({})
     , m_publicKey({})
     , keyPair(NULL)
@@ -23,13 +24,16 @@ MainWindow::MainWindow(QWidget *parent)
     , m_sJacktrip(NULL)
 {
     ui->setupUi(this);
+    m_connectionLabel->hide();
+    m_connectionLabel->setStyleSheet("QLabel {color:red;}");
 
     m_jacktrip->setPortCBAreas(pri_fromPorts, pri_toPorts, pri_broadcastPorts, 2);
 
-
     m_stackedWidget->addWidget(m_connectForm);
 
-    setCentralWidget(m_stackedWidget);
+    ui->mainLayout->addWidget(m_stackedWidget);
+    ui->mainLayout->addWidget(m_connectionLabel);
+
 
     // Actions menu
     QMenu *actionsMenu = menuBar()->addMenu(tr("&Actions"));
@@ -46,7 +50,8 @@ MainWindow::MainWindow(QWidget *parent)
     actionsMenu->addAction(m_changeRoleAction);
     QObject::connect(m_changeRoleAction, &QAction::triggered, this, &MainWindow::changeRole);
 
-
+    m_netStatusTimer->callOnTimeout(this, &MainWindow::updateConnectionLabel);
+    m_netStatusTimer->start(100);
 
     QObject::connect(m_connectForm, &ConnectForm::tryConnect, this, &MainWindow::tryConnect);
 
@@ -75,8 +80,6 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(m_netClient, &LRNetClient::authCodeDisabled, this, [=](){statusBar()->showMessage("Guest login disabled.  Ask a leader to enable it");});
     QObject::connect(m_connectForm, &ConnectForm::netidUpdated, this, [&](const QString & nnetid){m_netid = nnetid; m_netClient->setNetid(nnetid);});
     QObject::connect(m_netClient, &LRNetClient::gotEncryptionKey, this, &MainWindow::setEncryptionKey);
-
-
 
 
     /*
@@ -119,6 +122,21 @@ MainWindow::~MainWindow()
     //delete m_connectForm;
     RSA_free(keyPair);
 
+}
+
+void MainWindow::updateConnectionLabel(){
+    QString label = "";
+    for(const QNetworkInterface& iface : QNetworkInterface::allInterfaces()) {
+        if (iface.type() == QNetworkInterface::Wifi && iface.flags().testFlag(QNetworkInterface::IsUp)) {
+            label = "WARNING: You are likely using WiFi.  Please only use Ethernet.";
+        }
+    }
+    if (label.isEmpty())
+        m_connectionLabel->hide();
+    else {
+        m_connectionLabel->setText(label);
+        m_connectionLabel->show();
+    }
 }
 
 void MainWindow::keyInit(){
@@ -370,7 +388,7 @@ void MainWindow::launchChef(){
     ((ChefForm *)m_roleForm)->loadSetup(m_settings);
     m_changeRoleAction->setEnabled(true);
 
-    resize(800,700);
+    resize(800,725);
 }
 
 
@@ -407,7 +425,7 @@ void MainWindow::launchMember(){
     ((MemberForm *)m_roleForm)->loadSetup(m_settings);
     m_changeRoleAction->setEnabled(true);
     m_stackedWidget->setCurrentWidget(m_roleForm);
-    resize(m_roleForm->sizeHint());
+    resize(600,575);
 }
 
 
@@ -431,7 +449,7 @@ void MainWindow::startJackTrip(){
         QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
         QObject::connect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
         qDebug() << "Want to start JackTrip";
-        m_netClient->startJackTrip();
+        m_netClient->startJackTrip(MEMBER);
         ((MemberForm *)m_roleForm)->disableJackForm();
         QObject::connect(m_netClient, &LRNetClient::serverJTReady, this, &MainWindow::startJackTripThread);
         break;
@@ -467,19 +485,20 @@ void MainWindow::stopJackTrip(){
         QObject::disconnect((MemberForm *)m_roleForm, &MemberForm::stopJackTrip, this, &MainWindow::stopJackTrip);
         QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
         qDebug() << "Want to stop JackTrip";
-        m_netClient->stopJackTrip();
+        m_netClient->stopJackTrip(MEMBER);
         ((MemberForm *)m_roleForm)->enableJackForm();
         break;
     case CHEF:
         QObject::disconnect((ChefForm *)m_roleForm, &ChefForm::stopJackTrip, this, &MainWindow::stopJackTrip);
         QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
         qDebug() << "Want to stop JackTrip";
-        m_netClient->stopJackTrip();
+        m_netClient->stopJackTrip(CHEF);
         break;
     default:
         break;
     }
     if(m_jackClient){
+        jack_deactivate(m_jackClient);
         jack_client_close(m_jackClient);
         m_jackClient=NULL;
     }
