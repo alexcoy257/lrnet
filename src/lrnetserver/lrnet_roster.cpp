@@ -23,6 +23,8 @@ Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
 
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
+    m_iostatOutStream = new std::ofstream();
+    m_iostatOutStream->open("lastIOLogOut.log");
 }
 /**
  * Try to make the Roster's JACK client. Return 0 if successful, 1
@@ -169,6 +171,8 @@ void Roster::removeMemberBySerialID(Member::serial_t id){
 
 void Roster::removeMemberBySessionID(session_id_t s_id){
     qDebug() <<"Remove a member by session id";
+    if(!membersBySessionID.contains(s_id))
+        return;
     Member * m = membersBySessionID.take(s_id);
     if(m){
         {
@@ -198,6 +202,8 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
 
 void Roster::removeChefBySessionID(session_id_t s_id){
     qDebug() <<"Remove a chef by session id";
+    if(!chefsBySessionID.contains(s_id))
+        return;
     Member * m = chefsBySessionID.take(s_id);
     if (m){
     chefs.take(m->getSerialID());
@@ -213,7 +219,7 @@ void Roster::removeChefBySessionID(session_id_t s_id){
 
 void Roster::removeMember(Member * m){
     Member::serial_t id = m->getSerialID();
-    delete m;
+    m->deleteLater();
     qDebug() <<"Deleted member successfully";
     emit memberRemoved(id);
 }
@@ -250,12 +256,16 @@ void Roster::setSectionBySessionID(QString & section, session_id_t s_id){
     emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
 }
 void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
-    members[s_id]->setName(name);
-    emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
+    if (members.contains(s_id)){
+        members[s_id]->setName(name);
+        emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
+    }
 }
 void Roster::setSectionBySerialID(QString & section, Member::serial_t s_id){
-    members[s_id]->setSection(section);
-    emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
+    if (members.contains(s_id)){
+        members[s_id]->setSection(section);
+        emit sigMemberUpdate(members[s_id], RosterNS::MEMBER_UPDATE);
+    }
 }
 
 void Roster::setJoinMuted(bool joinMuted){
@@ -311,18 +321,20 @@ void Roster::stopAllThreads()
 }
 
 void Roster::setControl(Member::serial_t id, int out, float val){
-   Member * m =  members[id];
-   qDebug() << __FUNCTION__ << "to " << val << " for field " << out;
-   if (m) m->setControl(out, val);
+    if (members.contains(id)){
+        Member * m =  members[id];
+        qDebug() << __FUNCTION__ << "to " << val << " for field " << out;
+        if (m) m->setControl(out, val);
+    }
 }
 
 void Roster::stopJackTrip(session_id_t s_id, bool hint_member){
     Member * m = NULL;
-    if (hint_member && membersBySessionID.contains(s_id)){
-        m = membersBySessionID[s_id];
+    if (hint_member ){
+        m = membersBySessionID.value(s_id);
     }
-    else if (chefsBySessionID.contains(s_id))
-        m = chefsBySessionID[s_id];
+    if (!m)
+        m = chefsBySessionID.value(s_id);
     if (!m)
         return;
     qDebug() <<"Stop jacktrip member" <<m->getName();

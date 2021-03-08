@@ -79,6 +79,8 @@ Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * 
         JackTrip::ZEROS,
         netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
+    assocThread->setIOStatTimeout(60);
+    assocThread->setIOStatStream(QSharedPointer<std::ofstream>(mRoster->m_iostatOutStream));
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
     {
         QMutexLocker lock(&roster->mMutex);
@@ -169,6 +171,7 @@ void Member::resetThread(){
     assocThread = new JackTripWorker(serial, mRoster, 10, JackTrip::ZEROS,
         netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
+    assocThread->setIOStatTimeout(30);
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
     
     //{

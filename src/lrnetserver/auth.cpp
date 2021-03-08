@@ -71,7 +71,7 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
         qDebug() <<"Checking uniqueid " <<id;
         QByteArray * key = readdb.getKeyForID(id);
 
-        qDebug() <<"Got key from db:" <<*key <<"of length " <<key->length();
+        qDebug() <<"Got key from db.";// <<*key <<"of length " <<key->length();
 
         int nw = BIO_write(t_pub, key->data(), key->length());
         if (nw < 1){

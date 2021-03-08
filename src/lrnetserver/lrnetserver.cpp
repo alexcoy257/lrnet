@@ -351,8 +351,9 @@ void LRNetServer::receivedClientInfo()
 }
 
 void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg){
-    cout <<"Address Pattern: " <<msg->AddressPattern() << endl;
+    //cout <<"Address Pattern: " <<msg->AddressPattern() << endl;
     if (std::strcmp(msg->AddressPattern(), "/auth/newbykey") == 0){
+        cout <<"/auth/newbykey" << endl;
         osc::ReceivedMessageArgumentStream args = msg->ArgumentStream();
 
         osc::Blob b;

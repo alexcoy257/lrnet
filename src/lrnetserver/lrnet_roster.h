@@ -43,6 +43,7 @@ class Roster : public QObject
     LRNetServer * m_server;
     jack_status_t * m_jackStatus;
     jack_client_t * m_jackClient;
+    std::ofstream * m_iostatOutStream;
 
 
 
