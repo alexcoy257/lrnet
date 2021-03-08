@@ -3,6 +3,20 @@
 #include <QDebug>
 #include <jack/jack.h>
 #include <openssl/rand.h>
+#include <QDateTime>
+#include <QDir>
+
+QString findLogFN(){
+  if (!QDir(QDir::homePath().append("/.lrlogs")).exists()){
+    QDir(QDir::homePath()).mkdir(".lrlogs");
+    qDebug() << "Made Log Directory";
+  }
+  QString toRet = QDir::homePath().append("/.lrlogs/")
+  .append(QDateTime::currentDateTime().toString("yyyyMMdd-hhmm"));
+  //QSharedPointer<QString> toRet = QSharedPointer<QString>(new QString("No"));
+  return toRet;
+}
+
 
 //Q_DECLARE_OPAQUE_POINTER(audioPortHandle_t);
 
@@ -24,7 +38,7 @@ Roster::Roster(LRNetServer * server, QObject *parent) : QObject(parent)
     //mJTWorkers = new JackTripWorker(this);
     mThreadPool.setExpiryTimeout(3000); // msec (-1) = forever
     m_iostatOutStream = new std::ofstream();
-    m_iostatOutStream->open("lastIOLogOut.log");
+    m_iostatOutStream->open(findLogFN().toStdString());
 }
 /**
  * Try to make the Roster's JACK client. Return 0 if successful, 1
