@@ -74,6 +74,7 @@ converters.
 
 ## Licensing
 All of the LRNet audio code is available under the GPLv2, as we
-include a recent copy of libjackserver. Parallel licenses for 
+include a recent copy of libjackserver, and some packages that
+JACK uses are released only under the GPL. Parallel licenses for 
 non-JACK LRNet configurations will come as we find setups that
 work.
