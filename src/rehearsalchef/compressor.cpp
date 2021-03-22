@@ -36,7 +36,6 @@ void Compressor::setupSignals(){
     threshTimer->callOnTimeout(this, [=](){if (threshChanged) {
         emit valueChanged(mCStruct, THRESHOLD, (float)threshold);
         threshChanged = false;
-        ui->c_threshVal->setText(QString("Threshold: %1 dB").arg(threshold));
     }});
     threshTimer->start(100);
 
@@ -44,7 +43,6 @@ void Compressor::setupSignals(){
     ratioTimer->callOnTimeout(this, [=](){if (ratioChanged) {
         emit valueChanged(mCStruct, RATIO, (float)ratio);
         ratioChanged = false;
-        ui->c_ratioVal->setText(QString("Ratio: %1").arg(ratio));
     }});
     ratioTimer->start(100);
 
@@ -52,7 +50,6 @@ void Compressor::setupSignals(){
     attackTimer->callOnTimeout(this, [=](){if (attackChanged) {
         emit valueChanged(mCStruct, ATTACK, (float)attack);
         attackChanged = false;
-        ui->c_attackVal->setText(QString("Attack: %1 ms").arg(attack));
     }});
     attackTimer->start(100);
 
@@ -61,7 +58,6 @@ void Compressor::setupSignals(){
     releaseTimer->callOnTimeout(this, [=](){if (releaseChanged) {
         emit valueChanged(mCStruct, RELEASE, (float)release);
         releaseChanged = false;
-        ui->c_releaseVal->setText(QString("Release: %1 ms").arg(release));
     }});
     releaseTimer->start(100);
 
@@ -70,7 +66,6 @@ void Compressor::setupSignals(){
     makeupTimer->callOnTimeout(this, [=](){if (makeupChanged) {
         emit valueChanged(mCStruct, MAKEUP, (float)makeup);
         makeupChanged = false;
-        ui->c_makeupVal->setText(QString("Make-up Gain: %1 dB").arg(makeup));
     }});
     makeupTimer->start(100);
 
@@ -82,9 +77,27 @@ void Compressor::setThresh(int value){
     threshold = value;
 }
 
+void Compressor::setThreshWithoutSignal(int value){
+    if (!threshChanged){
+        QObject::disconnect(ui->c_threshKnob, &QAbstractSlider::valueChanged, this, &Compressor::setThresh);
+        ui->c_threshKnob->setValue(value);
+        ui->c_threshVal->setText(QString("Threshold: %1 dB").arg(value));
+        QObject::connect(ui->c_threshKnob, &QAbstractSlider::valueChanged, this, &Compressor::setThresh);
+    }
+}
+
 void Compressor::setRatio(int value){
     ratioChanged = true;
     ratio = value;
+}
+
+void Compressor::setRatioWithoutSignal(int value){
+    if (!ratioChanged){
+        QObject::disconnect(ui->c_ratioKnob, &QAbstractSlider::valueChanged, this, &Compressor::setRatio);
+        ui->c_ratioKnob->setValue(value);
+        ui->c_ratioVal->setText(QString("Ratio: %1").arg(value));
+        QObject::connect(ui->c_ratioKnob, &QAbstractSlider::valueChanged, this, &Compressor::setRatio);
+    }
 }
 
 void Compressor::setAttack(int value){
@@ -92,14 +105,49 @@ void Compressor::setAttack(int value){
     attack = value;
 }
 
+void Compressor::setAttackWithoutSignal(int value){
+    if (!attackChanged){
+        QObject::disconnect(ui->c_attackKnob, &QAbstractSlider::valueChanged, this, &Compressor::setAttack);
+        ui->c_attackKnob->setValue(value);
+        ui->c_attackVal->setText(QString("Attack: %1 ms").arg(value));
+        QObject::connect(ui->c_attackKnob, &QAbstractSlider::valueChanged, this, &Compressor::setAttack);
+    }
+}
+
 void Compressor::setRelease(int value){
     releaseChanged = true;
     release = value;
 }
 
+void Compressor::setReleaseWithoutSignal(int value){
+    if (!releaseChanged){
+        QObject::disconnect(ui->c_releaseKnob, &QAbstractSlider::valueChanged, this, &Compressor::setRelease);
+        ui->c_releaseKnob->setValue(value);
+        ui->c_releaseVal->setText(QString("Release: %1 ms").arg(value));
+        QObject::connect(ui->c_releaseKnob, &QAbstractSlider::valueChanged, this, &Compressor::setRelease);
+    }
+}
+
 void Compressor::setMakeup(int value){
     makeupChanged = true;
     makeup= value;
+}
+
+void Compressor::setMakeupWithoutSignal(int value){
+    if (!makeupChanged){
+        QObject::disconnect(ui->c_makeupKnob, &QAbstractSlider::valueChanged, this, &Compressor::setMakeup);
+        ui->c_makeupKnob->setValue(value);
+        ui->c_makeupVal->setText(QString("Make-up Gain: %1 dB").arg(value));
+        QObject::connect(ui->c_makeupKnob, &QAbstractSlider::valueChanged, this, &Compressor::setMakeup);
+    }
+}
+
+void Compressor::newControls(QVector<float> & controls){
+    setRatioWithoutSignal(controls[1]);
+    setThreshWithoutSignal(controls[2]);
+    setAttackWithoutSignal(controls[3]);
+    setReleaseWithoutSignal(controls[4]);
+    setMakeupWithoutSignal(controls[5]);
 }
 
 Compressor::~Compressor()

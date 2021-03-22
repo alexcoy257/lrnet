@@ -32,11 +32,19 @@ public slots:
     void setAttack(int value);
     void setRelease(int value);
     void setMakeup(int value);
+    void newControls(QVector<float> & controls);
 
 signals:
     void valueChanged(LRMClient * myClient, CValuesE type, float value);
 
 private:
+    void setThreshWithoutSignal(int value);
+    void setRatioWithoutSignal(int value);
+    void setAttackWithoutSignal(int value);
+    void setReleaseWithoutSignal(int value);
+    void setMakeupWithoutSignal(int value);
+
+
     Ui::Compressor *ui;
     void setupSignals();
 

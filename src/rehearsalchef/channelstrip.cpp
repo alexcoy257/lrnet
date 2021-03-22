@@ -97,10 +97,11 @@ void ChannelStrip::setPostGain(int value){
 }
 
 void ChannelStrip::setPostGainWithoutSignal(int value){
-    QObject::disconnect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
-    ui->cs_postGain->setValue(value);
-    QObject::connect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
-
+    if (!gainChanged){
+        QObject::disconnect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
+        ui->cs_postGain->setValue(value);
+        QObject::connect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
+    }
 }
 
 void ChannelStrip::setSolo(bool checked){

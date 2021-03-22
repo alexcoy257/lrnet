@@ -52,6 +52,7 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         cStruct->id = id;
         qDebug() <<"Controls: " <<controls;
         cStruct->cs->newControls(controls);
+        cStruct->comp->newControls(controls);
         //qDebug() <<"Widgets present: " << ui->m_channelStripArea->count();
         //ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
         m_csAreaLayout->addWidget(cStruct->cs, floor(m_csAreaLayout->count()/csPerRow), (m_csAreaLayout->count() % csPerRow));
@@ -83,6 +84,7 @@ void ChefForm::updateChannelStripControls(QVector<float> &controls, int id){
     LRMClient * client = m_clients[id];
     if (client){
         client->cs->newControls(controls);
+        client->comp->newControls(controls);
     }
 }
 
