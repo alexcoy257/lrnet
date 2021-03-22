@@ -245,9 +245,10 @@ void MainWindow::disconnected(){
     resize(m_connectFormSize);
     delete m_launcherForm;
     m_launcherForm = NULL;
-    if (m_role == MEMBER){
-        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
-    }
+
+    if (m_role == MEMBER) ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    else if (m_role == CHEF) ((ChefForm *)m_roleForm)->saveSetup(m_settings);
+
     if(m_roleForm)
     delete m_roleForm;
     m_role = NONE;
@@ -282,9 +283,8 @@ void MainWindow::saveSetup(){
     m_settings.setValue("PrivateKey",m_privateKey);
     m_settings.endGroup();
 
-    if (m_role == MEMBER){
-        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
-    }
+    if (m_role == MEMBER) ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    else if (m_role == CHEF) ((ChefForm *)m_roleForm)->saveSetup(m_settings);
 
     m_settings.sync();
 }
@@ -301,9 +301,10 @@ void MainWindow::changeRole(){
     m_stackedWidget->setCurrentWidget(m_launcherForm);
     setMinimumSize(m_connectFormSize);
     resize(m_connectFormSize);
-    if (m_role == MEMBER){
-        ((MemberForm *)m_roleForm)->saveSetup(m_settings);
-    }
+
+    if (m_role == MEMBER) ((MemberForm *)m_roleForm)->saveSetup(m_settings);
+    else if (m_role == CHEF) ((ChefForm *)m_roleForm)->saveSetup(m_settings);
+
      QObject::disconnect(m_netClient, &LRNetClient::gotUdpPort, this, &MainWindow::setUdpPort);
     delete m_roleForm;
     m_role = NONE;

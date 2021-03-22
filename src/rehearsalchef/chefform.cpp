@@ -1,10 +1,11 @@
 #include "chefform.h"
 #include "ui_chefform.h"
+#include <cmath>
 
 ChefForm::ChefForm(QWidget *parent) :
     QWidget(parent),
     m_tbSetupForm(new TalkbackSettingsForm(NULL)),
-    m_csAreaLayout(new QHBoxLayout(NULL)),
+    m_csAreaLayout(new QGridLayout(NULL)),
     ui(new Ui::ChefForm)
 
 {
@@ -12,7 +13,7 @@ ChefForm::ChefForm(QWidget *parent) :
     m_chatForm = ui->m_chatForm;
     //ui->m_channelStripArea->addStretch();
     ui->m_channelStripScrollParent->setLayout(m_csAreaLayout);
-    m_csAreaLayout->addStretch();
+//    m_csAreaLayout->addStretch();
     ui->secondaryConnectButton->setEnabled(false);
     //ui->chatArea->addWidget(m_chatForm);
 
@@ -26,6 +27,7 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(ui->muteButton, &QAbstractButton::released, this, &ChefForm::toggleMute);
     QObject::connect(ui->muteAllButton, &QAbstractButton::released, this, [=](){muteAll(true);});
     QObject::connect(ui->unmuteAllButton, &QAbstractButton::released, this, [=](){muteAll(false);});
+    QObject::connect(ui->rowSpinBox, SIGNAL(valueChanged(int)), this, SLOT(changeRowLength(int)));
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStarted, this, [=](){ui->secondaryConnectButton->setEnabled(true);});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStopped, this, [=](){ui->secondaryConnectButton->setEnabled(false);});
     QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
@@ -52,7 +54,7 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         cStruct->cs->newControls(controls);
         //qDebug() <<"Widgets present: " << ui->m_channelStripArea->count();
         //ui->m_channelStripArea->insertWidget(ui->m_channelStripArea->count()-1,cStruct->cs);
-        m_csAreaLayout->insertWidget(m_csAreaLayout->count()-1,cStruct->cs);
+        m_csAreaLayout->addWidget(cStruct->cs, floor(m_csAreaLayout->count()/csPerRow), (m_csAreaLayout->count() % csPerRow));
         //ui->m_channelStripArea->addWidget(cStruct->cs, 0, Qt::AlignLeft);
         //cStruct->cs->show();
         QObject::connect(cStruct->cs, &ChannelStrip::setActive, this, [=](){highlightInsert(cStruct->comp);}, Qt::QueuedConnection);
@@ -90,6 +92,21 @@ void ChefForm::deleteChannelStrip(int id){
         delete m_clients[id]->cs;
         delete m_clients[id]->comp;
         m_clients.remove(id);
+        organizeChannelStripArea();
+    }
+}
+
+void ChefForm::changeRowLength(int value){
+    csPerRow = value;
+    organizeChannelStripArea();
+}
+
+void ChefForm::organizeChannelStripArea(){
+    delete m_csAreaLayout;
+    m_csAreaLayout = new QGridLayout(NULL);
+    ui->m_channelStripScrollParent->setLayout(m_csAreaLayout);
+    for (LRMClient * client : m_clients.values()){
+        m_csAreaLayout->addWidget(client->cs, floor(m_csAreaLayout->count()/csPerRow), (m_csAreaLayout->count() % csPerRow));
     }
 }
 
@@ -180,11 +197,21 @@ void ChefForm::enableJackForm(){
 }
 
 void ChefForm::loadSetup(QSettings & settings){
+    settings.beginGroup("/Chef");
+    ui->rowSpinBox->setValue(settings.value("RowLength",6).toInt());
+    settings.endGroup();
+
     m_tbSetupForm->loadSetup(settings);
 }
 
 void ChefForm::saveSetup(QSettings & settings){
+    settings.beginGroup("/Chef");
+    settings.setValue("RowLength", ui->rowSpinBox->value());
+    settings.endGroup();
+
     m_tbSetupForm->saveSetup(settings);
+
+    settings.sync();
 }
 
 void ChefForm::toggleMute(){

@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QHBoxLayout>
+#include <QSpinBox>
 
 #include "channelstrip.h"
 #include "compressor.h"
@@ -30,7 +31,7 @@ class ChefForm : public QWidget
     QHash<int, LRMClient *> m_clients;
     QHash<int, LRMClient *> m_soloers;
     TalkbackSettingsForm * m_tbSetupForm = NULL;
-    QHBoxLayout * m_csAreaLayout;
+    QGridLayout * m_csAreaLayout;
 public:
     explicit ChefForm(QWidget *parent = nullptr);
     virtual ~ChefForm();
@@ -49,6 +50,8 @@ public slots:
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void updateChannelStripControls(QVector<float> &controls, int id);
     void deleteChannelStrip(int id);
+    void changeRowLength(int value);
+    void organizeChannelStripArea();
 
     void loadSetup(QSettings &settings);
     void saveSetup(QSettings &settings);
@@ -71,6 +74,7 @@ private:
     void updateAuthCode();
     void updateAuthCodeEnabled();
     bool muted = true;
+    int csPerRow = 6;
     void fstartJacktripSec();
     void fstopJacktripSec();
 

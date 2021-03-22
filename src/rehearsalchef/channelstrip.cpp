@@ -24,7 +24,7 @@ ChannelStrip::ChannelStrip(LRMClient * cStruct, QWidget *parent, QString cName)
   QObject::connect(ui->cs_muteButton, &QAbstractButton::toggled, this, &ChannelStrip::sendMute);
   QObject::connect(ui->cs_soloButton, &QAbstractButton::toggled, this, [=](bool checked){emit requestSolo(mCStruct->id, checked);});
 
-  gainTimer->callOnTimeout(this, [=](){if (gainChanged) emit valueChanged(mCStruct, (int)INDIV_GAIN, float(volume)); gainChanged = false;});
+  gainTimer->callOnTimeout(this, [=](){if (gainChanged) {emit valueChanged(mCStruct, (int)INDIV_GAIN, float(volume)); gainChanged = false;}});
   gainTimer->start(100);
 
   ui->cs_soloButton->hide();
