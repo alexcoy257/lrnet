@@ -42,6 +42,7 @@ public slots:
     void handleAuthCodeEnabledUpdated(bool enabled);
     void updateAuthCodeLabel(const QString & authCode);
     void soloRequested(int id, bool checked);
+    void muteAll();
     void handleSoloResponse(int id, bool isSolo);
     void handleJoinMutedResponse(bool joinMuted);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);

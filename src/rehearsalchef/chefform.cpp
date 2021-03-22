@@ -17,7 +17,6 @@ ChefForm::ChefForm(QWidget *parent) :
     //ui->chatArea->addWidget(m_chatForm);
 
     // Remove this when implemented
-    ui->muteAllButton->hide();
     ui->unmuteAllButton->hide();
     //
 
@@ -30,6 +29,7 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::stopJackTrip, this, [=](){emit stopJackTrip();});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::setjtSelfLoopback, this, &ChefForm::setjtSelfLoopback);
     QObject::connect(ui->muteButton, &QAbstractButton::released, this, &ChefForm::toggleMute);
+    QObject::connect(ui->muteAllButton, &QAbstractButton::clicked, this, &ChefForm::muteAll);
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStarted, this, [=](){ui->secondaryConnectButton->setEnabled(true);});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStopped, this, [=](){ui->secondaryConnectButton->setEnabled(false);});
     QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
@@ -130,6 +130,12 @@ void ChefForm::handleAuthCodeEnabledUpdated(bool enabled){
 
 void ChefForm::updateAuthCodeLabel(const QString &authCode){
     ui->authCodeLabel->setText(authCode);
+}
+
+void ChefForm::muteAll(){
+    for (LRMClient * client : m_clients.values()){
+        client->cs->setMuted(true);
+    }
 }
 
 void ChefForm::soloRequested(int id, bool checked){

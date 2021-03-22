@@ -45,7 +45,10 @@ public:
 
 public slots:
     void sendMute(bool mute);
-    void setMute(bool checked);
+    void setMuted(bool checked);
+    void setMutedWithoutSignal(bool checked);
+    void setPostGain(int value);
+    void setPostGainWithoutSignal(int value);
     void setSolo(bool checked);
     void newControls(QVector<float> & controls);
     void setControl(int type, float value){
