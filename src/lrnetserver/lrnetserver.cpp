@@ -1416,5 +1416,5 @@ void LRNetServer::handleStartJackTripSec(session_id_t session){
 }
 
 void LRNetServer::handleStopJackTripSec(session_id_t session){
-    mRoster->stopJackTrip(session, true);
+    mRoster->removeMemberBySessionID(session);
 }
