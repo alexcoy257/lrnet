@@ -45,6 +45,7 @@ public slots:
     void soloRequested(int id, bool checked);
     void muteAll(bool mute);
     void handleSoloResponse(int id, bool isSolo);
+    void sigJoinMutedUpdate();
     void handleJoinMutedResponse(bool joinMuted);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);

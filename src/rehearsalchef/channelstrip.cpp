@@ -69,7 +69,7 @@ void ChannelStrip::setSection(const QString & nsection){
 }
 
 void ChannelStrip::sendMute(bool checked){
-    emit valueChanged(mCStruct, (int)MUTE, (float)checked);
+    emit valueChanged(mCStruct, (int)MUTE, (float)!checked); // Inverted because Faust considers 0 muted
 
     //Commented out until behavior of solo is known
 //    if (checked && ui->cs_soloButton->isChecked()){
@@ -111,5 +111,5 @@ void ChannelStrip::setSolo(bool checked){
 void ChannelStrip::newControls(QVector<float> & controls){
     currentControls = controls;
     setPostGainWithoutSignal(controls[7]);
-    setMutedWithoutSignal(controls[8]);
+    setMutedWithoutSignal(!controls[8]); // Inverted because Fause considers 0 muted
 }

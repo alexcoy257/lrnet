@@ -20,7 +20,7 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(ui->authCodeEdit, &QLineEdit::editingFinished, this, &ChefForm::updateAuthCode);
     QObject::connect(ui->codeEnabledBox, &QCheckBox::stateChanged, this, &ChefForm::updateAuthCodeEnabled);
     QObject::connect(ui->tbSetupButton, &QAbstractButton::released, m_tbSetupForm, &QWidget::show);
-    QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sendJoinMutedUpdate);
+    QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sigJoinMutedUpdate);
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::startJackTrip, this, [=](){emit startJackTrip();});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::stopJackTrip, this, [=](){emit stopJackTrip();});
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::setjtSelfLoopback, this, &ChefForm::setjtSelfLoopback);
@@ -185,8 +185,14 @@ void ChefForm::handleSoloResponse(int id, bool isSolo){
         m_clients[id]->cs->setSolo(isSolo);
 }
 
+void ChefForm::sigJoinMutedUpdate(){
+    emit sendJoinMutedUpdate(ui->joinMutedBox->isChecked());
+}
+
 void ChefForm::handleJoinMutedResponse(bool joinMuted){
+    QObject::disconnect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sigJoinMutedUpdate);
     ui->joinMutedBox->setChecked(joinMuted);
+    QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sigJoinMutedUpdate);
     qDebug() << "set muted box checked to " << joinMuted;
 }
 
