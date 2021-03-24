@@ -105,7 +105,7 @@ Member * Roster::addMemberOrChef(QString &netid,
         return NULL;
     }
     Member * newMem = new Member(netid, s_id, this);
-    newMem->setControl(Member::MUTE, (float)mJoinMuted);
+    newMem->setControl(Member::MUTE, (float)!mJoinMuted); // Inverted because client muted when MUTE == 0
     group[s_id]=newMem;
     sGroup[newMem->getSerialID()]=newMem;    
     return newMem;
