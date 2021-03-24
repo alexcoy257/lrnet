@@ -1,9 +1,11 @@
+#include "lrnet_member.h"
 #include "lrnet_roster.h"
 #include "JackTripWorker.h"
 #include <jacktrip/JackTrip.h>
 #include <QDebug>
 #include <sys/mman.h>
 #include <memory>
+#include <iostream>
 
 Member::serial_t Member::currentSerial=0;
 
@@ -80,7 +82,9 @@ Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * 
         netid.arg("JT").toStdString().data());
     assocThread->setBufferStrategy(1);
     assocThread->setIOStatTimeout(60);
+    #ifdef __LINUX__
     assocThread->setIOStatStream(QSharedPointer<std::ofstream>(mRoster->m_iostatOutStream));
+    #endif
     assocThread->setPortCBAreas(fromPorts, toPorts, broadcastPorts, 2);
     {
         QMutexLocker lock(&roster->mMutex);

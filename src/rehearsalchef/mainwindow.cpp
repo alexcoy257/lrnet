@@ -436,6 +436,7 @@ void MainWindow::setUdpPort(int port){
         qDebug() << "Set secondary udp port to" <<port;
         m_sJacktrip->setJackTrip(m_hostname, 4464, port, 2, false);
         m_jacktripthreadpool.start(m_sJacktrip, QThread::TimeCriticalPriority);
+        m_expectSecondary=false;
     }
     else{
     m_jacktrip->setJackTrip(m_hostname, 4463, port, 2, false);
