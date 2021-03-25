@@ -71,6 +71,7 @@ void Roster::addMember(QString &netid, session_id_t s_id){
         return;
 
     //newMem->setPort(61002);
+    newMem->setControl(Member::MUTE, (float)!mJoinMuted); // Inverted because client muted when MUTE == 0
     qDebug() <<"New member " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
 
     QObject::connect(newMem, &Member::readyToFan,
@@ -84,8 +85,8 @@ void Roster::addChef(QString &netid, session_id_t s_id){
     Member * newMem = addMemberOrChef(netid, s_id, chefsBySessionID, chefs);
     if (!newMem)
         return;
-
-     qDebug() <<"New chef " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
+    newMem->setControl(Member::MUTE, 1);
+    qDebug() <<"New chef " <<newMem->getNetID() <<"Assigned UDP Port:" << newMem->getPort();
     QObject::connect(newMem, &Member::readyToFan,
         this, &Roster::fanNewChef);
     emit sigNewChef(newMem, RosterNS::CHEF_CAME);
@@ -105,7 +106,6 @@ Member * Roster::addMemberOrChef(QString &netid,
         return NULL;
     }
     Member * newMem = new Member(netid, s_id, this);
-    newMem->setControl(Member::MUTE, (float)!mJoinMuted); // Inverted because client muted when MUTE == 0
     group[s_id]=newMem;
     sGroup[newMem->getSerialID()]=newMem;    
     return newMem;
