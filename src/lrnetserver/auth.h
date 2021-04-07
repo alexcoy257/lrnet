@@ -34,7 +34,6 @@ class Auth : public QObject{
   std::list<auth_roster_t> * getRoles();
   int getIDforKeyAndAuthPacket(const char * key, AuthPacket & pkt);
   void updatePermission(QString netid, AuthTypeE authType);
-  void removeUser(QString netid);
 
 
   signals:

@@ -1059,7 +1059,11 @@ void LRNetServer::removeUsers(osc::ReceivedMessageArgumentStream * args){
             // Not a string.
         }
         for (QString netid : netidsSelected){
-            authorizer.removeUser(netid);
+            QVector<int> * uidsSelected = mLRdb->getIDsForNetid(netid);
+            for (int uid : *uidsSelected){
+                mLRdb->removeControlsForUID(uid);
+            }
+            mLRdb->removeUser(netid);
             for (unsigned long key : activeSessions.keys()){
                 if (netid == QString(activeSessions[key].netid)){
                     qDebug() << "Removing current user: " << netid << "...";

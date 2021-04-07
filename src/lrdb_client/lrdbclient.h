@@ -41,6 +41,7 @@ public:
 
     void addControlsForUID(db_controls_t controls, int uid);
     void updateControlsForUID(db_controls_t controls, int uid);
+    void removeControlsForUID(int uid);
     db_controls_t getControlsForUID(int uid);
     bool tryToMakeControlsSchema();
     db_controls_t default_db_controls = {2,-24,15,30,2,0};

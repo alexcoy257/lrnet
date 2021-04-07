@@ -428,6 +428,18 @@ void LRdbClient::updateControlsForUID(db_controls_t controls, int uid){
     readDb.close();
 }
 
+void LRdbClient::removeControlsForUID(int uid){
+    readDb.open();
+    QSqlQuery query(readDb);
+    query.prepare("DELETE FROM controls WHERE id=?");
+    query.bindValue(0, QVariant(uid));
+
+    if (query.exec())
+        qDebug() << "Succeeded in removing " << uid;
+    else
+        qDebug() << "Failed to remove " << uid;
+    readDb.close();
+}
 
 db_controls_t LRdbClient::getControlsForUID(int uid){
     readDb.open();

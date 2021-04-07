@@ -167,9 +167,6 @@ void Auth::updatePermission(QString netid, AuthTypeE authType){
     readdb->setRoleForNetID(authType, netid);
 }
 
-void Auth::removeUser(QString netid){
-    readdb->removeUser(netid);
-}
 
 void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
     qDebug() <<"Verified key, adding to db if not present";
