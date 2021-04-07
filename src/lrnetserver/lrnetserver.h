@@ -154,6 +154,8 @@ private slots:
     void loadMemberFrame(Member * m);
     void handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleAuthCodeEnabled(osc::ReceivedMessageArgumentStream * args);
+    void saveAllControls();
+    void saveMemberControls(Member * m);
     void pushChatMessage(osc::ReceivedMessageArgumentStream * args, session_id_t tSess);
     void writeStreamToSocket(QSslSocket * socket);
     void handleStoreKey(osc::ReceivedMessageArgumentStream & args, session_id_t session, QSslSocket * socket);
@@ -240,7 +242,6 @@ private:
     QTimer mCtimeoutTimer;
     QThread * cThread;
 
-
     int mBufferQueueLength;
     
     bool m_connectDefaultAudioPorts;
@@ -281,6 +282,9 @@ private:
      *  20 seconds of no activity.
      */
     QHash<QSslSocket *, connectionPair>activeConnections;
+
+    LRdbClient * mLRdb;
+
     Auth authorizer;
     Roster * mRoster;
     

@@ -315,6 +315,7 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     else if (std::strcmp(ap, "/push/authcodeenabled") == 0){
         handleAuthCodeEnabled(args);
     }
+
 }
 
 void LRNetClient::sendPing(){

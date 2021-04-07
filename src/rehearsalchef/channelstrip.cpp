@@ -111,5 +111,5 @@ void ChannelStrip::setSolo(bool checked){
 void ChannelStrip::newControls(QVector<float> & controls){
     currentControls = controls;
     setPostGainWithoutSignal(controls[7]);
-    setMutedWithoutSignal(!controls[8]); // Inverted because Fause considers 0 muted
+    setMutedWithoutSignal(!controls[8]); // Inverted because Faust considers 0 muted
 }

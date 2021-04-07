@@ -138,11 +138,16 @@ int main(int argc, char** argv){
     LRdbClient client(nullptr);
 
     if (action & MAKE_SCHEMA){
-        bool success = client.tryToMakeSchema();
+        bool success = client.tryToMakeUsersSchema();
         if(!success)
-            std::cerr << "Couldn't make schema. Maybe it exists?" <<std::endl;
+            std::cerr << "Couldn't make users schema. Maybe it exists?" <<std::endl;
         else
-            std::cout << "Established schema successfully." <<std::endl;
+            std::cout << "Established users schema successfully." <<std::endl;
+        success = client.tryToMakeControlsSchema();
+        if(!success)
+            std::cerr << "Couldn't make channelstrips schema. Maybe it exists?" <<std::endl;
+        else
+            std::cout << "Established channelstrips schema successfully." <<std::endl;
     }
 
     if (action & ADD){

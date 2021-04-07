@@ -1,6 +1,8 @@
 #include "lrnet_rostertest.h"
 #include <QMetaObject>
 
+db_controls_t default_db_controls = {2,-24,15,30,2,0};
+
 void RosterTest::initTestCase(){
 
 }
@@ -27,11 +29,11 @@ void RosterTest::addMember()
             gotSignal=true;
         }}));
 
-    roster.addMember(netid, 1);
+    roster.addMember(netid, 1, default_db_controls);
     QVERIFY2(gotSignal, "Didn't get memberAdded signal with member ac2456.");
 
     gotSignal = false;
-    roster.addMember(netid, 1);
+    roster.addMember(netid, 1, default_db_controls);
     QVERIFY2(!gotSignal, "Got signal for member with duplicate sessionI");
 
 
@@ -42,7 +44,7 @@ void RosterTest::addMember()
     }
 
     netid = "aa1111";
-    roster.addMember(netid, 3);
+    roster.addMember(netid, 3, default_db_controls);
     QCOMPARE(roster.getMembers()[1]->getSerialID(), 1UL);
 }
 
@@ -69,22 +71,22 @@ void RosterTest::memberUdpPortReturn(){
         ports[i++]=mem->getPort();
                         }));
 
-    roster.addMember(netid, 1);
+    roster.addMember(netid, 1, default_db_controls);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
     qDebug() <<"Add member ac2456,1";
     roster.removeMemberBySessionID((session_id_t)1);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
     qDebug() <<"Remvoe member ac2456, 1";
 
-    roster.addMember(netid, 2);
+    roster.addMember(netid, 2, default_db_controls);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
 
-    roster.addMember(netid, 3);
+    roster.addMember(netid, 3, default_db_controls);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
 
     roster.removeMemberBySessionID((session_id_t)2);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
-    roster.addMember(netid, 4);
+    roster.addMember(netid, 4, default_db_controls);
     QAbstractEventDispatcher::instance()->processEvents(QEventLoop::AllEvents);
 
     QCOMPARE(ports[0], 61002);

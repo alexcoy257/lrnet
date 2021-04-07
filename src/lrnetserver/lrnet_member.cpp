@@ -54,6 +54,7 @@ Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * 
   ,netid(nnetid)
   ,mRoster(roster)
   ,mPort(roster?roster->getPort():0)
+  ,mSaveControlTimer()
   ,cs(NULL)
   ,ui(NULL)
   ,audio(NULL)
@@ -76,6 +77,9 @@ Member::Member(QString & nnetid, session_id_t s_id, Roster * roster,  QObject * 
     
     //audio->init(netid.toStdString().data(), cs);
     //audio->start();
+
+    mSaveControlTimer.setSingleShot(true);
+    mSaveControlTimer.callOnTimeout([=](){emit saveMemberControls(this); qDebug() << "Save signal emitted";});
 
     assocThread = new JackTripWorker(serial, roster, 10,
         JackTrip::ZEROS,
@@ -148,6 +152,8 @@ void Member::setSection(QString & nsection){
 
 void Member::setControl(int out, float val){
     if (out < numControlValues){
+        if (savedControls.contains(CSControlsE(out)))
+            mSaveControlTimer.start(2000);
         currentControlValues[out] = val;
         cses.at(0)->ui->decodeControl(currentControlValues, numControlValues);
         if (cses.size() == 2){

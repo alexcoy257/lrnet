@@ -13,11 +13,9 @@ using ossl::BIO_free;
 using ossl::RAND_bytes;
 */
 
-Auth::Auth():
-readdb(nullptr)
-{
+Auth::Auth(LRdbClient * p_lrdb){
 
-
+  readdb = p_lrdb;
   unsigned char testRand;
   if(!RAND_bytes(&testRand, 1)){
     qDebug() <<"Machine doesn't support rand_bytes";
@@ -43,33 +41,36 @@ session_id_t Auth::genSessionKey(){
       return 0;
 }
 
-auth_type_t Auth::checkCredentials (AuthPacket & pck)
+temp_auth_type_t Auth::checkCredentials (AuthPacket & pck)
 {
-#if false //def AUTH_TEST_SHORTCUT
-    if (std::strcmp(pck.netid, "superchef") == 0)
-        return {1, SUPERCHEF};
-    if (std::strcmp(pck.netid, "chef") == 0)
-        return {1, SUPERCHEF};
-    if (std::strcmp(pck.netid, "memberchef") == 0)
-        return {1, SUPERCHEF};
-    return {0, NONE};
-#endif
+    //Need to rewrite to accomodate user id
+//#if false //def AUTH_TEST_SHORTCUT
+//    if (std::strcmp(pck.netid, "superchef") == 0)
+//        return {1, SUPERCHEF};
+//    if (std::strcmp(pck.netid, "chef") == 0)
+//        return {1, SUPERCHEF};
+//    if (std::strcmp(pck.netid, "memberchef") == 0)
+//        return {1, SUPERCHEF};
+//    return {0, NONE};
+//#endif
+    //
 
     //qDebug() <<"Checking credentials for " <<pck.netid;
-    QScopedPointer<QVector<int>> ids(readdb.getIDsForNetid(pck.netid, pck.netid_length));
+    QScopedPointer<QVector<int>> ids(readdb->getIDsForNetid(pck.netid, pck.netid_length));
 
     if (ids->isEmpty()){
-        return {0,NONE};
+        return {0,0,NONE};
     }
 
     BIO * t_pub = BIO_new(BIO_s_mem());
     RSA * pubkey = RSA_new();
 
     AuthTypeE role = NONE;
+    int user_id = -1;
 
     for (int id:*ids){
         qDebug() <<"Checking uniqueid " <<id;
-        QByteArray * key = readdb.getKeyForID(id);
+        QByteArray * key = readdb->getKeyForID(id);
 
         qDebug() <<"Got key from db.";// <<*key <<"of length " <<key->length();
 
@@ -87,7 +88,7 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
 
         int verified = RSA_verify(NID_sha256, pck.challenge, 214, pck.sig, 256, pubkey);
         if (verified) {
-            QString * srole = readdb.getRoleForID(id);
+            QString * srole = readdb->getRoleForID(id);
             if (srole){
                 qDebug() <<"Got a role: " <<*srole <<" to superchef: " <<srole->compare("superchef");
             }
@@ -101,7 +102,8 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
             if (QString::compare(*srole, "user") == 0){
                 role = MEMBER;
             }
-             break;
+            user_id = id;
+            break;
         }
     }
 
@@ -109,11 +111,11 @@ auth_type_t Auth::checkCredentials (AuthPacket & pck)
     RSA_free(pubkey);
 
     if (role != NONE){
-      return {genSessionKey(), role};
+      return {genSessionKey(),user_id,role};
     }
 
     qDebug() <<"Challenge failed";
-    return {0, NONE};
+    return {0,0,NONE};
 }
 
 bool Auth::addKey(const char * key, AuthPacket & pck){
@@ -151,20 +153,27 @@ bool Auth::addKey(const char * key, AuthPacket & pck){
 }
 
 std::list<auth_roster_t> * Auth::getRoles(){
-    return readdb.getRoles();
+    return readdb->getRoles();
 }
 
+int Auth::getIDforKeyAndAuthPacket(const char * key, AuthPacket & pkt){
+    QByteArray bakey(key, 451);
+    QString netid = QString::fromLocal8Bit(pkt.netid, pkt.netid_length);
+    return readdb->getIDforKeyAndNetID(bakey, netid);
+}
+
+
 void Auth::updatePermission(QString netid, AuthTypeE authType){
-    readdb.setRoleForNetID(authType, netid);
+    readdb->setRoleForNetID(authType, netid);
 }
 
 void Auth::removeUser(QString netid){
-    readdb.removeUser(netid);
+    readdb->removeUser(netid);
 }
 
 void Auth::addKeyToDb(const char * key, AuthPacket & pkt){
     qDebug() <<"Verified key, adding to db if not present";
     QByteArray bakey(key, 451);
     QString netid = QString::fromLocal8Bit(pkt.netid, pkt.netid_length);
-    readdb.addKeyToNetid(bakey, netid);
+    readdb->addKeyToNetid(bakey, netid);
 }

@@ -22,22 +22,25 @@ class Auth : public QObject{
 
   Q_OBJECT;
   
-  LRdbClient readdb;
   void addKeyToDb(const char * key, AuthPacket & pkt);
 
   public:
   
-  Auth();
+  Auth(LRdbClient * p_lrdb);
   ~Auth();
 
-  auth_type_t checkCredentials (AuthPacket &pkt);
+  temp_auth_type_t checkCredentials (AuthPacket &pkt);
   bool addKey (const char * key, AuthPacket &pkt);
   std::list<auth_roster_t> * getRoles();
+  int getIDforKeyAndAuthPacket(const char * key, AuthPacket & pkt);
   void updatePermission(QString netid, AuthTypeE authType);
   void removeUser(QString netid);
 
 
   signals:
+
+private:
+  LRdbClient * readdb;
 
 public:
   session_id_t genSessionKey();

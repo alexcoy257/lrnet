@@ -1,6 +1,7 @@
 #ifndef LRNET_MEMBER_H
 #define LRNET_MEMBER_H
 #include <QObject>
+#include <QSet>
 #include "auth_types.h"
 #include "JackTripWorker.h"
 #include <jack/jack.h>
@@ -63,6 +64,8 @@ private:
     jack_port_t * toPorts[2] = {NULL, NULL};
     jack_port_t * broadcastPorts[2] = {NULL, NULL};
 
+    QTimer mSaveControlTimer;
+
     int mNumChannels = 1;
     std::vector<std::unique_ptr<csControlPair>> cses;
     ChannelStrip * cs ;
@@ -72,6 +75,12 @@ private:
     float currentControlValues[9] = {0.,2.,-24.,15.,40.,2.,0,0, 1};
     void connectChannelStrip();
 
+    const QSet<CSControlsE> savedControls = QSet<CSControlsE>({COMP_RATIO,
+                                                         COMP_THRESHOLD,
+                                                         COMP_ATTACK,
+                                                         COMP_RELEASE,
+                                                         COMP_MAKEUP,
+                                                         INDIV_GAIN});
 
 public:
     static int constexpr numControlValues = 9;
@@ -99,5 +108,6 @@ public:
 
 signals:
     void readyToFan(Member * m);
+    void saveMemberControls(Member * m);
 };
 #endif // LRNET_MEMBER_H

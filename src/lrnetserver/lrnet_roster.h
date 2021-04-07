@@ -76,7 +76,8 @@ class Roster : public QObject
     Member * addMemberOrChef(QString &netid,
         session_id_t s_id,
         QHash<session_id_t, Member *> & group,
-        QHash<Member::serial_t, Member *> & sGroup);
+        QHash<Member::serial_t, Member *> & sGroup,
+        db_controls_t controls);
 
 
 public:
@@ -85,9 +86,10 @@ public:
     ///Assumes Jack is already running. Returns nonzero if failure.
     bool initJackClient();
     ~Roster();
-    void addMember(QString & netid, session_id_t s_id);
-    void addChef(QString & netid, session_id_t s_id);
+    void addMember(QString & netid, session_id_t s_id, db_controls_t controls);
+    void addChef(QString & netid, session_id_t s_id, db_controls_t controls);
     QHash<Member::serial_t, Member *>&  getMembers(){return members;}
+    bool containsMember(Member * m){return members.contains(m->getSerialID());};
     QStringList & getValidSections(){return sections;}
     void removeMemberBySerialID(Member::serial_t id);
     void removeMemberBySessionID(session_id_t s_id);
@@ -117,10 +119,16 @@ public:
     PortPool mPortPool;
     int releaseThread(Member::serial_t id);
 
+public slots:
+
+    void sigSaveMemberControls(Member * m);
+
+
 signals:
     void jacktripRemoveMember(session_id_t s_id);
     void sigMemberUpdate(Member * member, RosterNS::MemberEventE event);
     void sigNewChef(Member * chef, RosterNS::MemberEventE event);
+    void saveMemberControls(Member * m);
     void memberRemoved(Member::serial_t id);
     void jackTripStarted(session_id_t s_id);
     void sendKeyToClient(unsigned char * key, session_id_t s_id);

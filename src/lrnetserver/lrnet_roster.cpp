@@ -64,9 +64,9 @@ Roster::~Roster(){
     mThreadPool.waitForDone();
 }
 
-void Roster::addMember(QString &netid, session_id_t s_id){
+void Roster::addMember(QString &netid, session_id_t s_id, db_controls_t controls){
     qDebug() <<"addMember called with" <<membersBySessionID.size();
-    Member * newMem = addMemberOrChef(netid, s_id, membersBySessionID, members);
+    Member * newMem = addMemberOrChef(netid, s_id, membersBySessionID, members, controls);
     if (!newMem)
         return;
 
@@ -76,13 +76,14 @@ void Roster::addMember(QString &netid, session_id_t s_id){
 
     QObject::connect(newMem, &Member::readyToFan,
         this, &Roster::fanNewMember);
+
     emit sigMemberUpdate(newMem, RosterNS::MEMBER_CAME);
 }
 
-void Roster::addChef(QString &netid, session_id_t s_id){
+void Roster::addChef(QString &netid, session_id_t s_id, db_controls_t controls){
     qDebug() <<"addChef called";
     
-    Member * newMem = addMemberOrChef(netid, s_id, chefsBySessionID, chefs);
+    Member * newMem = addMemberOrChef(netid, s_id, chefsBySessionID, chefs, controls);
     if (!newMem)
         return;
     newMem->setControl(Member::MUTE, 1);
@@ -96,7 +97,8 @@ void Roster::addChef(QString &netid, session_id_t s_id){
 Member * Roster::addMemberOrChef(QString &netid,
         session_id_t s_id,
         QHash<session_id_t, Member *> & group,
-        QHash<Member::serial_t, Member *> & sGroup){
+        QHash<Member::serial_t, Member *> & sGroup,
+        db_controls_t controls){
             //Must have some sort of ID to be a member.
     if (netid.length()==0)
         return NULL;
@@ -106,8 +108,21 @@ Member * Roster::addMemberOrChef(QString &netid,
         return NULL;
     }
     Member * newMem = new Member(netid, s_id, this);
+    QHash<session_id_t, sessionTriple> & activeSessions = getActiveSessions();
+    if (activeSessions.contains(s_id)){
+        newMem->setControl(Member::COMP_RATIO, (float)controls.ratio);
+        newMem->setControl(Member::COMP_THRESHOLD, (float)controls.threshold);
+        newMem->setControl(Member::COMP_ATTACK, (float)controls.attack);
+        newMem->setControl(Member::COMP_RELEASE, (float)controls.release);
+        newMem->setControl(Member::COMP_MAKEUP, (float)controls.makeup);
+        newMem->setControl(Member::INDIV_GAIN, (float)controls.gain);
+    }
     group[s_id]=newMem;
-    sGroup[newMem->getSerialID()]=newMem;    
+    sGroup[newMem->getSerialID()]=newMem;
+
+    QObject::connect(newMem, &Member::saveMemberControls,
+        this, &Roster::sigSaveMemberControls);
+
     return newMem;
 }
 
@@ -233,6 +248,8 @@ void Roster::removeChefBySessionID(session_id_t s_id){
 
 void Roster::removeMember(Member * m){
     Member::serial_t id = m->getSerialID();
+    QObject::disconnect(m, &Member::saveMemberControls,
+        this, &Roster::sigSaveMemberControls);
     m->deleteLater();
     qDebug() <<"Deleted member successfully";
     emit memberRemoved(id);
@@ -340,6 +357,10 @@ void Roster::setControl(Member::serial_t id, int out, float val){
         qDebug() << __FUNCTION__ << "to " << val << " for field " << out;
         if (m) m->setControl(out, val);
     }
+}
+
+void Roster::sigSaveMemberControls(Member * m){
+    emit saveMemberControls(m);
 }
 
 void Roster::stopJackTrip(session_id_t s_id, bool hint_member){

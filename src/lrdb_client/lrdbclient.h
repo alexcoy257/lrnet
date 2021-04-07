@@ -9,6 +9,7 @@
 
 #include "lrdbsettings.h"
 #include "../lrnetserver/auth_types.h"
+#include "../lrnetserver/control_types.h"
 
 class LRdbClient : public QObject
 {
@@ -30,12 +31,20 @@ public:
     QVector<int> * getIDsForNetid(QString& netid);
     QVector<int> * getIDsForNetid(char * netid, int len);
     QByteArray * getKeyForID(int id);
+    int getIDforKeyAndNetID(QByteArray& key, QString& netid);
     QString * getRoleForID(int id);
     std::list<auth_roster_t> * getRoles();
     void updatePermission(QString netid, AuthTypeE authType);
     void setRoleForID(AuthTypeE role, int id);
     void setRoleForNetID(AuthTypeE role, QString netid);
-    bool tryToMakeSchema();
+    bool tryToMakeUsersSchema();
+
+    void addControlsForUID(db_controls_t controls, int uid);
+    void updateControlsForUID(db_controls_t controls, int uid);
+    db_controls_t getControlsForUID(int uid);
+    bool tryToMakeControlsSchema();
+    db_controls_t default_db_controls = {2,-24,15,30,2,0};
+
 signals:
 
 private:

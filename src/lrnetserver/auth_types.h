@@ -60,6 +60,12 @@ typedef struct {
 } auth_type_t;
 
 typedef struct {
+    session_id_t session_id;
+    int user_id;
+    AuthTypeE authType;
+} temp_auth_type_t;
+
+typedef struct {
     std::string netid;
     AuthTypeE authType;
 } auth_roster_t;

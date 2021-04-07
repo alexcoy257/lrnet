@@ -46,6 +46,9 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     , oscOutStream( buffer, OUTPUT_BUFFER_SIZE )
     , mRoster(new Roster(this, nullptr))
 
+    , mLRdb(new LRdbClient(nullptr))
+    , authorizer(mLRdb)
+
 {
 
         mStimeoutTimer.setInterval(300000); //5 minutes for a session
@@ -107,6 +110,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     QObject::connect(mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
     QObject::connect(mRoster, &Roster::jackTripStarted, this, &LRNetServer::sendJackTripReady);
     QObject::connect(mRoster, &Roster::sendKeyToClient, this, &LRNetServer::sendKeyToClient);
+    QObject::connect(mRoster, &Roster::saveMemberControls, this, &LRNetServer::saveMemberControls);
 
     mBufferStrategy = 1;
     mBroadcastQueue = 0;
@@ -369,15 +373,15 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
             //qDebug() <<"Signed " <<batmp;
 
             qDebug() <<"Checking for " <<pkt.netid;
-            auth_type_t at = authorizer.checkCredentials(pkt);
-            if( at.authType != NONE){
-                sendAuthResponse(socket, at);
-                qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                sessionTriple tt = {at.session_id, socket, true, at.authType, NONE, ""};
+            temp_auth_type_t tat = authorizer.checkCredentials(pkt);
+            if( tat.authType != NONE){
+                sendAuthResponse(socket, {tat.session_id, tat.authType});
+                qDebug() <<"Authenticated: Gave session id " <<tat.session_id;
+                sessionTriple tt = {tat.session_id, tat.user_id, socket, true, tat.authType, NONE, ""};
                 size_t nl = qMin(pkt.netid_length, (uint8_t)30);
                 memcpy(tt.netid, pkt.netid, nl);
                 tt.netid[nl] = 0;
-                activeSessions.insert(at.session_id, tt);
+                activeSessions.insert(tat.session_id, tt);
             }
             else
             {
@@ -409,7 +413,7 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                         auth_type_t at = {authorizer.genSessionKey(), MEMBER};
                         sendAuthResponse(socket, at);
                         qDebug() <<"Authenticated: Gave session id " <<at.session_id;
-                        sessionTriple tt = {at.session_id, socket, true, at.authType, NONE, ""};
+                        sessionTriple tt = {at.session_id, -1, socket, true, at.authType, NONE, ""};
                         char nonetid[8] = "nonetid";
                         memcpy(tt.netid, nonetid, 7);
                         tt.netid[8] = 0;
@@ -850,7 +854,8 @@ int LRNetServer::getPoolID(QString address, uint16_t port)
 
 void LRNetServer::handleNewMember(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
-    mRoster->addMember(netid, tSess);
+    db_controls_t controls = mLRdb->getControlsForUID(activeSessions[tSess].user_id);
+    mRoster->addMember(netid, tSess, controls);
     while (!args->Eos()){
         const char * key;
         const char * value;
@@ -882,7 +887,8 @@ void LRNetServer::handleNewChef(osc::ReceivedMessageArgumentStream * args, sessi
     activeChefs.insert(tSess, tSess);
     QString netid = QString::fromStdString(activeSessions[tSess].netid);
     qDebug() << "Add chef netid " <<netid;
-    mRoster->addChef(netid, tSess);
+    db_controls_t controls = mLRdb->getControlsForUID(activeSessions[tSess].user_id);
+    mRoster->addChef(netid, tSess, controls);
     sendRoster(activeSessions[tSess].lastSeenConnection);
     sendAuthCodeStatus(activeSessions[tSess].lastSeenConnection);
     sendJoinMutedStatus(activeSessions[tSess].lastSeenConnection);
@@ -1121,6 +1127,42 @@ void LRNetServer::handleAuthCodeUpdate(osc::ReceivedMessageArgumentStream * args
     }
 }
 
+void LRNetServer::saveAllControls(){
+    for (Member *m : mRoster->getMembers()){
+        session_id_t s_id = m->getSessionID();
+        if (activeSessions.contains(s_id)){
+            int u_id = activeSessions[s_id].user_id;
+            const float * u_controls = m->getCurrentControls();
+            db_controls_t db_controls = mLRdb->default_db_controls;
+            db_controls.ratio = u_controls[Member::COMP_RATIO];
+            db_controls.threshold = u_controls[Member::COMP_THRESHOLD];
+            db_controls.attack = u_controls[Member::COMP_ATTACK];
+            db_controls.release = u_controls[Member::COMP_RELEASE];
+            db_controls.makeup = u_controls[Member::COMP_MAKEUP];
+            db_controls.gain = u_controls[Member::INDIV_GAIN];
+            mLRdb->updateControlsForUID(db_controls, u_id);
+        }
+    }
+}
+
+void LRNetServer::saveMemberControls(Member * m){
+    if (mRoster->containsMember(m)){
+        session_id_t s_id = m->getSessionID();
+        if (activeSessions.contains(s_id)){
+            int u_id = activeSessions[s_id].user_id;
+            const float * u_controls = m->getCurrentControls();
+            db_controls_t db_controls = mLRdb->default_db_controls;
+            db_controls.ratio = u_controls[Member::COMP_RATIO];
+            db_controls.threshold = u_controls[Member::COMP_THRESHOLD];
+            db_controls.attack = u_controls[Member::COMP_ATTACK];
+            db_controls.release = u_controls[Member::COMP_RELEASE];
+            db_controls.makeup = u_controls[Member::COMP_MAKEUP];
+            db_controls.gain = u_controls[Member::INDIV_GAIN];
+            mLRdb->updateControlsForUID(db_controls, u_id);
+        }
+    }
+}
+
 void LRNetServer::sendAuthCodeStatus(QSslSocket * socket){
     oscOutStream.Clear();
     oscOutStream << osc::BeginMessage( "/push/authcodestatus" )
@@ -1307,6 +1349,11 @@ void LRNetServer::handleStoreKey(
         if (!authorizer.addKey((const char *)b.data,pkt)){
             notifyRolesUpdated();
             notifyStoreKeyResults(socket, true);
+            activeSessions[s_id].user_id = authorizer.getIDforKeyAndAuthPacket((const char *)b.data,pkt);
+            size_t nl = qMin(pkt.netid_length, (uint8_t)30);
+            memcpy(activeSessions[s_id].netid, pkt.netid, nl);
+            activeSessions[s_id].netid[nl] = 0;
+            mLRdb->addControlsForUID(mLRdb->default_db_controls, activeSessions[s_id].user_id);
         } else{
             notifyStoreKeyResults(socket, false);
         }
@@ -1407,7 +1454,8 @@ void LRNetServer::handleSelfLoopback(
 
 void LRNetServer::handleStartJackTripSec(session_id_t session){
     QString netid = QString::fromStdString(activeSessions[session].netid);
-    mRoster->addMember(netid, session);
+    db_controls_t controls = mLRdb->getControlsForUID(activeSessions[session].user_id);
+    mRoster->addMember(netid, session, controls);
     mRoster->setNumChannelsBySessionID(2, session);
     //QString t = "Chef Alt";
     //mRoster->setNameBySessionID(t, session);

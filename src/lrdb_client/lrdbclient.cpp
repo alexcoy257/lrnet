@@ -159,6 +159,22 @@ QByteArray * LRdbClient::getKeyForID(int id){
     return arr;
 }
 
+int LRdbClient::getIDforKeyAndNetID(QByteArray& key, QString &netid){
+    readDb.open();
+    QSqlQuery query(readDb);
+    int id = -1;
+    query.prepare("SELECT id FROM users WHERE pubkey=? and netid=?");
+    query.bindValue(0, QVariant(key));
+    query.bindValue(1, QVariant(netid));
+    if (query.exec()){
+        qDebug() << "Succeeded to query getIDforKeyandNetID";
+        if (query.next()){
+            id = query.value(0).toInt();
+        }
+    }
+    return id;
+}
+
 std::list<auth_roster_t> * LRdbClient::getRoles(){
     readDb.open();
     std::list<auth_roster_t> * stdAuthRoster = new std::list<auth_roster_t>();
@@ -229,7 +245,7 @@ void LRdbClient::getPrivileges(){
     readDb.close();
 }
 
-bool LRdbClient::tryToMakeSchema(){
+bool LRdbClient::tryToMakeUsersSchema(){
     if (!connGood){
         return false;
     }
@@ -248,6 +264,32 @@ bool LRdbClient::tryToMakeSchema(){
     }
     readDb.close();
     return false;
+}
+
+
+bool LRdbClient::tryToMakeControlsSchema(){
+    if (!connGood){
+        return false;
+    }
+    readDb.open();
+    QSqlQuery query(readDb);
+    QString qBase = "CREATE TABLE controls (\
+    id int NOT NULL,\
+    c_ratio int,\
+    c_threshold int,\
+    c_attack int,\
+    c_release int,\
+    c_makeup int,\
+    gain int,\
+    PRIMARY KEY (id))";
+    query.prepare(qBase);
+    if (query.exec() && query.lastError().type() == QSqlError::NoError){
+        readDb.close();
+        return true;
+    }
+    readDb.close();
+    return false;
+
 }
 
 void LRdbClient::setRoleForID(AuthTypeE role, int id){
@@ -317,3 +359,100 @@ void LRdbClient::setRoleForNetID(AuthTypeE role, QString netid){
     }
     readDb.close();
 }
+
+
+void LRdbClient::addControlsForUID(db_controls_t controls, int uid){
+    readDb.open();
+    QSqlQuery query(readDb);
+    query.prepare("SELECT id FROM controls WHERE id=?");
+    query.bindValue(0, QVariant(uid));
+    if(query.exec())
+        qDebug() << "Succeeded to query";
+    else
+        qDebug() << "Fail query";
+    bool nothing = true;
+    while (query.next()) {
+        nothing = false;
+    }
+
+    if (nothing){
+
+        query.prepare("INSERT INTO controls (id, c_ratio, c_threshold, c_attack, c_release, c_makeup, gain) VALUES (?,?,?,?,?,?,?)");
+        query.bindValue(0, QVariant(uid));
+        query.bindValue(1, QVariant(controls.ratio));
+        query.bindValue(2, QVariant(controls.threshold));
+        query.bindValue(3, QVariant(controls.attack));
+        query.bindValue(4, QVariant(controls.release));
+        query.bindValue(5, QVariant(controls.makeup));
+        query.bindValue(6, QVariant(controls.gain));
+        if(query.exec())
+            qDebug() << "Succeeded to add";
+        else
+            qDebug() << "Fail add";
+    }
+
+    readDb.close();
+}
+
+
+void LRdbClient::updateControlsForUID(db_controls_t controls, int uid){
+    readDb.open();
+    QSqlQuery query(readDb);
+    query.prepare("SELECT id FROM controls WHERE id=?");
+    query.bindValue(0, QVariant(uid));
+    if(query.exec())
+        qDebug() << "Succeeded to query";
+    else
+        qDebug() << "Fail query";
+    bool something = false;
+    while (query.next()) {
+        something = true;
+    }
+
+    if (something){
+
+        query.prepare("UPDATE controls SET c_ratio=?, c_threshold=?, c_attack=?, c_release=?, c_makeup=?, gain=? WHERE id=?");
+        query.bindValue(0, QVariant(controls.ratio));
+        query.bindValue(1, QVariant(controls.threshold));
+        query.bindValue(2, QVariant(controls.attack));
+        query.bindValue(3, QVariant(controls.release));
+        query.bindValue(4, QVariant(controls.makeup));
+        query.bindValue(5, QVariant(controls.gain));
+        query.bindValue(6, QVariant(uid));
+        if(query.exec())
+            qDebug() << "Succeeded to update";
+        else
+            qDebug() << "Fail update";
+    }
+
+    readDb.close();
+}
+
+
+db_controls_t LRdbClient::getControlsForUID(int uid){
+    readDb.open();
+    QSqlQuery query(readDb);
+    db_controls_t controls = default_db_controls;
+    query.prepare("SELECT c_ratio, c_threshold, c_attack, c_release, c_makeup, gain FROM controls WHERE id=?");
+    query.bindValue(0,QVariant(uid));
+    if (query.exec()){
+        if (query.next()){
+            controls.ratio = query.value(0).toInt();
+            controls.threshold = query.value(1).toInt();
+            controls.attack = query.value(2).toInt();
+            controls.release = query.value(3).toInt();
+            controls.makeup = query.value(4).toInt();
+            controls.gain = query.value(5).toInt();
+//            qDebug() << "Ratio: " << query.value(0).toInt();
+//            qDebug() << "Threshold: " << query.value(1).toInt();
+//            qDebug() << "Attack: " << query.value(2).toInt();
+//            qDebug() << "Release: " << query.value(3).toInt();
+//            qDebug() << "Makeup: " << query.value(4).toInt();
+//            qDebug() << "Gain: " << query.value(5).toInt();
+        }
+    }
+
+    return controls;
+
+}
+
