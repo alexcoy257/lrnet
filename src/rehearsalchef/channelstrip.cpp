@@ -105,12 +105,16 @@ void ChannelStrip::setIsClientMutedProperty(bool isClientMuted){
     setProperty("isClientMuted", isClientMuted);
     style()->unpolish(this);
     style()->polish(this);
+    update();
+    qDebug() << "isClientMuted property: " << property("isClientMuted");
 }
 
 void ChannelStrip::setIsJackTripConnectedProperty(bool isJackTripConnected){
     setProperty("isJackTripConnected", isJackTripConnected);
     style()->unpolish(this);
     style()->polish(this);
+    update();
+    qDebug() << "isJackTripConnected property: " << property("isJackTripConnected");
 }
 
 void ChannelStrip::setPostGainWithoutSignal(int value){
