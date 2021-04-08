@@ -185,6 +185,18 @@ void ChefForm::handleSoloResponse(int id, bool isSolo){
         m_clients[id]->cs->setSolo(isSolo);
 }
 
+void ChefForm::clientMuteReceived(int serial_id, bool isClientMuted){
+    if (m_clients.contains(serial_id)){
+        m_clients[serial_id]->cs->setIsClientMutedProperty(isClientMuted);
+    }
+}
+
+void ChefForm::clientJackTripStatusReceived(int serial_id, bool isJackTripConnected){
+    if (m_clients.contains(serial_id)){
+        m_clients[serial_id]->cs->setIsJackTripConnectedProperty(isJackTripConnected);
+    }
+}
+
 void ChefForm::sigJoinMutedUpdate(){
     emit sendJoinMutedUpdate(ui->joinMutedBox->isChecked());
 }

@@ -354,6 +354,8 @@ void MainWindow::launchChef(){
     QObject::connect(m_netClient, &LRNetClient::updateMemberControls, (ChefForm *)m_roleForm, &ChefForm::updateChannelStripControls);
     QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
     QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+    QObject::connect(m_netClient, &LRNetClient::clientMuteReceived, ((ChefForm *)m_roleForm), &ChefForm::clientMuteReceived);
+    QObject::connect(m_netClient, &LRNetClient::clientJackTripStatusReceived, ((ChefForm *)m_roleForm), &ChefForm::clientJackTripStatusReceived);
     QObject::connect(m_netClient, &LRNetClient::updateAuthCodeStatus, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeStatus);
     QObject::connect(m_netClient, &LRNetClient::handleSoloResponse, (ChefForm *)m_roleForm, &ChefForm::handleSoloResponse);
     QObject::connect(m_netClient, &LRNetClient::handleJoinMutedResponse, (ChefForm *)m_roleForm, &ChefForm::handleJoinMutedResponse);
@@ -409,6 +411,7 @@ void MainWindow::launchMember(){
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setLocalLoopback, this, &MainWindow::setLocalLoopback);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::sendClientMute, m_netClient, &LRNetClient::sendClientMute);
 
 
     QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, this,

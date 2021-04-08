@@ -3,31 +3,36 @@
 #include <QDebug>
 
 ChannelStrip::ChannelStrip(LRMClient * cStruct, QWidget *parent, QString cName)
-  : QWidget(parent)
+  : QFrame(parent)
   , mCStruct(cStruct)
   , ui(new Ui::ChannelStrip)
   , cs_compressorZone(NULL)
   , name(cName)
   , gainTimer(new QTimer(this))
 {
-  ui->setupUi(this);
-  ui->cs_preGain->setMaximumSize(45,45);
-  ui->cs_preGain->updateGeometry();
-  ui->cs_preGain->hide();
-  //qDebug() <<name;
-  ui->cs_cName->setText(cName);
-  setFocusPolicy(Qt::ClickFocus);
-  //cs_compressor.hide();
-  QObject::connect(ui->cs_compButton, &QAbstractButton::released, this, &ChannelStrip::passCompressor, Qt::QueuedConnection);
-  QObject::connect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
+    setProperty("isJackTripConnected", false);
+    setProperty("isClientMuted", false);
+    qDebug() << "Set dynamic properties; " << property("isJackTripConnected") << property("isClientMuted");
+    style()->unpolish(this);
+    style()->polish(this);
+    ui->setupUi(this);
+    ui->cs_preGain->setMaximumSize(45,45);
+    ui->cs_preGain->updateGeometry();
+    ui->cs_preGain->hide();
+    //qDebug() <<name;
+    ui->cs_cName->setText(cName);
+    setFocusPolicy(Qt::ClickFocus);
+    //cs_compressor.hide();
+    QObject::connect(ui->cs_compButton, &QAbstractButton::released, this, &ChannelStrip::passCompressor, Qt::QueuedConnection);
+    QObject::connect(ui->cs_postGain, &QDial::valueChanged, this, &ChannelStrip::setPostGain);
 
-  QObject::connect(ui->cs_muteButton, &QAbstractButton::toggled, this, &ChannelStrip::sendMute);
-  QObject::connect(ui->cs_soloButton, &QAbstractButton::toggled, this, [=](bool checked){emit requestSolo(mCStruct->id, checked);});
+    QObject::connect(ui->cs_muteButton, &QAbstractButton::toggled, this, &ChannelStrip::sendMute);
+    QObject::connect(ui->cs_soloButton, &QAbstractButton::toggled, this, [=](bool checked){emit requestSolo(mCStruct->id, checked);});
 
-  gainTimer->callOnTimeout(this, [=](){if (gainChanged) {emit valueChanged(mCStruct, (int)INDIV_GAIN, float(volume)); gainChanged = false;}});
-  gainTimer->start(100);
+    gainTimer->callOnTimeout(this, [=](){if (gainChanged) {emit valueChanged(mCStruct, (int)INDIV_GAIN, float(volume)); gainChanged = false;}});
+    gainTimer->start(100);
 
-  ui->cs_soloButton->hide();
+    ui->cs_soloButton->hide();
 }
 
 ChannelStrip::~ChannelStrip()
@@ -94,6 +99,18 @@ void ChannelStrip::setMutedWithoutSignal(bool checked){
 void ChannelStrip::setPostGain(int value){
     gainChanged = true;
     volume = value;
+}
+
+void ChannelStrip::setIsClientMutedProperty(bool isClientMuted){
+    setProperty("isClientMuted", isClientMuted);
+    style()->unpolish(this);
+    style()->polish(this);
+}
+
+void ChannelStrip::setIsJackTripConnectedProperty(bool isJackTripConnected){
+    setProperty("isJackTripConnected", isJackTripConnected);
+    style()->unpolish(this);
+    style()->polish(this);
 }
 
 void ChannelStrip::setPostGainWithoutSignal(int value){

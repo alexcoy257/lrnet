@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QTimer>
+#include <QStyle>
 #include "ui_channelStrip.h"
 #include "compressor.h"
 
@@ -14,7 +15,7 @@ QT_END_NAMESPACE
 
 struct LRMClient;
 
-class ChannelStrip : public QWidget
+class ChannelStrip : public QFrame
 {
     Q_OBJECT
 
@@ -46,6 +47,8 @@ public:
 public slots:
     void sendMute(bool mute);
     void setMuted(bool checked);
+    void setIsClientMutedProperty(bool isClientMuted);
+    void setIsJackTripConnectedProperty(bool isJackTripConnected);
     void setMutedWithoutSignal(bool checked);
     void setPostGain(int value);
     void setPostGainWithoutSignal(int value);

@@ -39,6 +39,8 @@ signals:
     void setLocalLoopback(bool e);
     void setNumChannels(int n);
 
+    void sendClientMute(bool isMuted);
+
     void startJackTrip();
     void stopJackTrip();
 

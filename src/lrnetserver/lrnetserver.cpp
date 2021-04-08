@@ -109,6 +109,7 @@ LRNetServer::LRNetServer(int server_port, int server_udp_port) :
     QObject::connect(mRoster, &Roster::sigNewChef, this, &LRNetServer::sendMemberUdpPort);
     QObject::connect(mRoster, &Roster::memberRemoved, this, &LRNetServer::notifyChefsMemLeft);
     QObject::connect(mRoster, &Roster::jackTripStarted, this, &LRNetServer::sendJackTripReady);
+    QObject::connect(mRoster, &Roster::notifyChefsSessionJackTripStatus, this, &LRNetServer::notifyChefsSessionJackTripStatus);
     QObject::connect(mRoster, &Roster::sendKeyToClient, this, &LRNetServer::sendKeyToClient);
     QObject::connect(mRoster, &Roster::saveMemberControls, this, &LRNetServer::saveMemberControls);
 
@@ -530,6 +531,11 @@ void LRNetServer::handleMessage(QSslSocket * socket, osc::ReceivedMessage * msg)
                  mRoster->stopJackTrip(tSess);
         }
 
+        else if (std::strcmp(msg->AddressPattern(), "/member/sendmute") == 0){
+            if (role & (SUPERCHEF | CHEF | MEMBER))
+                handleClientMute(&args, tSess);
+        }
+
         else if (std::strcmp(msg->AddressPattern(), "/control/member") == 0){
             if (role & (SUPERCHEF | CHEF))
                 handleAdjustParams(&args);
@@ -919,6 +925,19 @@ void LRNetServer::handleNameUpdate(osc::ReceivedMessageArgumentStream * args, se
         }
 }
 
+void LRNetServer::handleClientMute(osc::ReceivedMessageArgumentStream * args, session_id_t tSess){
+    if (!args->Eos()){
+        bool isMuted;
+        try{
+            *args >> isMuted;
+            notifyChefsMemMute(mRoster->getSerialIDbySessionID(tSess), isMuted);
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a boolean.
+        }
+    }
+}
+
+
 void LRNetServer::handleUnsubscribe(session_id_t tSess){
 
     switch (activeSessions[tSess].subcribedRole){
@@ -1202,6 +1221,16 @@ void LRNetServer::notifyChefsMemEvent(Member * m, RosterNS::MemberEventE event){
 
 }
 
+void LRNetServer::notifyChefsMemMute(int serial_id, bool isClientMuted){
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/clientmute")
+                 << serial_id
+                 << isClientMuted
+                 << osc::EndMessage;
+
+    broadcastToChefs();
+}
+
 void LRNetServer::sendMemberUdpPort(Member * m, RosterNS::MemberEventE event){
     if (event == RosterNS::MEMBER_CAME || event == RosterNS::CHEF_CAME){
         oscOutStream.Clear();
@@ -1255,6 +1284,17 @@ void LRNetServer::broadcastToSuperChefs(){
         QSslSocket * conn = activeSessions[t].lastSeenConnection;
         writeStreamToSocket(conn);
     }
+}
+
+void LRNetServer::notifyChefsSessionJackTripStatus(session_id_t session_id, bool jackTripStatus){
+    qDebug() << "Sending Chefs Client's JackTrip Status: " << jackTripStatus;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/push/clientjacktripstatus" )
+                 << mRoster->getSerialIDbySessionID(session_id)
+                 << jackTripStatus
+                 << osc::EndMessage;
+
+    broadcastToChefs();
 }
 
 void LRNetServer::sendJackTripReady(session_id_t s_id){

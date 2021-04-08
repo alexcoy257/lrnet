@@ -95,6 +95,7 @@ public:
     void removeMemberBySessionID(session_id_t s_id);
     void removeChefBySessionID(session_id_t s_id);
     QString getNameBySessionID(session_id_t s_id);
+    int getSerialIDbySessionID(session_id_t s_id);
     void setNameBySessionID(QString & name, session_id_t s_id);
     void setSectionBySessionID(QString & section, session_id_t s_id);
     void setNameBySerialID(QString & name, Member::serial_t s_id);
@@ -131,6 +132,7 @@ signals:
     void saveMemberControls(Member * m);
     void memberRemoved(Member::serial_t id);
     void jackTripStarted(session_id_t s_id);
+    void notifyChefsSessionJackTripStatus(session_id_t s_id, bool jackTripStatus);
     void sendKeyToClient(unsigned char * key, session_id_t s_id);
 
 

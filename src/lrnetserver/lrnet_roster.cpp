@@ -170,6 +170,7 @@ void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     mThreadPool.start(w, QThread::TimeCriticalPriority);
     // wait until one is complete before another spawns
     emit jackTripStarted(s_id);
+    emit notifyChefsSessionJackTripStatus(s_id, true);
 
     //while (w->isSpawning()) { QThread::msleep(10);
     ///*qDebug() << "Loop wait for spawning;";*/}
@@ -253,6 +254,14 @@ void Roster::removeMember(Member * m){
     m->deleteLater();
     qDebug() <<"Deleted member successfully";
     emit memberRemoved(id);
+}
+
+int Roster::getSerialIDbySessionID(session_id_t s_id){
+    Member * m = membersBySessionID.value(s_id, nullptr);
+    if (m)
+        return m->getSerialID();
+    else
+        return -1;
 }
 
 QString Roster::getNameBySessionID(session_id_t s_id){
@@ -375,6 +384,8 @@ void Roster::stopJackTrip(session_id_t s_id, bool hint_member){
     qDebug() <<"Stop jacktrip member" <<m->getName();
     m->getThread()->stopThread();
     m->resetThread();
+
+    emit notifyChefsSessionJackTripStatus(s_id, false);
 }
 
 void Roster::fanNewMember(Member * member){

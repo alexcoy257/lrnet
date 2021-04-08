@@ -126,4 +126,5 @@ void MemberForm::toggleMute(){
         ui->muteButton->setText("Mute");
         emit doMute(false);
     }
+    emit sendClientMute(muted);
 }

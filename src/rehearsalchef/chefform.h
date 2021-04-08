@@ -47,6 +47,8 @@ public slots:
     void handleSoloResponse(int id, bool isSolo);
     void sigJoinMutedUpdate();
     void handleJoinMutedResponse(bool joinMuted);
+    void clientMuteReceived(int serial_id, bool isMuted);
+    void clientJackTripStatusReceived(int serial_id, bool isJackTripConnected);
     void addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id);
     void updateChannelStrip(const QString& mName, const QString& sName, int id);
     void updateChannelStripControls(QVector<float> &controls, int id);
