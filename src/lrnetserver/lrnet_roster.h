@@ -101,6 +101,8 @@ public:
     void setNameBySerialID(QString & name, Member::serial_t s_id);
     void setSectionBySerialID(QString & section, Member::serial_t s_id);
     void setJoinMuted(bool joinMuted);
+    void setClientMutedBySessionID(session_id_t session_id, bool isMuted);
+    void setIsJackTripConnectedBySessionID(session_id_t session_id, bool isJackTripConnected);
     void stopAllThreads();
 
     void setRedundancyBySessionID(int newRed, session_id_t s_id);

@@ -106,8 +106,8 @@ private:
         void connected();
         void disconnected();
         void timeout();
-        void newMember(const QString& name, const QString& group, const QVector<float> controls, int id);
-        void updateMember(const QString& name, const QString& group, int id);
+        void newMember(const QString& name, const QString& group, const QVector<float> controls, int id, bool isClientMuted, bool isJackTripConnected);
+        void updateMember(const QString& name, const QString& group, int id, bool isClientMuted, bool isJackTripConnected);
         void updateMemberControls(QVector<float> &controls, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);

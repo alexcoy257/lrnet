@@ -60,6 +60,8 @@ private:
     Roster * mRoster;
     JackTripWorker * assocThread = NULL;
     int mPort;
+    bool isClientMuted;
+    bool isJackTripConnected;
     jack_port_t * fromPorts[2] = {NULL, NULL};
     jack_port_t * toPorts[2] = {NULL, NULL};
     jack_port_t * broadcastPorts[2] = {NULL, NULL};
@@ -100,6 +102,10 @@ public:
     int getNumChannels(){return mNumChannels;}
     void setPort(int port){mPort = port;}
     int getPort(){return mPort;}
+    bool getIsClientMuted(){return isClientMuted;};
+    void setIsClientMuted(bool isMuted){isClientMuted = isMuted;};
+    bool getIsJackTripConnected(){return isJackTripConnected;};
+    void setIsJackTripConnected(bool isConnected){isJackTripConnected = isConnected;};
     audioPortHandle_t getAudioInputPort(int n);
     audioPortHandle_t getAudioOutputPort(int n);
     JackTripWorker * getThread(){return assocThread;}

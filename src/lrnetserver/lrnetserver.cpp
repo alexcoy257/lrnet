@@ -753,9 +753,11 @@ void LRNetServer::notifyRolesUpdated(){
 
 void LRNetServer::loadMemberFrame(Member * m){
     if (m){
-    oscOutStream << m->getName().toStdString().c_str();
-    oscOutStream << m->getSection().toStdString().c_str();
-    oscOutStream << (int64_t)m->getSerialID();
+        oscOutStream << m->getName().toStdString().c_str()
+                     << m->getSection().toStdString().c_str()
+                     << (int64_t)m->getSerialID()
+                     << m->getIsClientMuted()
+                     << m->getIsJackTripConnected();
     for (int i=0; i<Member::numControlValues; i++)
         oscOutStream<< (m->getCurrentControls())[i];
     }
@@ -930,6 +932,7 @@ void LRNetServer::handleClientMute(osc::ReceivedMessageArgumentStream * args, se
         bool isMuted;
         try{
             *args >> isMuted;
+            mRoster->setClientMutedBySessionID(tSess, isMuted);
             notifyChefsMemMute(mRoster->getSerialIDbySessionID(tSess), isMuted);
         }catch(osc::WrongArgumentTypeException & e){
             //Not a boolean.

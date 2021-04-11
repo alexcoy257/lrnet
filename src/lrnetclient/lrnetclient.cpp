@@ -265,7 +265,7 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     }
 
     else if (std::strcmp(ap, "/push/roster/updatemember") == 0){
-            handleMemberGroup(args, MEMBER_UPDATE);
+        handleMemberGroup(args, MEMBER_UPDATE);
     }
 
     else if (std::strcmp(ap, "/push/roster/memberleft") == 0){
@@ -402,26 +402,31 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     const char * memName;
     const char * memSect;
     int64_t id;
+    bool isClientMuted;
+    bool isJackTripConnected;
     QVector<float> currControls(9); //ChannelStrip::numControlValues
 
     try{
-    args >> memName;
-    args >> memSect;
-    args >> id;
+        args >> memName;
+        args >> memSect;
+        args >> id;
+        args >> isClientMuted;
+        args >> isJackTripConnected;
 
 
-    std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
-    switch (type){
-    case MEMBER_ADD:
-        for (int i=0; i<9; i++){ // ChannelStrip::numControlValues
-            args >> (currControls.data())[i];
+
+        std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
+        switch (type){
+        case MEMBER_ADD:
+            for (int i=0; i<9; i++){ // ChannelStrip::numControlValues
+                args >> (currControls.data())[i];
+            }
+            emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id, isClientMuted, isJackTripConnected);
+            break;
+        case MEMBER_UPDATE:
+            emit updateMember(QString(memName), QString(memSect), id, isClientMuted, isJackTripConnected);
+            break;
         }
-    emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id);
-        break;
-    case MEMBER_UPDATE:
-    emit updateMember(QString(memName), QString(memSect), id);
-        break;
-    }
     }
     catch (osc::WrongArgumentTypeException & e){
         qDebug() <<"Member group argument was a bad type";

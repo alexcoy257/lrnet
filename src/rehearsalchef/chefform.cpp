@@ -41,7 +41,7 @@ ChefForm::~ChefForm()
     //delete m_chatForm;
 }
 
-void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id){
+void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id, bool isClientMuted, bool isJackTripConnected){
 
     if (! m_clients.contains(id)){
         LRMClient * cStruct = (LRMClient *)malloc(sizeof(LRMClient));
@@ -50,6 +50,8 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         cStruct->comp = new Compressor(cStruct, this);
         cStruct->comp->hide();
         cStruct->id = id;
+        cStruct->cs->setIsClientMutedProperty(isClientMuted);
+        cStruct->cs->setIsJackTripConnectedProperty(isJackTripConnected);
         qDebug() <<"Controls: " <<controls;
         cStruct->cs->newControls(controls);
         cStruct->comp->newControls(controls);
@@ -72,11 +74,13 @@ void ChefForm::newValueHandler(LRMClient * cStruct, int type, float value){
     emit sendControlUpdate(cStruct->id, ftmp);
 }
 
-void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id){
-    LRMClient * client = m_clients[id];
-    if(client){
+void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id, bool isClientMuted, bool isJackTripConnected){
+    if (m_clients.contains(id)){
+        LRMClient * client = m_clients[id];
         client ->cs->setName(mName);
         client->cs->setSection(sName);
+        client->cs->setIsClientMutedProperty(isClientMuted);
+        client->cs->setIsJackTripConnectedProperty(isJackTripConnected);
     }
 }
 

@@ -170,6 +170,7 @@ void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     mThreadPool.start(w, QThread::TimeCriticalPriority);
     // wait until one is complete before another spawns
     emit jackTripStarted(s_id);
+    m->setIsJackTripConnected(true);
     emit notifyChefsSessionJackTripStatus(s_id, true);
 
     //while (w->isSpawning()) { QThread::msleep(10);
@@ -316,6 +317,18 @@ void Roster::setJoinMuted(bool joinMuted){
     mJoinMuted = joinMuted;
 }
 
+void Roster::setClientMutedBySessionID(session_id_t session_id, bool isMuted){
+    if (membersBySessionID.contains(session_id)){
+        membersBySessionID[session_id]->setIsClientMuted(isMuted);
+    }
+}
+
+void Roster::setIsJackTripConnectedBySessionID(session_id_t session_id, bool isJackTripConnected){
+    if (membersBySessionID.contains(session_id)){
+        membersBySessionID[session_id]->setIsJackTripConnected(isJackTripConnected);
+    }
+}
+
 int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
@@ -389,6 +402,7 @@ void Roster::stopJackTrip(session_id_t s_id, bool hint_member){
         m->getThread()->stopThread();
         m->resetThread();
 
+        m->setIsJackTripConnected(false);
         emit notifyChefsSessionJackTripStatus(s_id, false);
     }
 }
