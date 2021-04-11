@@ -60,8 +60,8 @@ private:
     Roster * mRoster;
     JackTripWorker * assocThread = NULL;
     int mPort;
-    bool isClientMuted;
-    bool isJackTripConnected;
+    bool isClientMuted = false;
+    bool isJackTripConnected = false;
     jack_port_t * fromPorts[2] = {NULL, NULL};
     jack_port_t * toPorts[2] = {NULL, NULL};
     jack_port_t * broadcastPorts[2] = {NULL, NULL};
