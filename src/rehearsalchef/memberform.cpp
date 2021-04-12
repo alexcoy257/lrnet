@@ -25,6 +25,8 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, &MemberForm::setjtSelfLoopback);
     QObject::connect(ui->localLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setLocalLoopback(e);});
 
+    ui->muteButton->setProperty("isClientMuted", false);
+
     ui->jtSelfLoopbackBox->hide();
     ui->jtSelfLoopbackInfoLabel->hide();
 
@@ -140,5 +142,9 @@ void MemberForm::toggleMute(){
         ui->muteButton->setText("Mute");
         emit doMute(false);
     }
+    ui->muteButton->setProperty("isClientMuted", muted);
+    style()->unpolish(ui->muteButton);
+    style()->polish(ui->muteButton);
+    update();
     emit sendClientMute(muted);
 }

@@ -32,6 +32,8 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStopped, this, [=](){ui->secondaryConnectButton->setEnabled(false);});
     QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
 
+    ui->muteButton->setProperty("isMuted", true);
+
 }
 
 ChefForm::~ChefForm()
@@ -252,6 +254,10 @@ void ChefForm::toggleMute(){
         ui->muteButton->setText("Mute");
         emit doMute(false);
     }
+    ui->muteButton->setProperty("isMuted", muted);
+    style()->unpolish(ui->muteButton);
+    style()->polish(ui->muteButton);
+    update();
 }
 
 void ChefForm::fstartJacktripSec(){

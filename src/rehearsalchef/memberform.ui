@@ -25,6 +25,11 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton[isClientMuted = true] {background-color : rgb(170, 0, 0);}
+
+QPushButton[isClientMuted = false] {background-color : rgb(0, 170, 0);}</string>
+  </property>
   <layout class="QGridLayout" name="mainGridLayout">
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="NameArea">
