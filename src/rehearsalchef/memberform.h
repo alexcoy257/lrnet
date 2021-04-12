@@ -31,6 +31,9 @@ public:
     void enableJackForm();
     void disableJackForm();
 
+public slots:
+    void handleJackPortsConnected();
+
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);

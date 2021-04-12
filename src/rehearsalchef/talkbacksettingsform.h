@@ -19,6 +19,7 @@ public:
     void disableJackForm();
     void loadSetup(QSettings &settings);
     void saveSetup(QSettings &settings);
+    bool getjtSelfLoopback();
 
 signals:
     void jackStarted();

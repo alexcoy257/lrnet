@@ -25,7 +25,6 @@ isEmpty(PREFIX) {
 
 message(Installing to $$PREFIX)
 
-
 #message($$DLLDESTDIR)
 macx{
 CONFIG += sdk_no_version_check
@@ -67,3 +66,5 @@ DEFINES += WAIRTOHUB
 FORMS +=
 
 SOURCES +=
+
+RESOURCES += $$PWD/lrnet.qrc

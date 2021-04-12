@@ -212,6 +212,10 @@ void ChefForm::handleJoinMutedResponse(bool joinMuted){
     qDebug() << "set muted box checked to " << joinMuted;
 }
 
+void ChefForm::handleJackPortsConnected(){
+    emit doMute(muted);
+}
+
 void ChefForm::disableJackForm(){
     m_tbSetupForm->disableJackForm();
 }

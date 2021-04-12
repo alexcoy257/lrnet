@@ -139,6 +139,7 @@ private slots:
     void disconnectPrimaryReceive();
     void connectSecondary();
     void disconnectSecondary();
+    void doPrimaryMute(bool m);
     void setLocalLoopback(bool l);
 
 };

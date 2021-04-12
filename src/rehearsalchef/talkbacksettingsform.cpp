@@ -65,3 +65,7 @@ void TalkbackSettingsForm::loadSetup(QSettings & settings){
 void TalkbackSettingsForm::saveSetup(QSettings & settings){
     ui->jackServer->saveSetup(settings);
 }
+
+bool TalkbackSettingsForm::getjtSelfLoopback(){
+    return ui->jtSelfLoopbackBox->isChecked();
+}
