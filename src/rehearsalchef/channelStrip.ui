@@ -19,6 +19,17 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">ChannelStrip[isClientMuted = false] {
+							border: 2px solid rgb(0, 170, 0);
+							}
+ChannelStrip[isClientMuted = true] {
+							border: 2px solid rgb(170, 0, 0);
+							}
+ChannelStrip[isJackTripConnected = false] {
+							border: 2px solid rgb(255, 230, 43);
+							}</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="4" column="0">
     <widget class="QPushButton" name="cs_soloButton">

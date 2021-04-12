@@ -265,10 +265,19 @@ void LRNetClient::handleMessage(osc::ReceivedMessage * inMsg){
     }
 
     else if (std::strcmp(ap, "/push/roster/updatemember") == 0){
-            handleMemberGroup(args, MEMBER_UPDATE);
-        }
+        handleMemberGroup(args, MEMBER_UPDATE);
+    }
+
     else if (std::strcmp(ap, "/push/roster/memberleft") == 0){
           handleRemoveMember(args);
+    }
+
+    else if (std::strcmp(ap, "/push/clientmute") == 0){
+        handleClientMute(args);
+    }
+
+    else if (std::strcmp(ap, "/push/clientjacktripstatus") == 0){
+        handleClientJackTripStatus(args);
     }
 
     else if (std::strcmp(ap, "/config/udpport") == 0){
@@ -393,26 +402,31 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     const char * memName;
     const char * memSect;
     int64_t id;
+    bool isClientMuted;
+    bool isJackTripConnected;
     QVector<float> currControls(9); //ChannelStrip::numControlValues
 
     try{
-    args >> memName;
-    args >> memSect;
-    args >> id;
+        args >> memName;
+        args >> memSect;
+        args >> id;
+        args >> isClientMuted;
+        args >> isJackTripConnected;
 
 
-    std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
-    switch (type){
-    case MEMBER_ADD:
-        for (int i=0; i<9; i++){ // ChannelStrip::numControlValues
-            args >> (currControls.data())[i];
+
+        std::cout << "Member " <<id <<": " << memName <<"-" <<memSect << std::endl;
+        switch (type){
+        case MEMBER_ADD:
+            for (int i=0; i<9; i++){ // ChannelStrip::numControlValues
+                args >> (currControls.data())[i];
+            }
+            emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id, isClientMuted, isJackTripConnected);
+            break;
+        case MEMBER_UPDATE:
+            emit updateMember(QString(memName), QString(memSect), id, isClientMuted, isJackTripConnected);
+            break;
         }
-    emit newMember(QString(memName), QString(memSect), QVector<float>(currControls), id);
-        break;
-    case MEMBER_UPDATE:
-    emit updateMember(QString(memName), QString(memSect), id);
-        break;
-    }
     }
     catch (osc::WrongArgumentTypeException & e){
         qDebug() <<"Member group argument was a bad type";
@@ -554,6 +568,50 @@ void LRNetClient::stopJackTrip(AuthTypeE role){
     << osc::EndMessage;
     writeStreamToSocket();
     //socket->write(oscOutStream.Data(), oscOutStream.Size());
+}
+
+void LRNetClient::sendClientMute(bool isMuted){
+    qDebug() << "Sending muted set to :" << isMuted;
+    oscOutStream.Clear();
+    oscOutStream << osc::BeginMessage( "/member/sendmute")
+                 << osc::Blob(&session, sizeof(session))
+                 << isMuted
+                 << osc::EndMessage;
+    writeStreamToSocket();
+}
+
+void LRNetClient::handleClientMute(osc::ReceivedMessageArgumentStream & args){
+    int serial_id;
+    bool isMuted;
+    try{
+        args >> serial_id;
+        try{
+            args >> isMuted;
+            qDebug() << "Received client mute set to: " << isMuted;
+            emit clientMuteReceived(serial_id, isMuted);
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a boolean
+        }
+    } catch(osc::WrongArgumentTypeException & e){
+        //Not an int
+    }
+}
+
+void LRNetClient::handleClientJackTripStatus(osc::ReceivedMessageArgumentStream & args){
+    int serial_id;
+    bool isJackTripConnected;
+    try{
+        args >> serial_id;
+        try{
+            args >> isJackTripConnected;
+            qDebug() << "Received client jacktrip connection: " << isJackTripConnected;
+            emit clientJackTripStatusReceived(serial_id, isJackTripConnected);
+        }catch(osc::WrongArgumentTypeException & e){
+            //Not a boolean
+        }
+    } catch(osc::WrongArgumentTypeException & e){
+        //Not an int
+    }
 }
 
 void LRNetClient::sendChat(const QString &chatMsg){

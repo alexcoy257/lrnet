@@ -106,8 +106,8 @@ private:
         void connected();
         void disconnected();
         void timeout();
-        void newMember(const QString& name, const QString& group, const QVector<float> controls, int id);
-        void updateMember(const QString& name, const QString& group, int id);
+        void newMember(const QString& name, const QString& group, const QVector<float> controls, int id, bool isClientMuted, bool isJackTripConnected);
+        void updateMember(const QString& name, const QString& group, int id, bool isClientMuted, bool isJackTripConnected);
         void updateMemberControls(QVector<float> &controls, int id);
         void lostMember(int id);
         void authenticated(AuthTypeE type);
@@ -117,6 +117,8 @@ private:
         void handleSoloResponse(int id, bool isSolo);
         void handleJoinMutedResponse(bool joinMuted);
         void updateAuthCodeStatus(bool enabled, const QString & authCode);
+        void clientMuteReceived(int serial_id, bool isMuted);
+        void clientJackTripStatusReceived(int serial_id, bool isJackTripConnected);
         void serverUpdatedAuthCodeEnabled(bool enabled);
         void serverUpdatedAuthCode(const QString & authCode);
         void storeKeyResultReceived(bool success);
@@ -146,6 +148,7 @@ private:
         void sendAuthCode(const QString &chatMsg);
         void sendPublicKey();
         void updateAuthCodeEnabled(bool enabled);
+        void sendClientMute(bool muted);
 
         void subSuperChef();
 
@@ -195,6 +198,8 @@ private:
         void handleNewChat(osc::ReceivedMessageArgumentStream & args);
         void handleRoles(osc::ReceivedMessageArgumentStream & args);
         void handleSoloUpdate(osc::ReceivedMessageArgumentStream & args);
+        void handleClientMute(osc::ReceivedMessageArgumentStream & args);
+        void handleClientJackTripStatus(osc::ReceivedMessageArgumentStream & args);
         void handleJoinMutedUpdated(osc::ReceivedMessageArgumentStream & args);
         void handleStoreKeyResult(osc::ReceivedMessageArgumentStream & args);
         void handleAuthCodeStatus(osc::ReceivedMessageArgumentStream & args);

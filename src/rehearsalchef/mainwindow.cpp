@@ -354,6 +354,8 @@ void MainWindow::launchChef(){
     QObject::connect(m_netClient, &LRNetClient::updateMemberControls, (ChefForm *)m_roleForm, &ChefForm::updateChannelStripControls);
     QObject::connect(m_netClient, &LRNetClient::lostMember, (ChefForm *)m_roleForm, &ChefForm::deleteChannelStrip);
     QObject::connect(m_netClient, &LRNetClient::chatReceived, ((ChefForm *)m_roleForm)->m_chatForm, &ChatForm::appendMessage);
+    QObject::connect(m_netClient, &LRNetClient::clientMuteReceived, ((ChefForm *)m_roleForm), &ChefForm::clientMuteReceived);
+    QObject::connect(m_netClient, &LRNetClient::clientJackTripStatusReceived, ((ChefForm *)m_roleForm), &ChefForm::clientJackTripStatusReceived);
     QObject::connect(m_netClient, &LRNetClient::updateAuthCodeStatus, (ChefForm *)m_roleForm, &ChefForm::updateAuthCodeStatus);
     QObject::connect(m_netClient, &LRNetClient::handleSoloResponse, (ChefForm *)m_roleForm, &ChefForm::handleSoloResponse);
     QObject::connect(m_netClient, &LRNetClient::handleJoinMutedResponse, (ChefForm *)m_roleForm, &ChefForm::handleJoinMutedResponse);
@@ -376,10 +378,9 @@ void MainWindow::launchChef(){
     m_sJacktrip->setPortCBAreas(sec_fromPorts, sec_toPorts, sec_broadcastPorts, 2);
     QObject::connect(m_sJacktrip, &RCJTWorker::jackPortsReady, this, &MainWindow::connectSecondary, Qt::QueuedConnection);
 
-    QObject::connect((ChefForm *)m_roleForm, &ChefForm::doMute, this, [=](bool m){
-        if (m) disconnectPrimarySend();
-        else connectPrimarySend();
-    });
+    QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, (ChefForm *)m_roleForm, &ChefForm::handleJackPortsConnected, Qt::QueuedConnection);
+
+    QObject::connect((ChefForm *)m_roleForm, &ChefForm::doMute, this, &MainWindow::doPrimaryMute);
 
 
     QObject::connect((ChefForm *)m_roleForm, &ChefForm::startJackTrip, this, &MainWindow::startJackTrip);
@@ -409,15 +410,15 @@ void MainWindow::launchMember(){
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setEncryption, this, &MainWindow::setEncryption);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setjtSelfLoopback, m_netClient, &LRNetClient::setjtSelfLoopback);
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::setLocalLoopback, this, &MainWindow::setLocalLoopback);
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::sendClientMute, m_netClient, &LRNetClient::sendClientMute);
 
 
     QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, this,
             &MainWindow::connectPrimary, Qt::QueuedConnection);
 
-    QObject::connect((MemberForm *)m_roleForm, &MemberForm::doMute, this, [=](bool m){
-        if (m) disconnectPrimarySend();
-        else connectPrimarySend();
-    });
+    QObject::connect(m_jacktrip, &RCJTWorker::jackPortsReady, (MemberForm *)m_roleForm, &MemberForm::handleJackPortsConnected, Qt::QueuedConnection);
+
+    QObject::connect((MemberForm *)m_roleForm, &MemberForm::doMute, this, &MainWindow::doPrimaryMute);
 
     QObject::connect((MemberForm *)m_roleForm, &MemberForm::startJackTrip, this, &MainWindow::startJackTrip);
 
@@ -742,6 +743,11 @@ void MainWindow::disconnectSecondary(){
                 std::free(ports);
             }
     }
+}
+
+void MainWindow::doPrimaryMute(bool m){
+    if (m) disconnectPrimarySend();
+    else connectPrimarySend();
 }
 
 void MainWindow::setNumChannels(int n){

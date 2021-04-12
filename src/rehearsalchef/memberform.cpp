@@ -22,8 +22,13 @@ MemberForm::MemberForm(QWidget *parent) :
     QObject::connect(ui->encryptEnabledBox, &QCheckBox::stateChanged, this, [=](int e){emit setEncryption(e);});
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->muteButton, &QAbstractButton::released, this, &MemberForm::toggleMute);
-    QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setjtSelfLoopback(e);});
+    QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, &MemberForm::setjtSelfLoopback);
     QObject::connect(ui->localLoopbackBox, &QCheckBox::stateChanged, this, [=](int e){emit setLocalLoopback(e);});
+
+    ui->muteButton->setProperty("isClientMuted", false);
+
+    ui->jtSelfLoopbackBox->hide();
+    ui->jtSelfLoopbackInfoLabel->hide();
 
     // This section should be removed as functionality is implemented
     ui->sectionLabel->hide();
@@ -51,6 +56,8 @@ void MemberForm::fstartJacktrip(){
     ui->startJackTripButton->setText("Stop JackTrip");
     ui->redundancyChoice->setDisabled(true);
     ui->sentChannelsChoice->setDisabled(true);
+    ui->jtSelfLoopbackBox->show();
+    ui->jtSelfLoopbackInfoLabel->show();
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
 }
@@ -60,8 +67,17 @@ void MemberForm::fstopJacktrip(){
     ui->startJackTripButton->setText("Start JackTrip");
     ui->redundancyChoice->setEnabled(true);
     ui->sentChannelsChoice->setEnabled(true);
+    QObject::disconnect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, &MemberForm::setjtSelfLoopback);
+    ui->jtSelfLoopbackBox->setChecked(false);
+    ui->jtSelfLoopbackBox->hide();
+    ui->jtSelfLoopbackInfoLabel->hide();
+    QObject::connect(ui->jtSelfLoopbackBox, &QCheckBox::stateChanged, this, &MemberForm::setjtSelfLoopback);
     QObject::disconnect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstopJacktrip);
     QObject::connect(ui->startJackTripButton, &QAbstractButton::released, this, &MemberForm::fstartJacktrip);
+}
+
+void MemberForm::handleJackPortsConnected(){
+    emit doMute(muted);
 }
 
 MemberForm::~MemberForm()
@@ -126,4 +142,9 @@ void MemberForm::toggleMute(){
         ui->muteButton->setText("Mute");
         emit doMute(false);
     }
+    ui->muteButton->setProperty("isClientMuted", muted);
+    style()->unpolish(ui->muteButton);
+    style()->polish(ui->muteButton);
+    update();
+    emit sendClientMute(muted);
 }

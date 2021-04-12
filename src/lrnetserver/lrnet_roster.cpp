@@ -133,7 +133,7 @@ QHash<session_id_t, sessionTriple> & Roster::getActiveSessions(){
 
 void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     Member * m = NULL;
-     if (membersBySessionID.contains(s_id)){
+    if (membersBySessionID.contains(s_id)){
         m = membersBySessionID[s_id];
     }
     else if (!hint_member && chefsBySessionID.contains(s_id))
@@ -170,6 +170,8 @@ void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
     mThreadPool.start(w, QThread::TimeCriticalPriority);
     // wait until one is complete before another spawns
     emit jackTripStarted(s_id);
+    m->setIsJackTripConnected(true);
+    emit notifyChefsSessionJackTripStatus(s_id, true);
 
     //while (w->isSpawning()) { QThread::msleep(10);
     ///*qDebug() << "Loop wait for spawning;";*/}
@@ -187,8 +189,8 @@ void Roster::startJackTrip(session_id_t s_id, bool encrypt, bool hint_member){
 void Roster::removeMemberBySerialID(Member::serial_t id){
     Member * m = members.take(id);
     if (m){
-    membersBySessionID.take(m->getSessionID());
-    removeMember(m);
+        membersBySessionID.take(m->getSessionID());
+        removeMember(m);
     }
 }
 
@@ -203,29 +205,29 @@ void Roster::removeMemberBySessionID(session_id_t s_id){
     if(!membersBySessionID.contains(s_id))
         return;
     Member * m = membersBySessionID.take(s_id);
-    if(m){
+    if (m){
+        {
+        QHashIterator<Member::serial_t, Member *> iterator(members);
+        
+        while (iterator.hasNext()) {
+            iterator.next();
+            qDebug() <<"Member " <<iterator.value();
+        }
+        }
+        members.take(m->getSerialID());
+
+    
         {
             QHashIterator<Member::serial_t, Member *> iterator(members);
         
         while (iterator.hasNext()) {
-        iterator.next();
-        qDebug() <<"Member " <<iterator.value();
-         }
+            iterator.next();
+            qDebug() <<"Member " <<iterator.value();
         }
-    members.take(m->getSerialID());
-
-    
-    {
-            QHashIterator<Member::serial_t, Member *> iterator(members);
-        
-        while (iterator.hasNext()) {
-        iterator.next();
-        qDebug() <<"Member " <<iterator.value();
-         }
         }
-    qDebug() <<members.size() <<" member(s) remain...";
+        qDebug() <<members.size() <<" member(s) remain...";
 
-    removeMember(m);
+        removeMember(m);
     }
 }
 
@@ -235,8 +237,8 @@ void Roster::removeChefBySessionID(session_id_t s_id){
         return;
     Member * m = chefsBySessionID.take(s_id);
     if (m){
-    chefs.take(m->getSerialID());
-    delete m;
+        chefs.take(m->getSerialID());
+        delete m;
     }
 }
 
@@ -255,15 +257,23 @@ void Roster::removeMember(Member * m){
     emit memberRemoved(id);
 }
 
+int Roster::getSerialIDbySessionID(session_id_t s_id){
+    Member * m = membersBySessionID.value(s_id, nullptr);
+    if (m)
+        return m->getSerialID();
+    else
+        return -1;
+}
+
 QString Roster::getNameBySessionID(session_id_t s_id){
     if (!membersBySessionID.contains(s_id)){
             return QString("Chef");
     } else{
-    QString qsName = membersBySessionID[s_id]->getName();
-    if (qsName.isEmpty()){
-        qsName = membersBySessionID[s_id]->getNetID();
-    }
-    return qsName;
+        QString qsName = membersBySessionID[s_id]->getName();
+        if (qsName.isEmpty()){
+            qsName = membersBySessionID[s_id]->getNetID();
+        }
+        return qsName;
     }
 }
 void Roster::setNameBySessionID(QString &name, session_id_t s_id){
@@ -273,8 +283,10 @@ void Roster::setNameBySessionID(QString &name, session_id_t s_id){
     else if (chefsBySessionID.contains(s_id)){
         m = chefsBySessionID[s_id];
     }
-    m->setName(name);
-    emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
+    if (m){
+        m->setName(name);
+        emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
+    }
 }
 void Roster::setSectionBySessionID(QString & section, session_id_t s_id){
     Member * m = NULL;
@@ -283,8 +295,10 @@ void Roster::setSectionBySessionID(QString & section, session_id_t s_id){
     else if (chefsBySessionID.contains(s_id)){
         m = chefsBySessionID[s_id];
     }
-    m->setSection(section);
-    emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
+    if (m){
+        m->setSection(section);
+        emit sigMemberUpdate(m, RosterNS::MEMBER_UPDATE);
+    }
 }
 void Roster::setNameBySerialID(QString & name, Member::serial_t s_id){
     if (members.contains(s_id)){
@@ -303,21 +317,33 @@ void Roster::setJoinMuted(bool joinMuted){
     mJoinMuted = joinMuted;
 }
 
+void Roster::setClientMutedBySessionID(session_id_t session_id, bool isMuted){
+    if (membersBySessionID.contains(session_id)){
+        membersBySessionID[session_id]->setIsClientMuted(isMuted);
+    }
+}
+
+void Roster::setIsJackTripConnectedBySessionID(session_id_t session_id, bool isJackTripConnected){
+    if (membersBySessionID.contains(session_id)){
+        membersBySessionID[session_id]->setIsJackTripConnected(isJackTripConnected);
+    }
+}
+
 int Roster::releaseThread(Member::serial_t id)
 {   std::cout << "Releasing Thread" << std::endl;
     QMutexLocker lock(&mMutex);
     if (members.contains(id)){
-    //members[id]->setThread(NULL);
-    members[id]->resetThread();
-    //mPortPool.returnPort(members[id]->getPort());
-    mTotalRunningThreads--;
+        //members[id]->setThread(NULL);
+        members[id]->resetThread();
+        //mPortPool.returnPort(members[id]->getPort());
+        mTotalRunningThreads--;
     }
 
     if (chefs.contains(id)){
-    //members[id]->setThread(NULL);
-    chefs[id]->resetThread();
-    //mPortPool.returnPort(members[id]->getPort());
-    mTotalRunningThreads--;
+        //members[id]->setThread(NULL);
+        chefs[id]->resetThread();
+        //mPortPool.returnPort(members[id]->getPort());
+        mTotalRunningThreads--;
     }
 
     return 0; /// \todo Check if we really need to return an argument here
@@ -365,16 +391,20 @@ void Roster::sigSaveMemberControls(Member * m){
 
 void Roster::stopJackTrip(session_id_t s_id, bool hint_member){
     Member * m = NULL;
-    if (hint_member ){
-        m = membersBySessionID.value(s_id);
+    if (membersBySessionID.contains(s_id)){
+        m = membersBySessionID[s_id];
     }
-    if (!m)
-        m = chefsBySessionID.value(s_id);
-    if (!m)
-        return;
-    qDebug() <<"Stop jacktrip member" <<m->getName();
-    m->getThread()->stopThread();
-    m->resetThread();
+    else if (!hint_member && chefsBySessionID.contains(s_id))
+        m = chefsBySessionID[s_id];
+
+    if (m){
+        qDebug() <<"Stop jacktrip member" <<m->getName();
+        m->getThread()->stopThread();
+        m->resetThread();
+
+        m->setIsJackTripConnected(false);
+        emit notifyChefsSessionJackTripStatus(s_id, false);
+    }
 }
 
 void Roster::fanNewMember(Member * member){
@@ -524,27 +554,31 @@ void Roster::fanNewChef(Member * chef){
 }
 
 void Roster::setRedundancyBySessionID(int newRed, session_id_t s_id){
-    Member * m = membersBySessionID[s_id];
-    if (!m)
-        return;
-    JackTripWorker * t = m->getThread();
-    if (t)
-        t->setRedundancy(newRed);
+    if (membersBySessionID.contains(s_id)){
+        Member * m = membersBySessionID[s_id];
+        if (m){
+            JackTripWorker * t = m->getThread();
+            if (t)
+                t->setRedundancy(newRed);
+        }
+    }
 }
 
 void Roster::setNumChannelsBySessionID(int newCh, session_id_t s_id){
-    Member * m = membersBySessionID[s_id];
-    if (!m)
-        return;
-    m->setNumChannels(newCh);
+    if (membersBySessionID.contains(s_id)){
+        Member * m = membersBySessionID[s_id];
+        if (m)
+            m->setNumChannels(newCh);
+    }
 }
 
 void Roster::setLoopbackBySessionID(bool lb, session_id_t s_id){
-    Member * m = membersBySessionID[s_id];
-    if (!m){
-        m = chefsBySessionID[s_id];
+    if (membersBySessionID.contains(s_id)){
+        Member * m = membersBySessionID[s_id];
+        if (!m && chefsBySessionID.contains(s_id)){
+            m = chefsBySessionID[s_id];
+        }
+        if (m)
+            m->setLoopback(lb);
     }
-    if (!m)
-        return;
-    m->setLoopback(lb);
 }

@@ -139,6 +139,8 @@ private slots:
     void sendMemberUdpPort(Member * m, RosterNS::MemberEventE event);
     void notifyChefsMemEvent(Member * member, RosterNS::MemberEventE event);
     void notifyChefsMemLeft(Member::serial_t id);
+    void notifyChefsMemMute(int serial_id, bool isClientMuted);
+    void notifyChefsSessionJackTripStatus(session_id_t session_id, bool jackTripStatus);
     void broadcastToSuperChefs();
     void broadcastToChefs();
     void broadcastToAll();
@@ -148,6 +150,7 @@ private slots:
     void handleSectionUpdate(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handleSoloUpdate(osc::ReceivedMessageArgumentStream * args);
     void handleJoinMuted(osc::ReceivedMessageArgumentStream * args);
+    void handleClientMute(osc::ReceivedMessageArgumentStream * args, session_id_t session);
     void handlePermissionUpdates(osc::ReceivedMessageArgumentStream * args);
     void removeUsers(osc::ReceivedMessageArgumentStream * args);
     void handleAdjustParams(osc::ReceivedMessageArgumentStream * args);

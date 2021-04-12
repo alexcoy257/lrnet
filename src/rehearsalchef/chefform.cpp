@@ -32,6 +32,8 @@ ChefForm::ChefForm(QWidget *parent) :
     QObject::connect(m_tbSetupForm, &TalkbackSettingsForm::jackStopped, this, [=](){ui->secondaryConnectButton->setEnabled(false);});
     QObject::connect(ui->secondaryConnectButton, &QAbstractButton::released, this, &ChefForm::fstartJacktripSec);
 
+    ui->muteButton->setProperty("isMuted", true);
+
 }
 
 ChefForm::~ChefForm()
@@ -41,7 +43,7 @@ ChefForm::~ChefForm()
     //delete m_chatForm;
 }
 
-void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id){
+void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVector<float> controls, int id, bool isClientMuted, bool isJackTripConnected){
 
     if (! m_clients.contains(id)){
         LRMClient * cStruct = (LRMClient *)malloc(sizeof(LRMClient));
@@ -50,6 +52,8 @@ void ChefForm::addChannelStrip(const QString& mName, const QString& sName, QVect
         cStruct->comp = new Compressor(cStruct, this);
         cStruct->comp->hide();
         cStruct->id = id;
+        cStruct->cs->setIsClientMutedProperty(isClientMuted);
+        cStruct->cs->setIsJackTripConnectedProperty(isJackTripConnected);
         qDebug() <<"Controls: " <<controls;
         cStruct->cs->newControls(controls);
         cStruct->comp->newControls(controls);
@@ -72,11 +76,13 @@ void ChefForm::newValueHandler(LRMClient * cStruct, int type, float value){
     emit sendControlUpdate(cStruct->id, ftmp);
 }
 
-void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id){
-    LRMClient * client = m_clients[id];
-    if(client){
+void ChefForm::updateChannelStrip(const QString& mName, const QString& sName, int id, bool isClientMuted, bool isJackTripConnected){
+    if (m_clients.contains(id)){
+        LRMClient * client = m_clients[id];
         client ->cs->setName(mName);
         client->cs->setSection(sName);
+        client->cs->setIsClientMutedProperty(isClientMuted);
+        client->cs->setIsJackTripConnectedProperty(isJackTripConnected);
     }
 }
 
@@ -185,6 +191,18 @@ void ChefForm::handleSoloResponse(int id, bool isSolo){
         m_clients[id]->cs->setSolo(isSolo);
 }
 
+void ChefForm::clientMuteReceived(int serial_id, bool isClientMuted){
+    if (m_clients.contains(serial_id)){
+        m_clients[serial_id]->cs->setIsClientMutedProperty(isClientMuted);
+    }
+}
+
+void ChefForm::clientJackTripStatusReceived(int serial_id, bool isJackTripConnected){
+    if (m_clients.contains(serial_id)){
+        m_clients[serial_id]->cs->setIsJackTripConnectedProperty(isJackTripConnected);
+    }
+}
+
 void ChefForm::sigJoinMutedUpdate(){
     emit sendJoinMutedUpdate(ui->joinMutedBox->isChecked());
 }
@@ -194,6 +212,10 @@ void ChefForm::handleJoinMutedResponse(bool joinMuted){
     ui->joinMutedBox->setChecked(joinMuted);
     QObject::connect(ui->joinMutedBox, &QAbstractButton::toggled, this, &ChefForm::sigJoinMutedUpdate);
     qDebug() << "set muted box checked to " << joinMuted;
+}
+
+void ChefForm::handleJackPortsConnected(){
+    emit doMute(muted);
 }
 
 void ChefForm::disableJackForm(){
@@ -232,6 +254,10 @@ void ChefForm::toggleMute(){
         ui->muteButton->setText("Mute");
         emit doMute(false);
     }
+    ui->muteButton->setProperty("isMuted", muted);
+    style()->unpolish(ui->muteButton);
+    style()->polish(ui->muteButton);
+    update();
 }
 
 void ChefForm::fstartJacktripSec(){

@@ -31,6 +31,9 @@ public:
     void enableJackForm();
     void disableJackForm();
 
+public slots:
+    void handleJackPortsConnected();
+
 signals:
     void nameUpdated(const QString & nname);
     void sectionUpdated(const QString & nsection);
@@ -38,6 +41,8 @@ signals:
     void setjtSelfLoopback(bool e);
     void setLocalLoopback(bool e);
     void setNumChannels(int n);
+
+    void sendClientMute(bool isMuted);
 
     void startJackTrip();
     void stopJackTrip();
