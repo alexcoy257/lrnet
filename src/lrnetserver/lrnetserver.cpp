@@ -310,7 +310,7 @@ void LRNetServer::receivedClientInfo()
     QScopedPointer<QByteArray> arr(cBuf->getMessage());
     if (!arr) return;
 
-    //qDebug() <<"Full message: " <<*arr;
+    qDebug() <<"Full message: " <<*arr;
 
     osc::ReceivedPacket * inPack = NULL;
     try{
@@ -1032,7 +1032,7 @@ void LRNetServer::sendJoinMutedStatus(QSslSocket * socket){
 
 void LRNetServer::handlePermissionUpdates(osc::ReceivedMessageArgumentStream *args){
     if (!args->Eos()){
-        int authType;
+        osc::int32 authType;
         const char * netid;
         QList<QString> netidsSelected = QList<QString>();
         try{
@@ -1313,7 +1313,7 @@ void LRNetServer::sendJackTripReady(session_id_t s_id){
 void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
     bool err;
     if (!args->Eos()){
-        int64_t serial;
+        osc::int64 serial;
         err = false;
         try{
             *args >> serial;
@@ -1323,7 +1323,7 @@ void LRNetServer::handleAdjustParams(osc::ReceivedMessageArgumentStream * args){
         }
         if (err) return;
         while (!args->Eos()){
-            int paramNum;
+            osc::int32 paramNum;
             float paramVal;
             try{
                 *args >> paramNum; *args >> paramVal;
@@ -1364,8 +1364,8 @@ QString LRNetServer::getRandomString(int length){
 void LRNetServer::writeStreamToSocket(QSslSocket * socket){
     if(!socket)
        return;
-    size_t s = oscOutStream.Size();
-    socket->write((const char *)&s, sizeof(size_t));
+    uint64_t s = oscOutStream.Size();
+    socket->write((const char *)&s, sizeof(uint64_t));
     socket->write(oscOutStream.Data(), s);
 }
 
@@ -1420,7 +1420,7 @@ void LRNetServer::handleUpdateRedundancy(
     osc::ReceivedMessageArgumentStream & args,
     session_id_t s_id)
 {   
-    int n = 1;
+    osc::int32 n = 1;
     bool err=false;
     try{
         args >> n;
@@ -1463,7 +1463,7 @@ void LRNetServer::sendKeyToClient(unsigned char * key, session_id_t s_id){
 void LRNetServer::handleSetNumChannels(
     osc::ReceivedMessageArgumentStream & args,
     session_id_t session){
-        int nc = 1;
+        osc::int32 nc = 1;
         bool err=false;
          try{
         args >> nc;

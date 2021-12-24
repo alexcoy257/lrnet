@@ -25,7 +25,10 @@ SOURCES += lrnetclient.cpp \
           lrnetclientmain.cpp
 
 !win32{
-SOURCES += /usr/local/include/osc/*.cpp
+SOURCES +=  /usr/local/include/osc/OscTypes.cpp \
+            /usr/local/include/osc/OscReceivedElements.cpp \
+            /usr/local/include/osc/OscOutboundPacketStream.cpp \
+            /usr/local/include/osc/OscPrintReceivedElements.cpp \
 }
 
 

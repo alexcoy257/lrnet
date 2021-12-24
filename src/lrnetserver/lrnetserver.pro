@@ -4,6 +4,8 @@ include(../lrnet.pri)
 CONFIG += c++11 console
 CONFIG += qt link_prl
 
+CONFIG += debug
+
 QT += sql network widgets
 
 !isEmpty(lrnetdeps){
@@ -39,6 +41,9 @@ SOURCES += lrnetserver.cpp \
             portpool.cpp \
             sslserver.cpp \
             lrnetservermain.cpp \
-            /usr/local/include/osc/*.cpp \
+            /usr/local/include/osc/OscTypes.cpp \
+            /usr/local/include/osc/OscReceivedElements.cpp \
+            /usr/local/include/osc/OscOutboundPacketStream.cpp \
+            /usr/local/include/osc/OscPrintReceivedElements.cpp \
             auth.cpp \
             JackTripWorker.cpp
