@@ -423,9 +423,16 @@ void LRdbClient::updateControlsForUID(db_controls_t controls, int uid){
             qDebug() << "Succeeded to update";
         else
             qDebug() << "Fail update";
+        
+        readDb.close();
     }
 
-    readDb.close();
+    else{
+        readDb.close();
+        addControlsForUID(controls, uid);
+    }
+
+    
 }
 
 void LRdbClient::removeControlsForUID(int uid){

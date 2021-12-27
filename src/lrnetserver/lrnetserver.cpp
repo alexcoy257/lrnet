@@ -310,11 +310,11 @@ void LRNetServer::receivedClientInfo()
     QScopedPointer<QByteArray> arr(cBuf->getMessage());
     if (!arr) return;
 
-    //qDebug() <<"Full message: " <<*arr;
+    qDebug() <<"Full message: " <<*arr;
 
     osc::ReceivedPacket * inPack = NULL;
     try{
-        inPack = new osc::ReceivedPacket(arr->data(), arr->length());
+        inPack = new osc::ReceivedPacket(arr->data(), (int32_t) arr->length());
     }
     catch(osc::MalformedPacketException e){
         qDebug() << "Malformed Packet";

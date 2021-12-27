@@ -157,7 +157,7 @@ void LRNetClient::readResponse()
 
     try{
 
-    inPack = new osc::ReceivedPacket(msg->data(), msg->length());
+    inPack = new osc::ReceivedPacket(msg->data(), (int32_t)msg->length());
     }
     catch(const osc::MalformedPacketException & e){
         qDebug() << "Malformed Packet";
