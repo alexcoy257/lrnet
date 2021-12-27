@@ -409,9 +409,9 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     try{
         args >> memName;
         args >> memSect;
-        args >> &id;
-        args >> &isClientMuted;
-        args >> &isJackTripConnected;
+        args >> id;
+        args >> isClientMuted;
+        args >> isJackTripConnected;
 
 
 
@@ -474,7 +474,7 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
         try{
             args >> netid;
             try{
-                args >> & authType;
+                args >> authType;
                 authRoster->append({QString(netid), AuthTypeE(authType)});
 
             }catch(osc::WrongArgumentTypeException & e){
@@ -494,9 +494,9 @@ void LRNetClient::handleSoloUpdate(osc::ReceivedMessageArgumentStream & args){
     bool isSolo;
 
     try{
-        args >> & id;
+        args >> id;
         try{
-            args >> & isSolo;
+            args >> isSolo;
 
             emit handleSoloResponse(id, isSolo);
 

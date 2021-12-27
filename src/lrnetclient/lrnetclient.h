@@ -18,9 +18,9 @@
 #include "../common/oscstreambuffer.h"
 
 #ifdef LIBLRNET_LIBRARY
-#warning "LIBLRNET_LIBRARY defined"
+#pragma message("LIBLRNET_LIBRARY defined")
 #else
-#warning "LIBLRNET_LIBRARY not defined"
+#pragma message("LIBLRNET_LIBRARY not defined")
 #endif
 
 
