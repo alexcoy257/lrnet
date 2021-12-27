@@ -10,18 +10,18 @@ class OSCStreamingBuffer: public QObject{
 
     char _base[inputSize];
     char * _head = _base;
-    size_t _remaining = inputSize;
-    size_t mSize = 0;
+    uint64_t _remaining = inputSize;
+    uint64_t mSize = 0;
 public:
     OSCStreamingBuffer(QObject * parent=nullptr):QObject(parent){};
 
-    void update(size_t bytesRead){
+    void update(uint64_t bytesRead){
         _head += bytesRead;
         _remaining -= bytesRead;
-        memset(_head, 0xFF, qMin(_remaining, sizeof(size_t)));
-        mSize = *((size_t*)_base);
+        memset(_head, 0xFF, qMin(_remaining, (uint64_t)sizeof(uint64_t)));
+        mSize = *((uint64_t*)_base);
         //qDebug() << filled() << "bytes read. Expecting" <<mSize;
-        //qDebug() << "Message now" << QByteArray(_base, filled() + qMin(_remaining, sizeof(size_t)));
+        //qDebug() << "Message now" << QByteArray(_base, filled() + qMin(_remaining, sizeof(uint64_t)));
     }
 
     int32_t messageSize(){
@@ -29,22 +29,22 @@ public:
     }
 
     bool haveFullMessage(){
-        //qDebug() <<"have" <<(_head - _base)+sizeof(size_t) <<"need" <<mSize;
-        return (_head - _base)+sizeof(size_t) >= (unsigned)mSize;
+        //qDebug() <<"have" <<(_head - _base)+sizeof(uint64_t) <<"need" <<mSize;
+        return (_head - _base)+sizeof(uint64_t) >= (unsigned)mSize;
     }
 
 
     QByteArray * getMessage(){
         QByteArray * toRet = NULL;
         if(haveFullMessage()){
-            toRet = new QByteArray(_base + sizeof(size_t), messageSize());
+            toRet = new QByteArray(_base + sizeof(uint64_t), messageSize());
 
-        //qDebug() <<"About to move this stuff" <<QByteArray(_base + mSize+sizeof(size_t), qMin(filled()-mSize-sizeof(size_t), 16UL));
-        std::memmove(_base, _base + mSize+sizeof(size_t), filled()-mSize-sizeof(size_t));
+        //qDebug() <<"About to move this stuff" <<QByteArray(_base + mSize+sizeof(uint64_t), qMin(filled()-mSize-sizeof(uint64_t), 16UL));
+        std::memmove(_base, _base + mSize+sizeof(uint64_t), filled()-mSize-sizeof(uint64_t));
         _remaining += mSize;
-        _head -= mSize + sizeof(size_t);
-        mSize = *((size_t*)_base);
-        //qDebug() << "Updated message-Size" <<mSize <<QByteArray(_base, filled() + qMin(_remaining, sizeof(size_t)));
+        _head -= mSize + sizeof(uint64_t);
+        mSize = *((uint64_t*)_base);
+        //qDebug() << "Updated message-Size" <<mSize <<QByteArray(_base, filled() + qMin(_remaining, sizeof(uint64_t)));
         //if (haveFullMessage())
         //    qDebug() <<"still have full message";
         return toRet;
@@ -61,10 +61,10 @@ public:
     char * base(){
         return _base;
     }
-    size_t remaining(){
+    uint64_t remaining(){
         return _remaining;
     }
-    size_t filled(){
+    uint64_t filled(){
         return inputSize - _remaining;
     }
 };

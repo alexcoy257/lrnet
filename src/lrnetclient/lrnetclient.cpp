@@ -409,9 +409,9 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
     try{
         args >> memName;
         args >> memSect;
-        args >> id;
-        args >> isClientMuted;
-        args >> isJackTripConnected;
+        args >> &id;
+        args >> &isClientMuted;
+        args >> &isJackTripConnected;
 
 
 
@@ -437,7 +437,7 @@ void LRNetClient::handleMemberGroup(osc::ReceivedMessageArgumentStream & args, M
 }
 
 void LRNetClient::handleRemoveMember(osc::ReceivedMessageArgumentStream & args){
-    int64_t id;
+    osc::int64 id;
     try{
     args >> id;
     std::cout << "Remove member " <<id  << std::endl;
@@ -452,11 +452,11 @@ void LRNetClient::handleRemoveMember(osc::ReceivedMessageArgumentStream & args){
 }
 
 void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
-    int32_t port;
+    osc::int32 port;
     try{
     args >> port;
     std::cout << "New UDP Port " <<port  << std::endl;
-    emit gotUdpPort(port);
+    emit gotUdpPort((int32_t)port);
     }
     catch (osc::WrongArgumentTypeException & e){
         qDebug() <<"UDP Port was a bad type";
@@ -469,12 +469,12 @@ void LRNetClient::handleNewUdpPort(osc::ReceivedMessageArgumentStream & args){
 void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
     QList<AuthRoster> * authRoster = new QList<AuthRoster>();
     const char * netid;
-    int authType;
+    osc::int32 authType;
     while (!args.Eos()){
         try{
             args >> netid;
             try{
-                args >> authType;
+                args >> & authType;
                 authRoster->append({QString(netid), AuthTypeE(authType)});
 
             }catch(osc::WrongArgumentTypeException & e){
@@ -490,13 +490,13 @@ void LRNetClient::handleRoles(osc::ReceivedMessageArgumentStream & args){
 }
 
 void LRNetClient::handleSoloUpdate(osc::ReceivedMessageArgumentStream & args){
-    int64_t id;
+    osc::int64 id;
     bool isSolo;
 
     try{
-        args >> id;
+        args >> & id;
         try{
-            args >> isSolo;
+            args >> & isSolo;
 
             emit handleSoloResponse(id, isSolo);
 
@@ -581,7 +581,7 @@ void LRNetClient::sendClientMute(bool isMuted){
 }
 
 void LRNetClient::handleClientMute(osc::ReceivedMessageArgumentStream & args){
-    int serial_id;
+    osc::int32 serial_id;
     bool isMuted;
     try{
         args >> serial_id;
@@ -598,7 +598,7 @@ void LRNetClient::handleClientMute(osc::ReceivedMessageArgumentStream & args){
 }
 
 void LRNetClient::handleClientJackTripStatus(osc::ReceivedMessageArgumentStream & args){
-    int serial_id;
+    osc::int32 serial_id;
     bool isJackTripConnected;
     try{
         args >> serial_id;

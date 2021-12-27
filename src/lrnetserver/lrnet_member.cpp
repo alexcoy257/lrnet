@@ -20,7 +20,8 @@ class Member::csControlPair{
         cs(ncs), ui(ncontrol), audio(naudio){
             mlock(cs, sizeof(ChannelStrip));
                 qDebug() <<"Locked mem";
-
+            if (!ncontrol)
+            qDebug() <<"UI is null";
             cs->buildUserInterface(ui);
             qDebug() <<"Built UI";
 
