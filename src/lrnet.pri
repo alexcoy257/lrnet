@@ -13,6 +13,12 @@ LIBS += -L$$lrnetdeps/lib
 message(lrnetdeps not set!)
 }
 
+!isEmpty(jack){
+message(Using JACK at $$jack)
+INCLUDEPATH+=$$jack/include
+LIBS += -L$$jack/lib
+}
+
 INCLUDEPATH += $$LIBINCDIR
 LIBS += -L$$DLLDESTDIR
 HEADERS += $$PWD/liblrnet_globals.h
